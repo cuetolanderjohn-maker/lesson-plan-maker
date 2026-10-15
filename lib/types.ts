@@ -18,6 +18,7 @@ export interface TeacherProfile {
   coordinatorKinder: string;
   coordinatorGrade1: string;
   geminiApiKey?: string;
+  geminiModel?: string;
 }
 
 /**

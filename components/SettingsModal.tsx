@@ -89,8 +89,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               }
               className="w-full text-xs font-mono px-3.5 py-2.5 rounded-lg bg-surface border border-borderMuted focus:outline-none focus:border-sage-500 transition-colors"
             />
+            
+            <div className="pt-2">
+              <label className="text-[11px] font-medium text-gray-600 block mb-1">
+                Gemini Model Version
+              </label>
+              <select
+                value={formData.geminiModel || "auto"}
+                onChange={(e) =>
+                  setFormData({ ...formData, geminiModel: e.target.value })
+                }
+                className="w-full text-xs px-3 py-2 rounded-lg bg-surface border border-borderMuted focus:outline-none focus:border-sage-500 text-gray-800 cursor-pointer"
+              >
+                <option value="auto">Auto-detect Best Active Model (gemini-2.5-flash / Recommended)</option>
+                <option value="gemini-2.5-flash">gemini-2.5-flash (Fastest Vision & Document Analysis)</option>
+                <option value="gemini-2.5-pro">gemini-2.5-pro (High-Capacity Deep Reasoning)</option>
+                <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+                <option value="gemini-1.5-flash-latest">gemini-1.5-flash-latest</option>
+              </select>
+            </div>
+
             <p className="text-[11px] text-gray-400">
-              Enables Google Gemini 2.0 Flash Vision to inspect the JPEG photos directly, recognizing pictures, stories, and exercises with high accuracy.
+              The app automatically detects and queries active models for your API key, avoiding 404 deprecation errors.
             </p>
           </div>
 
