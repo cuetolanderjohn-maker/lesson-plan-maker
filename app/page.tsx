@@ -33,6 +33,9 @@ import {
   Camera,
   FileText,
   HelpCircle,
+  Key,
+  ExternalLink,
+  Zap,
 } from "lucide-react";
 
 export default function HomePage() {
@@ -52,6 +55,11 @@ export default function HomePage() {
   const [dateCoverage, setDateCoverage] = useState("");
   const [bookReference, setBookReference] = useState("");
   const [images, setImages] = useState<ImageInput[]>([]);
+
+  // Engine Mode: "gemini" (Deep Vision AI) vs "builtIn" (Free On-Device ML)
+  const [engineMode, setEngineMode] = useState<"gemini" | "builtIn">("gemini");
+  const [quickApiKey, setQuickApiKey] = useState("");
+  const [showKeyInput, setShowKeyInput] = useState(false);
 
   // Input Mode: "photo" (camera/file upload) vs "directText" (paste/type directly)
   const [inputMode, setInputMode] = useState<"photo" | "directText">("photo");
@@ -79,7 +87,13 @@ export default function HomePage() {
     try {
       const savedProfile = localStorage.getItem("kat_teacher_profile");
       if (savedProfile) {
-        setProfile(JSON.parse(savedProfile));
+        const parsed: TeacherProfile = JSON.parse(savedProfile);
+        setProfile(parsed);
+        if (parsed.geminiApiKey?.trim()) {
+          setEngineMode("gemini");
+        } else {
+          setEngineMode("builtIn");
+        }
       }
       const savedHistory = localStorage.getItem("kat_plan_history");
       if (savedHistory) {
@@ -91,12 +105,28 @@ export default function HomePage() {
   }, []);
 
   const handleSaveProfile = (newProfile: TeacherProfile) => {
-    setProfile(newProfile);
+    const cleaned = {
+      ...newProfile,
+      geminiApiKey: newProfile.geminiApiKey?.trim() || undefined,
+    };
+    setProfile(cleaned);
     try {
-      localStorage.setItem("kat_teacher_profile", JSON.stringify(newProfile));
+      localStorage.setItem("kat_teacher_profile", JSON.stringify(cleaned));
     } catch (e) {
       console.error("Failed to save profile:", e);
     }
+  };
+
+  const handleSaveQuickKey = () => {
+    if (!quickApiKey.trim()) return;
+    const updated = {
+      ...profile,
+      geminiApiKey: quickApiKey.trim(),
+    };
+    handleSaveProfile(updated);
+    setQuickApiKey("");
+    setShowKeyInput(false);
+    setEngineMode("gemini");
   };
 
   const handleUpdateCurrentPlan = (updated: LessonPlan) => {
@@ -162,7 +192,7 @@ export default function HomePage() {
     }
   };
 
-  // Step 1: Analyze & Learn from Attached Photos
+  // Step 1: Analyze & Learn from Attached Photos (Local OCR & Vision NLP)
   const handleAnalyzeImages = async (): Promise<LearnedTextbookContent | null> => {
     if (images.length === 0) {
       setErrorMessage("Please attach at least one photo of the lesson from the book.");
@@ -177,16 +207,12 @@ export default function HomePage() {
       let combinedText = "";
 
       for (let i = 0; i < images.length; i++) {
-        // A. Gentle, non-destructive canvas contrast enhancement
         setProgressStatus(`Optimizing page ${i + 1} for high-fidelity reading...`);
         const preprocessed = await preprocessTextbookImage(images[i].base64Data);
 
-        // B. Machine Learning OCR with dual Filipino & English dictionary
         setProgressStatus(`Scanning textbook page ${i + 1} with Machine Learning OCR...`);
-        
         let ocrText = "";
         try {
-          // Attempt Filipino + English recognition
           const result = await Tesseract.recognize(preprocessed.ocrDataUrl, "fil+eng", {
             logger: (m) => {
               if (m.status === "recognizing text" && typeof m.progress === "number") {
@@ -198,7 +224,6 @@ export default function HomePage() {
           });
           ocrText = result.data.text || "";
         } catch {
-          // Fallback to English OCR if Filipino language file is unavailable
           const fallbackResult = await Tesseract.recognize(preprocessed.ocrDataUrl, "eng", {
             logger: (m) => {
               if (m.status === "recognizing text" && typeof m.progress === "number") {
@@ -214,15 +239,13 @@ export default function HomePage() {
         combinedText += "\n" + ocrText;
       }
 
-      // Check if scan yielded sufficient text
       const cleanLen = combinedText.trim().replace(/\s+/g, " ").length;
       if (cleanLen < 30) {
         setScanWarning(
-          "The photo had glare or low contrast. We extracted what we could—you can easily review, type, or paste the lesson title and story in the review card below."
+          "The photo had glare or low contrast. You can type or paste the lesson title and story in the review card below or switch to Gemini AI mode for deep photo analysis."
         );
       }
 
-      // C. Semantic NLP Analyzer
       setProgressStatus("Extracting lesson concepts, vocabulary, and questions...");
       const learned = analyzeTextbookText(combinedText, subject, gradeLevel);
 
@@ -283,8 +306,65 @@ export default function HomePage() {
     }
   };
 
-  // Combined action: Analyze & Generate in one click
-  const handleAnalyzeAndGenerate = async () => {
+  // Generate with Gemini Vision AI (Deep Multimodal Analysis of the JPEG)
+  const handleGenerateWithGemini = async () => {
+    if (images.length === 0) {
+      setErrorMessage("Please attach at least one photo of the lesson from the book.");
+      return;
+    }
+
+    const hasKey = Boolean(profile.geminiApiKey?.trim());
+    if (!hasKey) {
+      setShowKeyInput(true);
+      setErrorMessage("Please provide your Google Gemini API key to use Gemini Vision AI mode.");
+      return;
+    }
+
+    setIsGenerating(true);
+    setErrorMessage(null);
+    setScanWarning(null);
+
+    try {
+      setProgressStatus("Sending textbook photo to Google Gemini 2.0 Flash Vision...");
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          images,
+          meta: {
+            gradeLevel,
+            subject,
+            weekNumber,
+            term,
+            dateCoverage,
+            bookReference,
+          },
+          profile,
+          apiKey: profile.geminiApiKey,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to generate lesson plan with Gemini AI.");
+      }
+
+      setCurrentPlan(data.plan);
+      handleSavePlanToHistory(data.plan);
+    } catch (err: unknown) {
+      console.error("Gemini Generation Error:", err);
+      const msg = err instanceof Error ? err.message : "Failed to generate plan with Gemini AI.";
+      setErrorMessage(
+        `${msg} (Tip: You can switch to the Free Built-in Mode ⚡ below if your API key has quota limits).`
+      );
+    } finally {
+      setIsGenerating(false);
+      setProgressStatus("");
+    }
+  };
+
+  // Primary Action Button Handler
+  const handlePrimaryGenerate = async () => {
     if (inputMode === "directText") {
       if (!directText.trim()) {
         setErrorMessage("Please type or paste some lesson text first.");
@@ -294,9 +374,14 @@ export default function HomePage() {
       setLearnedContent(learned);
       handleGenerateFromLearned(learned);
     } else {
-      const learned = await handleAnalyzeImages();
-      if (learned) {
-        handleGenerateFromLearned(learned);
+      // In Photo mode: Check which engine is active
+      if (engineMode === "gemini") {
+        await handleGenerateWithGemini();
+      } else {
+        const learned = await handleAnalyzeImages();
+        if (learned) {
+          handleGenerateFromLearned(learned);
+        }
       }
     }
   };
@@ -347,6 +432,98 @@ export default function HomePage() {
               onChangeBookReference={setBookReference}
             />
 
+            {/* AI Engine Selector: Gemini Vision AI vs Free Built-in Mode */}
+            <div className="p-3.5 rounded-2xl bg-surface border border-sage-200 shadow-2xs space-y-2.5">
+              <div className="flex items-center justify-between text-xs font-semibold text-gray-700">
+                <span className="flex items-center space-x-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-sage-600" />
+                  <span>AI Generation Engine:</span>
+                </span>
+                {profile.geminiApiKey?.trim() && (
+                  <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    Gemini Key Active
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEngineMode("gemini");
+                    if (!profile.geminiApiKey?.trim()) {
+                      setShowKeyInput(true);
+                    }
+                  }}
+                  className={`py-2 px-3 rounded-xl text-xs font-medium border flex items-center justify-center space-x-1.5 transition-all ${
+                    engineMode === "gemini"
+                      ? "bg-sage-50 border-sage-500 text-sage-700 font-semibold shadow-2xs"
+                      : "bg-surface border-borderMuted text-gray-500 hover:bg-canvas"
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-sage-600" />
+                  <span>Gemini Vision AI</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setEngineMode("builtIn")}
+                  className={`py-2 px-3 rounded-xl text-xs font-medium border flex items-center justify-center space-x-1.5 transition-all ${
+                    engineMode === "builtIn"
+                      ? "bg-pastel-mint-bg border-pastel-mint-border text-pastel-mint-text font-semibold shadow-2xs"
+                      : "bg-surface border-borderMuted text-gray-500 hover:bg-canvas"
+                  }`}
+                >
+                  <Zap className="w-3.5 h-3.5 text-sage-600" />
+                  <span>Free Built-in (No Key)</span>
+                </button>
+              </div>
+
+              {/* Gemini Key Inline Input if missing */}
+              {engineMode === "gemini" && (!profile.geminiApiKey?.trim() || showKeyInput) && (
+                <div className="pt-1.5 border-t border-borderMuted space-y-2 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-semibold text-gray-700 flex items-center space-x-1">
+                      <Key className="w-3 h-3 text-sage-600" />
+                      <span>Enter Gemini API Key:</span>
+                    </span>
+                    <a
+                      href="https://aistudio.google.com/app/apikey"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sage-600 hover:text-sage-700 font-medium underline underline-offset-2 flex items-center space-x-0.5"
+                    >
+                      <span>Get free key</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <input
+                      type="password"
+                      placeholder="AIzaSy..."
+                      value={quickApiKey}
+                      onChange={(e) => setQuickApiKey(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleSaveQuickKey())}
+                      className="flex-1 text-xs font-mono px-3 py-1.5 rounded-lg bg-canvas border border-borderMuted focus:outline-none focus:border-sage-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSaveQuickKey}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-sage-500 text-white hover:bg-sage-600"
+                    >
+                      Save Key
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-[11px] text-gray-400 leading-relaxed">
+                {engineMode === "gemini"
+                  ? "✨ Deep Multimodal Vision: Directly reads textbook JPEGs, analyzing stories, illustrations, and questions with high relevance."
+                  : "⚡ 100% Free on-device machine learning: Reads textbook text inside your browser without needing any API keys."}
+              </p>
+            </div>
+
             {/* Input Method Tabs: Photo vs Direct Text */}
             <div className="bg-surface rounded-2xl border border-borderMuted p-1.5 flex gap-1 shadow-2xs">
               <button
@@ -359,7 +536,7 @@ export default function HomePage() {
                 }`}
               >
                 <Camera className="w-3.5 h-3.5" />
-                <span>Textbook Photo Scanner</span>
+                <span>Textbook Photo (JPEG)</span>
               </button>
 
               <button
@@ -418,7 +595,7 @@ export default function HomePage() {
               </div>
             )}
 
-            {/* Scan Warning Notice (if photo had glare/shadow) */}
+            {/* Scan Warning Notice */}
             {scanWarning && (
               <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start space-x-2.5 animate-in fade-in">
                 <HelpCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
@@ -429,39 +606,7 @@ export default function HomePage() {
               </div>
             )}
 
-            {/* Step 1 Action Button: Analyze Textbook Photo */}
-            {inputMode === "photo" && images.length > 0 && !learnedContent && (
-              <div className="p-4 rounded-2xl bg-surface border border-sage-200 shadow-xs space-y-3">
-                <div className="flex items-center space-x-2 text-xs font-semibold text-gray-700">
-                  <Brain className="w-4 h-4 text-sage-600" />
-                  <span>Machine Learning Textbook Reader</span>
-                </div>
-                <p className="text-[11px] text-gray-500 leading-relaxed">
-                  The system will read and understand the lesson title, reading story, vocabulary words, and practice exercises directly from your photo.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={handleAnalyzeImages}
-                  disabled={isAnalyzing}
-                  className="w-full py-3 px-4 rounded-xl text-xs font-semibold text-white bg-sage-500 hover:bg-sage-600 active:scale-[0.99] transition-all shadow-md shadow-sage-500/20 flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>{progressStatus || "Analyzing Textbook Photo..."}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Brain className="w-4 h-4 text-pastel-mint-border" />
-                      <span>Analyze & Learn from Textbook (ML)</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-
-            {/* Step 2: Interactive Learned Content Inspector Card */}
+            {/* Built-in Mode Inspection Card (if learned locally) */}
             {learnedContent && (
               <LearnedInsightsCard
                 learned={learnedContent}
@@ -471,11 +616,11 @@ export default function HomePage() {
               />
             )}
 
-            {/* Direct 1-Click Generate Button (if card not visible yet) */}
+            {/* Primary Action Button */}
             {!learnedContent && (
               <button
                 type="button"
-                onClick={handleAnalyzeAndGenerate}
+                onClick={handlePrimaryGenerate}
                 disabled={
                   isAnalyzing ||
                   isGenerating ||
@@ -487,12 +632,16 @@ export default function HomePage() {
                 {isAnalyzing || isGenerating ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>{progressStatus || "Reading & Generating Official Plan..."}</span>
+                    <span>{progressStatus || "Analyzing Textbook JPEG..."}</span>
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4 text-pastel-butter-border" />
-                    <span>Read Book & Generate Official Lesson Plan</span>
+                    <span>
+                      {engineMode === "gemini" && inputMode === "photo"
+                        ? "Analyze JPEG with Gemini AI & Generate Plan ✨"
+                        : "Read Book & Generate Official Lesson Plan ⚡"}
+                    </span>
                   </>
                 )}
               </button>
@@ -505,6 +654,18 @@ export default function HomePage() {
                 <div className="flex-1">
                   <p className="font-semibold">Notice</p>
                   <p className="mt-0.5 text-[11px] leading-relaxed">{errorMessage}</p>
+                  {engineMode === "gemini" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEngineMode("builtIn");
+                        setErrorMessage(null);
+                      }}
+                      className="mt-2 text-xs font-semibold text-sage-700 underline"
+                    >
+                      Switch to Free Built-in Mode (No API Key)
+                    </button>
+                  )}
                 </div>
               </div>
             )}

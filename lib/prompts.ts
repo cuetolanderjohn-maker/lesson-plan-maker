@@ -11,8 +11,17 @@ export function buildMatatagSystemPrompt(meta: GenerateRequestMeta, profile?: Te
 
 Your task is to analyze the attached textbook photo(s) and generate an official Banghay-Aralin (Lesson Plan) formatted EXACTLY for ${gradeLabel} - ${meta.subject.toUpperCase()}.
 
+CRITICAL FIDELITY RULE:
+You MUST directly ground your entire lesson plan on the attached textbook JPEG.
+- Read and extract the EXACT lesson title / paksa (e.g. "Si Matsing, Si Kuting, at si Muning", "Ang Alamat ng Maya", "Ang Munting Gamu-gamo").
+- Read the story / dialogue / reading passage, and incorporate the real characters and plot into the Motivation and Discussion.
+- Extract the ACTUAL guide questions written on the page into "Gabay na tanong".
+- Extract the ACTUAL drill items, multiple choice questions, or exercises from the page into "Pagtataya: Formative" and "Pagtataya: Summative (5 numbered items)".
+- Connect the 6 LCCP integration values to the real theme of the textbook story.
+- Do NOT output generic or made-up placeholder text. Everything must come directly from the textbook JPEG.
+
 UNREADABLE / NON-BOOK IMAGE RULE:
-If the photo is too blurry, dark, unreadable, or does not contain an educational textbook lesson, you MUST respond ONLY with this JSON:
+If the photo is completely black, blank, unreadable, or does not contain an educational textbook lesson, you MUST respond ONLY with this JSON:
 {"error": "The textbook image is too blurry, unreadable, or does not appear to be a lesson page. Please take a clearer, well-lit photo of the textbook page."}
 
 CRITICAL SCHOOL REQUIREMENTS:
@@ -109,8 +118,17 @@ export function buildLccpSystemPrompt(meta: GenerateRequestMeta, profile?: Teach
 
 Your task is to analyze the attached textbook photo(s) and generate an official LCCP LEARNING PLAN for Kinder 2 - ${subjectDisplay}.
 
+CRITICAL FIDELITY RULE:
+You MUST directly ground your entire learning plan on the attached textbook JPEG.
+- Read and extract the EXACT lesson title and topic from the textbook page.
+- Examine the illustrations, stories, rhymes, or objects on the page and incorporate them directly into Motivation and Learning Strategies.
+- Formulate discussion questions directly about the textbook pictures and text.
+- Include the EXACT workbook tasks shown on the page (matching, circling, coloring, tracing) into Assessment and Assignment.
+- Connect the Catholic Values Statement directly to the specific topic shown in the JPEG.
+- Do NOT output generic filler. Everything must be deeply faithful to the textbook JPEG.
+
 UNREADABLE / NON-BOOK IMAGE RULE:
-If the photo is too blurry, dark, unreadable, or does not contain an educational textbook lesson, you MUST respond ONLY with this JSON:
+If the photo is completely blank, black, unreadable, or does not contain an educational textbook lesson, you MUST respond ONLY with this JSON:
 {"error": "The textbook image is too blurry, unreadable, or does not appear to be a lesson page. Please take a clearer, well-lit photo of the textbook page."}
 
 CRITICAL SCHOOL REQUIREMENTS:

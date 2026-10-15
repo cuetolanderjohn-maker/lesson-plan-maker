@@ -64,6 +64,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {/* Gemini AI Key Section */}
+          <div className="space-y-1.5 p-4 rounded-xl bg-canvas border border-sage-200">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-gray-700 flex items-center space-x-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Google Gemini AI Key</span>
+              </label>
+              <a
+                href="https://aistudio.google.com/app/apikey"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] text-sage-600 hover:text-sage-700 font-medium underline underline-offset-2"
+              >
+                Get a free key (Google AI Studio)
+              </a>
+            </div>
+            <input
+              type="password"
+              placeholder="AIzaSy..."
+              value={formData.geminiApiKey || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, geminiApiKey: e.target.value })
+              }
+              className="w-full text-xs font-mono px-3.5 py-2.5 rounded-lg bg-surface border border-borderMuted focus:outline-none focus:border-sage-500 transition-colors"
+            />
+            <p className="text-[11px] text-gray-400">
+              Enables Google Gemini 2.0 Flash Vision to inspect the JPEG photos directly, recognizing pictures, stories, and exercises with high accuracy.
+            </p>
+          </div>
+
           {/* Teacher Profile Section */}
           <div className="space-y-3.5">
             <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center space-x-1.5">

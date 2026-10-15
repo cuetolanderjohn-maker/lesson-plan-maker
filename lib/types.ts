@@ -17,6 +17,7 @@ export interface TeacherProfile {
   sectionGrade1: string;
   coordinatorKinder: string;
   coordinatorGrade1: string;
+  geminiApiKey?: string;
 }
 
 /**
