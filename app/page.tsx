@@ -7,12 +7,13 @@ import { ImageUploader } from "@/components/ImageUploader";
 import { LessonPlanPreview } from "@/components/LessonPlanPreview";
 import { SettingsModal } from "@/components/SettingsModal";
 import { HistoryDrawer, HistoryItem } from "@/components/HistoryDrawer";
-import type { ImageInput } from "@/lib/gemini";
+import { LearnedInsightsCard } from "@/components/LearnedInsightsCard";
 import type {
   GradeLevel,
   Subject,
   LessonPlan,
   TeacherProfile,
+  ImageInput,
 } from "@/lib/types";
 import {
   defaultTeacherProfile,
@@ -20,8 +21,17 @@ import {
   sampleLccpPlan,
 } from "@/lib/sampleData";
 import { generatePlanFromExtractedText } from "@/lib/freeLessonPlanner";
+import { analyzeTextbookText, LearnedTextbookContent } from "@/lib/nlpAnalyzer";
+import { preprocessTextbookImage } from "@/lib/imagePreprocessor";
 import Tesseract from "tesseract.js";
-import { Sparkles, Loader2, FileCheck, AlertCircle, Zap, ShieldCheck } from "lucide-react";
+import {
+  Sparkles,
+  Loader2,
+  FileCheck,
+  AlertCircle,
+  Brain,
+  CheckCircle,
+} from "lucide-react";
 
 export default function HomePage() {
   // Navigation & modals
@@ -41,10 +51,20 @@ export default function HomePage() {
   const [bookReference, setBookReference] = useState("");
   const [images, setImages] = useState<ImageInput[]>([]);
 
-  // Generation state
+  // Machine Learning & Analysis State
+  const [learnedContent, setLearnedContent] = useState<LearnedTextbookContent | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [progressStatus, setProgressStatus] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [currentPlan, setCurrentPlan] = useState<LessonPlan | null>(null);
+
+  // Reset learned content when user removes all images
+  useEffect(() => {
+    if (images.length === 0) {
+      setLearnedContent(null);
+    }
+  }, [images]);
 
   // Load profile and history from localStorage on mount
   useEffect(() => {
@@ -63,13 +83,9 @@ export default function HomePage() {
   }, []);
 
   const handleSaveProfile = (newProfile: TeacherProfile) => {
-    const cleaned = {
-      ...newProfile,
-      geminiApiKey: newProfile.geminiApiKey?.trim() || undefined,
-    };
-    setProfile(cleaned);
+    setProfile(newProfile);
     try {
-      localStorage.setItem("kat_teacher_profile", JSON.stringify(cleaned));
+      localStorage.setItem("kat_teacher_profile", JSON.stringify(newProfile));
     } catch (e) {
       console.error("Failed to save profile:", e);
     }
@@ -138,99 +154,92 @@ export default function HomePage() {
     }
   };
 
-  // Engine Mode: Free built-in OCR (zero-cost, no key needed) vs Gemini AI
-  const [engineMode, setEngineMode] = useState<"free" | "gemini">("free");
-  const [progressStatus, setProgressStatus] = useState<string>("");
-
-  // Generate handler
-  const handleGenerate = async () => {
+  // Step 1: Analyze & Learn from Attached JPG
+  const handleAnalyzeImages = async (): Promise<LearnedTextbookContent | null> => {
     if (images.length === 0) {
       setErrorMessage("Please attach at least one photo of the lesson from the book.");
-      return;
+      return null;
     }
 
-    setIsGenerating(true);
+    setIsAnalyzing(true);
     setErrorMessage(null);
 
-    const hasGeminiKey = Boolean(profile.geminiApiKey?.trim());
+    try {
+      let combinedText = "";
 
-    if (engineMode === "gemini" && hasGeminiKey) {
-      setProgressStatus("Connecting to Google Gemini AI...");
-      try {
-        const res = await fetch("/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            images,
-            meta: {
-              gradeLevel,
-              subject,
-              weekNumber,
-              term,
-              dateCoverage,
-              bookReference,
-            },
-            profile,
-            apiKey: profile.geminiApiKey,
-          }),
+      for (let i = 0; i < images.length; i++) {
+        // A. Image Preprocessing (Shadow removal, contrast boost, font sharpening)
+        setProgressStatus(`Enhancing image contrast & sharpening page ${i + 1}...`);
+        const preprocessed = await preprocessTextbookImage(images[i].base64Data);
+
+        // B. Machine Learning OCR (Tesseract)
+        setProgressStatus(`Reading textbook page ${i + 1} with Machine Learning OCR...`);
+        const result = await Tesseract.recognize(preprocessed.ocrDataUrl, "eng", {
+          logger: (m) => {
+            if (m.status === "recognizing text" && typeof m.progress === "number") {
+              setProgressStatus(
+                `Reading page ${i + 1} of ${images.length} (${Math.round(m.progress * 100)}%)...`
+              );
+            }
+          },
         });
 
-        const data = await res.json();
-        if (!res.ok || !data.success) {
-          throw new Error(data.error || "Failed to generate lesson plan");
-        }
-
-        setCurrentPlan(data.plan);
-        handleSavePlanToHistory(data.plan);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "An unexpected error occurred.";
-        setErrorMessage(msg);
-      } finally {
-        setIsGenerating(false);
-        setProgressStatus("");
+        combinedText += "\n" + (result.data.text || "");
       }
-    } else {
-      // 100% Free Built-in OCR & Curriculum Engine (Zero API Key, $0 cost)
-      try {
-        setProgressStatus("Initializing Free Built-in OCR...");
-        let combinedText = "";
 
-        for (let i = 0; i < images.length; i++) {
-          setProgressStatus(`Reading page ${i + 1} of ${images.length} with OCR...`);
-          const result = await Tesseract.recognize(images[i].base64Data, "eng", {
-            logger: (m) => {
-              if (m.status === "recognizing text" && typeof m.progress === "number") {
-                setProgressStatus(`Scanning page ${i + 1} (${Math.round(m.progress * 100)}%)...`);
-              }
-            },
-          });
-          combinedText += "\n" + (result.data.text || "");
-        }
+      // C. Semantic NLP Analyzer (Title, questions, vocabulary, exercises)
+      setProgressStatus("Extracting lesson concepts, vocabulary, and questions...");
+      const learned = analyzeTextbookText(combinedText, subject, gradeLevel);
 
-        setProgressStatus("Assembling official school lesson plan...");
-        const plan = generatePlanFromExtractedText(
-          combinedText,
-          {
-            gradeLevel,
-            subject,
-            weekNumber,
-            term,
-            dateCoverage,
-            bookReference,
-          },
-          profile
-        );
+      setLearnedContent(learned);
+      return learned;
+    } catch (err: unknown) {
+      console.error("Analysis error:", err);
+      const msg =
+        err instanceof Error ? err.message : "Failed to analyze textbook photo.";
+      setErrorMessage(msg);
+      return null;
+    } finally {
+      setIsAnalyzing(false);
+      setProgressStatus("");
+    }
+  };
 
-        setCurrentPlan(plan);
-        handleSavePlanToHistory(plan);
-      } catch (err: unknown) {
-        console.error("Free OCR generation error:", err);
-        const msg = err instanceof Error ? err.message : "Failed to read textbook photo.";
-        setErrorMessage(msg);
-      } finally {
-        setIsGenerating(false);
-        setProgressStatus("");
-      }
+  // Step 2: Generate Official Lesson Plan from Learned Content
+  const handleGenerateFromLearned = (learnedToUse?: LearnedTextbookContent) => {
+    const sourceLearned = learnedToUse || learnedContent;
+    if (!sourceLearned) return;
+
+    setIsGenerating(true);
+    try {
+      const plan = generatePlanFromExtractedText(
+        sourceLearned,
+        {
+          gradeLevel,
+          subject,
+          weekNumber,
+          term,
+          dateCoverage,
+          bookReference,
+        },
+        profile
+      );
+
+      setCurrentPlan(plan);
+      handleSavePlanToHistory(plan);
+    } catch (err: unknown) {
+      console.error("Plan generation error:", err);
+      setErrorMessage("Failed to assemble official lesson plan.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Combined action: Analyze & Generate in one click if teacher prefers
+  const handleAnalyzeAndGenerate = async () => {
+    const learned = await handleAnalyzeImages();
+    if (learned) {
+      handleGenerateFromLearned(learned);
     }
   };
 
@@ -282,93 +291,87 @@ export default function HomePage() {
             {/* Photo Uploader */}
             <ImageUploader
               images={images}
-              onImagesChange={setImages}
-              disabled={isGenerating}
+              onImagesChange={(newImgs) => {
+                setImages(newImgs);
+                setLearnedContent(null); // Fresh analysis needed for new images
+              }}
+              disabled={isAnalyzing || isGenerating}
             />
 
-            {/* Free vs Gemini Mode Toggle */}
-            <div className="p-3.5 rounded-2xl bg-surface border border-borderMuted shadow-2xs space-y-2">
-              <div className="flex items-center justify-between text-xs font-semibold text-gray-700">
-                <span className="flex items-center space-x-1.5">
-                  <Zap className="w-3.5 h-3.5 text-sage-600" />
-                  <span>Generation Engine:</span>
-                </span>
-                <span className="text-[11px] font-medium text-sage-600 bg-sage-50 px-2 py-0.5 rounded-full border border-sage-200">
-                  100% Free Forever
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
+            {/* Step 1 Action: Analyze Textbook Photo (if not yet analyzed) */}
+            {images.length > 0 && !learnedContent && (
+              <div className="p-4 rounded-2xl bg-surface border border-sage-200 shadow-xs space-y-3">
+                <div className="flex items-center space-x-2 text-xs font-semibold text-gray-700">
+                  <Brain className="w-4 h-4 text-sage-600" />
+                  <span>Machine Learning Textbook Reader</span>
+                </div>
+                <p className="text-[11px] text-gray-500 leading-relaxed">
+                  The system will read, understand, and extract the lesson title, reading story, vocabulary words, and practice exercises directly from your photo.
+                </p>
+
                 <button
                   type="button"
-                  onClick={() => setEngineMode("free")}
-                  className={`py-2 px-3 rounded-xl text-xs font-medium border flex items-center justify-center space-x-1.5 transition-all ${
-                    engineMode === "free"
-                      ? "bg-pastel-mint-bg border-pastel-mint-border text-pastel-mint-text font-semibold shadow-2xs"
-                      : "bg-surface border-borderMuted text-gray-500 hover:bg-canvas"
-                  }`}
+                  onClick={handleAnalyzeImages}
+                  disabled={isAnalyzing}
+                  className="w-full py-3 px-4 rounded-xl text-xs font-semibold text-white bg-sage-500 hover:bg-sage-600 active:scale-[0.99] transition-all shadow-md shadow-sage-500/20 flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <Zap className="w-3.5 h-3.5 text-sage-600" />
-                  <span>Free Built-in (No Key)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEngineMode("gemini");
-                    if (!profile.geminiApiKey?.trim()) {
-                      setIsSettingsOpen(true);
-                    }
-                  }}
-                  className={`py-2 px-3 rounded-xl text-xs font-medium border flex items-center justify-center space-x-1.5 transition-all ${
-                    engineMode === "gemini"
-                      ? "bg-sage-50 border-sage-500 text-sage-700 font-semibold shadow-2xs"
-                      : "bg-surface border-borderMuted text-gray-500 hover:bg-canvas"
-                  }`}
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-sage-600" />
-                  <span>Gemini AI Mode</span>
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>{progressStatus || "Analyzing Textbook Photo..."}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="w-4 h-4 text-pastel-mint-border" />
+                      <span>Analyze & Learn from Textbook (ML)</span>
+                    </>
+                  )}
                 </button>
               </div>
-              <p className="text-[11px] text-gray-400 leading-relaxed">
-                {engineMode === "free"
-                  ? "⚡ Runs directly in your browser. Reads book text and generates the official lesson plan without needing any API keys or spending anything!"
-                  : "✨ Uses Google Gemini 2.0 Flash for deep reasoning. Requires a free API key from Google AI Studio (no credit card required)."}
-              </p>
-            </div>
+            )}
+
+            {/* Step 2: Interactive Learned Content Inspector Card */}
+            {learnedContent && (
+              <LearnedInsightsCard
+                learned={learnedContent}
+                onUpdateLearned={setLearnedContent}
+                onGeneratePlan={() => handleGenerateFromLearned(learnedContent)}
+                isGenerating={isGenerating}
+              />
+            )}
+
+            {/* Direct 1-Click Generate Button (if no card yet) */}
+            {!learnedContent && (
+              <button
+                type="button"
+                onClick={handleAnalyzeAndGenerate}
+                disabled={isAnalyzing || isGenerating || images.length === 0}
+                className="w-full py-3.5 px-6 rounded-2xl text-sm font-semibold text-white bg-sage-500 hover:bg-sage-600 active:scale-[0.99] transition-all shadow-md shadow-sage-500/20 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {isAnalyzing || isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>{progressStatus || "Reading & Generating Official Plan..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 text-pastel-butter-border" />
+                    <span>Read Book & Generate Official Lesson Plan</span>
+                  </>
+                )}
+              </button>
+            )}
 
             {/* Error Message */}
             {errorMessage && (
               <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start space-x-2.5 animate-in fade-in">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
                 <div className="flex-1">
-                  <p className="font-semibold">Unable to generate lesson plan</p>
+                  <p className="font-semibold">Notice</p>
                   <p className="mt-0.5 text-[11px] leading-relaxed">{errorMessage}</p>
                 </div>
               </div>
             )}
-
-            {/* Generate Action Button */}
-            <button
-              type="button"
-              onClick={handleGenerate}
-              disabled={isGenerating}
-              className="w-full py-3.5 px-6 rounded-2xl text-sm font-semibold text-white bg-sage-500 hover:bg-sage-600 active:scale-[0.99] transition-all shadow-md shadow-sage-500/20 flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>{progressStatus || "Reading Textbook & Crafting Plan..."}</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 text-pastel-butter-border" />
-                  <span>
-                    {engineMode === "free"
-                      ? "Generate Official Lesson Plan (Free Mode ⚡)"
-                      : "Generate Official Lesson Plan (Gemini AI ✨)"}
-                  </span>
-                </>
-              )}
-            </button>
 
             {/* Quick Demo Previews */}
             <div className="pt-2 text-center">
@@ -409,10 +412,10 @@ export default function HomePage() {
                 </div>
                 <div className="max-w-xs">
                   <h3 className="text-sm font-semibold text-gray-700">
-                    Your Lesson Plan Will Appear Here
+                    Your Official Lesson Plan Will Appear Here
                   </h3>
                   <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                    Attach a photo of the lesson page in your book and click &quot;Generate Official Lesson Plan&quot;, or click one of the sample buttons to test.
+                    Attach a photo of the lesson page in your book and the machine learning engine will extract the topic, questions, and exercises to build your official DepEd / LCCP document.
                   </p>
                 </div>
               </div>

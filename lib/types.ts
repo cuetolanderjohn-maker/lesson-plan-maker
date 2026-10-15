@@ -2,6 +2,11 @@ export type GradeLevel = "kinder2" | "grade1";
 export type Subject = "filipino" | "language" | "science" | "math";
 export type TemplateType = "matatag" | "lccp";
 
+export interface ImageInput {
+  base64Data: string;
+  mimeType: string;
+}
+
 export interface TeacherProfile {
   schoolName: string;
   schoolAddress: string;
@@ -12,7 +17,6 @@ export interface TeacherProfile {
   sectionGrade1: string;
   coordinatorKinder: string;
   coordinatorGrade1: string;
-  geminiApiKey?: string;
 }
 
 /**

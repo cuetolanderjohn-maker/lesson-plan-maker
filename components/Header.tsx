@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { BookOpen, Settings, History, Sparkles } from "lucide-react";
+import { BookOpen, Settings, History, Brain } from "lucide-react";
 import type { TeacherProfile } from "@/lib/types";
 
 interface HeaderProps {
@@ -31,8 +31,8 @@ export const Header: React.FC<HeaderProps> = ({
                 Kat&apos;s Lesson Planner
               </h1>
               <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-pastel-mint-bg text-pastel-mint-text border border-pastel-mint-border">
-                <Sparkles className="w-3 h-3" />
-                AI Powered
+                <Brain className="w-3 h-3" />
+                Built-in Machine Learning
               </span>
             </div>
             <p className="text-xs text-gray-500 font-normal">

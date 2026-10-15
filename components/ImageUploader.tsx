@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { UploadCloud, Camera, X, Image as ImageIcon } from "lucide-react";
-import type { ImageInput } from "@/lib/gemini";
+import type { ImageInput } from "@/lib/types";
 
 interface ImageUploaderProps {
   images: ImageInput[];

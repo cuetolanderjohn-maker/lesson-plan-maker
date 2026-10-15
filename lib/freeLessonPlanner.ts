@@ -6,48 +6,25 @@ import type {
   LessonPlan,
 } from "./types";
 import { defaultTeacherProfile } from "./sampleData";
+import { analyzeTextbookText, LearnedTextbookContent } from "./nlpAnalyzer";
 
 export function generatePlanFromExtractedText(
-  extractedText: string,
+  extractedOrLearned: string | LearnedTextbookContent,
   meta: GenerateRequestMeta,
   profile?: TeacherProfile
 ): LessonPlan {
   const prof = profile || defaultTeacherProfile;
-  const lines = extractedText
-    .split("\n")
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0);
 
-  // Extract page number if present
-  const pageMatch = extractedText.match(/(?:page|pahina|p\.|pp\.)\s*(\d+(?:\s*-\s*\d+)?)/i);
-  const detectedPage = pageMatch ? `p. ${pageMatch[1]}` : "";
+  // 1. Obtain learned structured content from NLP analyzer
+  const learned: LearnedTextbookContent =
+    typeof extractedOrLearned === "string"
+      ? analyzeTextbookText(extractedOrLearned, meta.subject, meta.gradeLevel)
+      : extractedOrLearned;
 
-  // Extract candidate topic from top non-empty lines
-  let detectedTitle = "";
-  for (const line of lines.slice(0, 10)) {
-    const cleanedLine = line
-      .replace(/^(?:aralin|lesson|unit|chapter)\s*\d*\s*[:\-]\s*/i, "")
-      .trim();
-
-    if (
-      cleanedLine.length > 3 &&
-      !/^(?:page|pahina|p\.|pp\.|grade|subject)/i.test(cleanedLine) &&
-      !cleanedLine.includes("...")
-    ) {
-      detectedTitle = cleanedLine;
-      break;
-    }
-  }
-
-  // Extract any question marks for guide questions
-  const detectedQuestions = lines
-    .filter((l) => l.endsWith("?") || l.includes("?"))
-    .slice(0, 5);
-
-  // Extract candidate exercise items (lines starting with numbers or letters)
-  const detectedItems = lines
-    .filter((l) => /^\d+[\.\)]\s+|^[a-e][\.\)]\s+/i.test(l))
-    .slice(0, 5);
+  const topic = learned.topic || (meta.subject === "filipino" ? "Ang Ating Aralin" : "Lesson Topic");
+  const ref =
+    meta.bookReference ||
+    (learned.pageNumber ? `Batayang Aklat, ${learned.pageNumber}` : "Batayang Aklat sa Aralin");
 
   const isMatatag =
     meta.templateType === "matatag" ||
@@ -55,27 +32,32 @@ export function generatePlanFromExtractedText(
     meta.subject === "filipino";
 
   if (isMatatag) {
-    const topic = detectedTitle || (meta.subject === "filipino" ? "Ang Ating Aralin" : "Lesson Topic");
-    const ref = meta.bookReference || (detectedPage ? `Batayang Aklat, ${detectedPage}` : "Batayang Aklat sa Aralin");
+    // Grade 1 / Matatag Filipino
+    const vocabStr =
+      learned.vocabulary.length > 0
+        ? ` (${learned.vocabulary.slice(0, 4).join(", ")})`
+        : "";
 
+    // Guide questions: use extracted textbook questions first, then add deeper questions
     const guideQuestions =
-      detectedQuestions.length >= 3
-        ? detectedQuestions
+      learned.guideQuestions.length >= 2
+        ? learned.guideQuestions.slice(0, 5)
         : [
             `Tungkol saan ang binasang aralin o kuwento na "${topic}"?`,
-            "Sino-sino ang mga tauhan o ano ang pangunahing ideya sa talakayan?",
-            "Ano ang mahahalagang aral o kasanayan na dapat tandaan ng mga mag-aaral?",
+            `Ano-ano ang mahahalagang salita o kaisipan sa ating tinalakay${vocabStr}?`,
+            "Paano mo magagamit o maisasabuhay ang aral na ito sa iyong pang-araw-araw na buhay?",
           ];
 
+    // Summative items: use the real exercise items detected in the textbook
     const summativeItems =
-      detectedItems.length >= 3
-        ? detectedItems.map((item) => item.replace(/^\d+[\.\)]\s*/, ""))
+      learned.exerciseItems.length >= 2
+        ? learned.exerciseItems.slice(0, 5)
         : [
-            `Tukuyin ang wastong gamit batay sa araling "${topic}".`,
-            "Piliin ang tamang sagot sa bawat sitwasyon.",
-            "Sumulat ng maikling halimbawa sa kwaderno.",
-            "Ilarawan ang wastong paraan ng pagsasagawa ng gawain.",
-            "Ibahagi ang sariling karanasan na may kaugnayan sa aralin.",
+            `Tukuyin ang wastong kahulugan o gamit batay sa araling "${topic}".`,
+            "Piliin ang wastong sagot batay sa binasang talakayan sa aklat.",
+            `Gamitin sa sariling pangungusap ang isa sa mga natutuhang salita${vocabStr}.`,
+            "Isulat sa kwaderno ang tamang sagot sa inihandang pagsasanay.",
+            "Ibahagi ang sariling karanasan o saloobin na kaugnay ng ating aralin.",
           ];
 
     const plan: MatatagLessonPlan = {
@@ -86,58 +68,66 @@ export function generatePlanFromExtractedText(
       dateCoverage: meta.dateCoverage || "Kasalukuyang Linggo",
       termWeek: `${meta.term || "1st Term"} - ${meta.weekNumber || "Week 1"}`,
       objectives: [
-        `Natutukoy at nauunawaan ang mga pangunahing kaisipan sa araling "${topic}".`,
-        "Nakikilala at nagagamit ang wastong kasanayan batay sa mga halimbawa sa aklat.",
-        "Nakapagbabahagi ng sariling ideya at saloobin tungkol sa paksang tinalakay.",
-        "Naisasagawa nang may kawilihan ang mga inihandang pagsasanay at gawain.",
+        `Natutukoy at nauunawaan ang mga pangunahing kaisipan at mensahe sa paksang "${topic}".`,
+        `Nakikilala at nagagamit nang wasto ang mga mahahalagang salita${vocabStr} ayon sa konteksto ng aklat.`,
+        "Nakapagbabahagi ng sariling ideya, reaksiyon, at saloobin tungkol sa binasang aralin.",
+        "Naisasagawa nang buong sigla at kawilihan ang mga pagsasanay at pagsusulit sa aklat.",
       ],
       subjectMatter: {
         paksa: topic,
-        wika: meta.subject === "filipino" ? "Wastong Gamit ng Wika at Pagsasalita" : undefined,
+        wika: meta.subject === "filipino" ? "Wastong Gamit ng Wika, Pagbasa, at Pagsasalita" : undefined,
         sanggunian: ref,
         aiDeclaration:
-          "DO 3 s 2026 Annex (Ang banghay- aralin na ay binuo sa tulong ng sistema upang masiguro ang pagka-ayon nito sa mga Pamantayan ng Kurikulum ng DepEd MATATAG K-12.)",
+          "DO 3 s 2026 Annex (Ang banghay-aralin na ito ay binuo sa tulong ng sistema upang masiguro ang pagka-ayon nito sa mga Pamantayan ng Kurikulum ng DepEd MATATAG K-12.)",
       },
       learningCompetencies: `Naipamamalas ng mag-aaral ang pag-unawa at aktibong pakikilahok sa pagtalakay ng ${topic} upang malinang ang kaalaman at kasanayan ayon sa pamantayan ng DepEd MATATAG K-12.`,
       integrations: {
-        laudatoSi: "Pangangalaga sa kalikasan, kapiligiran, at sa mga likha ng Diyos.",
-        justiceAndPeace: "Pagpapakita ng katarungan, paggalang, at pantay-pantay na pakikitungo sa bawat kaklase.",
-        genderAndDevelopment: "Pagpapakita ng pantay na pagpapahalaga at oportunidad sa lahat ng mag-aaral.",
-        lccpCare: "Pagpapakita ng malasakit (Care), pagtulong, at kabutihan sa kapwa.",
-        interdisciplinary: "Values Ed: Pagpapahalaga sa pagiging magalang at responsable. Religion: Pasasalamat sa biyaya at karunungan mula sa Diyos.",
-        techTeaching: "Canva presentasyon at visual instructional media",
+        laudatoSi: learned.theme.includes("Laudato")
+          ? "Pangangalaga sa kalikasan, kapaligiran, at sa mga likha ng Diyos ayon sa diwa ng Laudato Si'."
+          : "Pangangalaga sa kapaligiran at pagpapanatili ng kalinisan sa silid-aralan at tahanan.",
+        justiceAndPeace: "Pagpapakita ng katarungan, paggalang sa kapwa, at pantay na pakikitungo sa bawat kamag-aral.",
+        genderAndDevelopment: "Pagpapakita ng pantay na pagpapahalaga at patas na oportunidad sa lahat ng mag-aaral nang walang diskriminasyon.",
+        lccpCare: `Pagsasabuhay ng LCCP Core Values: Malasakit (Care), kabutihan, at pagdamay sa kapwa kaugnay ng araling "${topic}".`,
+        interdisciplinary: "Values Education: Pagpapahalaga sa pagiging magalang at responsable. Edukasyon sa Pagpapakatao: Pasasalamat sa Diyos sa mga biyaya at kakayahan.",
+        techTeaching: "Smart TV / Canva presentasyon at mga visual media mula sa aklat.",
       },
       procedures: {
         routine: [
-          "Panalangin",
-          "Pagbati ng guro at mag-aaral",
-          "Pagpupulot ng kalat at pag-aayos ng upuan",
-          "Pagsusuri ng liban sa klase",
+          "Panimulang Panalangin",
+          "Masiglang Pagbati ng guro at mga mag-aaral",
+          "Pagpupulot ng kalat at pag-aayos ng mga upuan",
+          "Pagtatala ng liban at pumasok sa klase",
         ],
-        motivation: `Ipakikita ng guro ang mga larawan o kaugnay na sitwasyon sa paksang "${topic}" at magtatanong sa mga mag-aaral upang pukawin ang kanilang interes.`,
+        motivation: `Pagganyak: ${
+          learned.readingPassage.length > 30
+            ? `Ibabahagi ng guro ang panimulang sitwasyon o kuwento mula sa aklat: "${learned.readingPassage.slice(0, 140)}..." at hihikayatin ang mga mag-aaral na magbahagi ng kanilang ideya.`
+            : `Ipakikita ng guro ang mga larawan mula sa aklat kaugnay ng "${topic}" at magtatanong upang pukawin ang kuryosidad ng mga mag-aaral.`
+        }`,
         discussion: {
           steps: [
-            `Ipakikilala ng guro ang paksang tatalakayin: "${topic}".`,
-            "Gagabayan ang mga mag-aaral sa pagbasa at pagsusuri ng mga halimbawa sa aklat.",
-            "Magkakaroon ng interaktibong talakayan at pagpapalitan ng ideya.",
-            "Ipapaliwanag ang kahalagahan at wastong paggamit ng natutuhang aralin.",
+            `Ipakikilala at ipaliliwanag ng guro ang paksang aralin: "${topic}".`,
+            `Gagabayan ang mga bata sa pagbasa at pagsusuri ng mga salita at kaisipan sa aklat (${ref}).`,
+            "Magkakaroon ng interaktibong talakayan at pagtatanong tungkol sa nilalaman ng binasang aralin.",
+            "Ipaliliwanag ang wastong pagsasagawa ng mga pagsasanay at aktibidad na inihanda.",
           ],
-          teachingMethods: "Demonstrasyon, Talakayan at Pagtatanong, Drill at Practice",
+          teachingMethods: "Demonstrasyon, Interaktibong Pagtatanong, Pangkatang Talakayan, Drill at Practice",
           guideQuestions,
           deepening: [
-            "Paano mo maisasabuhay ang aral na iyong natutuhan sa iyong tahanan at paaralan?",
+            "Paano mo magagamit ang iyong natutuhan sa araling ito upang maging mabuting anak at mag-aaral?",
           ],
         },
-        valuesIntegration: `Ipapaliwanag ng guro kung paano maipakikita ang malasakit at paggalang sa kapwa sa pamamagitan ng natutuhan sa ${topic}.`,
-        summary: `Pagbubuod: Ang aralin tungkol sa ${topic} ay nagbibigay-diin sa tamang pagkaunawa at paglalapat ng kasanayan sa pang-araw-araw na buhay.`,
+        valuesIntegration: `Ipaliliwanag ng guro kung paano maipakikita ang malasakit at kabutihan sa kapwa sa pamamagitan ng mga aral na natutuhan sa "${topic}".`,
+        summary: `Pagbubuod: Ang aralin tungkol sa "${topic}" ay nagtuturo ng wastong kaalaman, kasanayan sa wika, at magagandang asal na dapat taglayin ng bawat batang Consolacion.`,
       },
       assessment: {
-        formative: `Pasalitang pagsasanay at pagsasagot sa mga inihandang gawain sa pahina ng aklat (${ref}).`,
-        summativeInstruction: "Panuto: Isulat ang tamang sagot sa inyong kwaderno para sa bawat bilang.",
+        formative: `Pasalitang pagsasanay, aktibong paglahok sa talakayan, at pagsagot sa mga tanong sa ${ref}.`,
+        summativeInstruction:
+          learned.instructions[0] ||
+          "Panuto: Basahing mabuti ang bawat bilang at isulat ang tamang sagot sa inyong kwaderno.",
         summativeItems,
       },
-      assignment: `Magbasa ng karagdagang pagsasanay sa susunod na pahina ng aklat at maghanda para sa talakayan bukas.`,
-      remarks: "Matagumpay na naisagawa ang talakayan at aktibong nakilahok ang mga mag-aaral.",
+      assignment: `Balikan ang binasang aralin sa ${ref} at magsanay sa pagbasa kasama ang mga magulang.`,
+      remarks: "Aktibong nakilahok ang mga mag-aaral at matagumpay na nakamit ang mga layunin ng aralin.",
       signatories: {
         preparedBy: prof.teacherNameFilipino || "Bb. Kathrynn Ross L. Acola",
         checkedBy: prof.coordinatorGrade1 || "Bb. Sta. Ana Florence",
@@ -146,27 +136,32 @@ export function generatePlanFromExtractedText(
     };
     return plan;
   } else {
-    // Template B: LCCP Institutional Learning Plan
+    // Template B: LCCP Institutional Learning Plan (Kinder 2)
     const subjectTitle = meta.subject.charAt(0).toUpperCase() + meta.subject.slice(1);
-    const lessonTitle = detectedTitle || `Learning About ${subjectTitle}`;
-    const ref = meta.bookReference || (detectedPage ? `Early Beginnings: ${subjectTitle} Kinder worktext, ${detectedPage}` : `Early Beginnings: ${subjectTitle} Kinder worktext`);
+    const lessonTitle = topic;
+    const kinderRef =
+      meta.bookReference ||
+      (learned.pageNumber
+        ? `Early Beginnings: ${subjectTitle} Kinder worktext, ${learned.pageNumber}`
+        : `Early Beginnings: ${subjectTitle} Kinder worktext`);
 
     const strategiesQuestions =
-      detectedQuestions.length > 0
-        ? detectedQuestions
+      learned.guideQuestions.length > 0
+        ? learned.guideQuestions.slice(0, 4)
         : [
             `What can you see in the pictures about ${lessonTitle}?`,
-            "How do we use or care for these in our everyday life?",
-            "Why is this important for our family and friends?",
+            "How do we show care and kindness when learning this together?",
+            "Can you name the examples we found in our worktext?",
           ];
 
     const assessmentItems =
-      detectedItems.length > 0
-        ? detectedItems.map((it) => it.replace(/^\d+[\.\)]\s*/, ""))
+      learned.exerciseItems.length > 0
+        ? learned.exerciseItems.slice(0, 4)
         : [
-            `Point and name the key concepts related to ${lessonTitle}.`,
-            "Color the pictures that show the correct action or example.",
-            "Draw your favorite part of the lesson in your worktext.",
+            `Point to and name the pictures showing ${lessonTitle}.`,
+            "Color the correct picture that matches the teacher's example.",
+            "Draw or trace the shape / pattern in your worktext.",
+            "Perform the action or recite the rhyme with teacher Kat.",
           ];
 
     const plan: LccpLearningPlan = {
@@ -182,36 +177,40 @@ export function generatePlanFromExtractedText(
       dateCoverage: meta.dateCoverage || "Week 1",
       term: meta.term || "Term 1",
       objectives: [
-        `Identify and name the key concepts of ${lessonTitle}.`,
-        `Demonstrate understanding of ${lessonTitle} through interactive classroom activities.`,
-        `Participate enthusiastically in songs, rhymes, and discussion.`,
-        `Complete the corresponding workbook activities with care and creativity.`,
+        `Identify and name the key concepts of "${lessonTitle}" using the textbook illustrations.`,
+        `Demonstrate understanding of "${lessonTitle}" through guided hands-on classroom activities.`,
+        `Express thoughts and participate enthusiastically in circle time, songs, and discussions.`,
+        `Complete the corresponding workbook activities on ${kinderRef} with care and neatness.`,
       ],
       subjectMatter: {
         lesson: lessonTitle,
-        references: ref,
+        references: kinderRef,
       },
-      learningCompetencies: `The learner demonstrates awareness, appreciation, and foundational understanding of ${lessonTitle} through guided exploration and play-based activities.`,
-      valuesStatement: `God gave us our abilities, world, and lessons so we can learn with joy, help our friends, and take care of everything around us with love and gratitude.`,
+      learningCompetencies: `The learner demonstrates awareness, appreciation, and foundational skills in ${lessonTitle} through play-based discovery and guided exploration.`,
+      valuesStatement: `God lovingly gave us our minds and senses to learn about "${lessonTitle}" so we can help others, care for creation, and live as loving children of God.`,
       procedures: {
-        routineActivities: ["Prayer", "Circle Time", "Attendance"],
-        motivation: `Singing and dancing to an interactive song related to ${lessonTitle}, followed by a mystery guessing game.`,
+        routineActivities: [
+          "Opening Prayer & Sign of the Cross",
+          "Good Morning Song & Circle Time",
+          "Attendance Check & Weather Song",
+        ],
+        motivation: `Interactive singing game or story preview about "${lessonTitle}" followed by a fun 'Guess what is inside the mystery bag' activity.`,
         learningStrategies: [
           {
-            title: "Picture Talk & Discussion",
-            instructions: `The teacher displays pictures from the textbook (${ref}) and invites students to share their observations.`,
+            title: "Picture Talk & Interactive Story",
+            instructions: `Teacher Kat shows the colorful pages from ${kinderRef} and guides the kindergarteners in exploring the pictures.`,
             questions: strategiesQuestions,
           },
           {
-            title: "Hands-on Practice & Guided Drill",
-            instructions: `Teacher models the activity step-by-step and guides the learners in practicing together.`,
+            title: "Guided Activity & Play-based Learning",
+            instructions: `Teacher demonstrates the learning drill step-by-step; pupils practice together using manipulatives and book pages.`,
           },
         ],
       },
       assessment: assessmentItems,
-      closure: `The teacher recaps the key points of ${lessonTitle} and closes with a cheerful review song and a thank-you prayer.`,
-      assignment: `Workbook activity on ${detectedPage || "the next page"}: Cut and paste or color the pictures with the guidance of parents.`,
-      remarks: "The kindergarten learners showed great interest and actively participated.",
+      closure: `Recap the fun ideas learned about "${lessonTitle}" with a joyful action song and a prayer of thanksgiving.`,
+      assignment: `Workbook activity on ${kinderRef}: Color and complete the page with the help of parents at home.`,
+      remarks: "The kindergarteners actively participated with enthusiasm and curiosity.",
       signatories: {
         preparedBy: prof.teacherName || "Ms. Kathrynn Ross L. Acola",
         checkedBy: prof.coordinatorKinder || "Mrs. Emma P. Dunque Lpt.",
