@@ -19,7 +19,9 @@ import {
   sampleMatatagPlan,
   sampleLccpPlan,
 } from "@/lib/sampleData";
-import { Sparkles, Loader2, FileCheck, AlertCircle, RefreshCw } from "lucide-react";
+import { generatePlanFromExtractedText } from "@/lib/freeLessonPlanner";
+import Tesseract from "tesseract.js";
+import { Sparkles, Loader2, FileCheck, AlertCircle, Zap, ShieldCheck } from "lucide-react";
 
 export default function HomePage() {
   // Navigation & modals
@@ -136,6 +138,10 @@ export default function HomePage() {
     }
   };
 
+  // Engine Mode: Free built-in OCR (zero-cost, no key needed) vs Gemini AI
+  const [engineMode, setEngineMode] = useState<"free" | "gemini">("free");
+  const [progressStatus, setProgressStatus] = useState<string>("");
+
   // Generate handler
   const handleGenerate = async () => {
     if (images.length === 0) {
@@ -146,13 +152,65 @@ export default function HomePage() {
     setIsGenerating(true);
     setErrorMessage(null);
 
-    try {
-      const res = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          images,
-          meta: {
+    const hasGeminiKey = Boolean(profile.geminiApiKey?.trim());
+
+    if (engineMode === "gemini" && hasGeminiKey) {
+      setProgressStatus("Connecting to Google Gemini AI...");
+      try {
+        const res = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            images,
+            meta: {
+              gradeLevel,
+              subject,
+              weekNumber,
+              term,
+              dateCoverage,
+              bookReference,
+            },
+            profile,
+            apiKey: profile.geminiApiKey,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "Failed to generate lesson plan");
+        }
+
+        setCurrentPlan(data.plan);
+        handleSavePlanToHistory(data.plan);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "An unexpected error occurred.";
+        setErrorMessage(msg);
+      } finally {
+        setIsGenerating(false);
+        setProgressStatus("");
+      }
+    } else {
+      // 100% Free Built-in OCR & Curriculum Engine (Zero API Key, $0 cost)
+      try {
+        setProgressStatus("Initializing Free Built-in OCR...");
+        let combinedText = "";
+
+        for (let i = 0; i < images.length; i++) {
+          setProgressStatus(`Reading page ${i + 1} of ${images.length} with OCR...`);
+          const result = await Tesseract.recognize(images[i].base64Data, "eng", {
+            logger: (m) => {
+              if (m.status === "recognizing text" && typeof m.progress === "number") {
+                setProgressStatus(`Scanning page ${i + 1} (${Math.round(m.progress * 100)}%)...`);
+              }
+            },
+          });
+          combinedText += "\n" + (result.data.text || "");
+        }
+
+        setProgressStatus("Assembling official school lesson plan...");
+        const plan = generatePlanFromExtractedText(
+          combinedText,
+          {
             gradeLevel,
             subject,
             weekNumber,
@@ -160,23 +218,19 @@ export default function HomePage() {
             dateCoverage,
             bookReference,
           },
-          profile,
-          apiKey: profile.geminiApiKey,
-        }),
-      });
+          profile
+        );
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to generate lesson plan");
+        setCurrentPlan(plan);
+        handleSavePlanToHistory(plan);
+      } catch (err: unknown) {
+        console.error("Free OCR generation error:", err);
+        const msg = err instanceof Error ? err.message : "Failed to read textbook photo.";
+        setErrorMessage(msg);
+      } finally {
+        setIsGenerating(false);
+        setProgressStatus("");
       }
-
-      setCurrentPlan(data.plan);
-      handleSavePlanToHistory(data.plan);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "An unexpected error occurred.";
-      setErrorMessage(msg);
-    } finally {
-      setIsGenerating(false);
     }
   };
 
@@ -232,6 +286,55 @@ export default function HomePage() {
               disabled={isGenerating}
             />
 
+            {/* Free vs Gemini Mode Toggle */}
+            <div className="p-3.5 rounded-2xl bg-surface border border-borderMuted shadow-2xs space-y-2">
+              <div className="flex items-center justify-between text-xs font-semibold text-gray-700">
+                <span className="flex items-center space-x-1.5">
+                  <Zap className="w-3.5 h-3.5 text-sage-600" />
+                  <span>Generation Engine:</span>
+                </span>
+                <span className="text-[11px] font-medium text-sage-600 bg-sage-50 px-2 py-0.5 rounded-full border border-sage-200">
+                  100% Free Forever
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEngineMode("free")}
+                  className={`py-2 px-3 rounded-xl text-xs font-medium border flex items-center justify-center space-x-1.5 transition-all ${
+                    engineMode === "free"
+                      ? "bg-pastel-mint-bg border-pastel-mint-border text-pastel-mint-text font-semibold shadow-2xs"
+                      : "bg-surface border-borderMuted text-gray-500 hover:bg-canvas"
+                  }`}
+                >
+                  <Zap className="w-3.5 h-3.5 text-sage-600" />
+                  <span>Free Built-in (No Key)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEngineMode("gemini");
+                    if (!profile.geminiApiKey?.trim()) {
+                      setIsSettingsOpen(true);
+                    }
+                  }}
+                  className={`py-2 px-3 rounded-xl text-xs font-medium border flex items-center justify-center space-x-1.5 transition-all ${
+                    engineMode === "gemini"
+                      ? "bg-sage-50 border-sage-500 text-sage-700 font-semibold shadow-2xs"
+                      : "bg-surface border-borderMuted text-gray-500 hover:bg-canvas"
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-sage-600" />
+                  <span>Gemini AI Mode</span>
+                </button>
+              </div>
+              <p className="text-[11px] text-gray-400 leading-relaxed">
+                {engineMode === "free"
+                  ? "⚡ Runs directly in your browser. Reads book text and generates the official lesson plan without needing any API keys or spending anything!"
+                  : "✨ Uses Google Gemini 2.0 Flash for deep reasoning. Requires a free API key from Google AI Studio (no credit card required)."}
+              </p>
+            </div>
+
             {/* Error Message */}
             {errorMessage && (
               <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start space-x-2.5 animate-in fade-in">
@@ -253,12 +356,16 @@ export default function HomePage() {
               {isGenerating ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Reading Textbook & Crafting Plan...</span>
+                  <span>{progressStatus || "Reading Textbook & Crafting Plan..."}</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 text-pastel-butter-border" />
-                  <span>Generate Official Lesson Plan</span>
+                  <span>
+                    {engineMode === "free"
+                      ? "Generate Official Lesson Plan (Free Mode ⚡)"
+                      : "Generate Official Lesson Plan (Gemini AI ✨)"}
+                  </span>
                 </>
               )}
             </button>
