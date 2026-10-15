@@ -11,14 +11,17 @@ export function buildMatatagSystemPrompt(meta: GenerateRequestMeta, profile?: Te
 
 Your task is to analyze the attached textbook photo(s) and generate an official Banghay-Aralin (Lesson Plan) formatted EXACTLY for ${gradeLabel} - ${meta.subject.toUpperCase()}.
 
-CRITICAL FIDELITY RULE:
-You MUST directly ground your entire lesson plan on the attached textbook JPEG.
-- Read and extract the EXACT lesson title / paksa (e.g. "Si Matsing, Si Kuting, at si Muning", "Ang Alamat ng Maya", "Ang Munting Gamu-gamo").
-- Read the story / dialogue / reading passage, and incorporate the real characters and plot into the Motivation and Discussion.
-- Extract the ACTUAL guide questions written on the page into "Gabay na tanong".
-- Extract the ACTUAL drill items, multiple choice questions, or exercises from the page into "Pagtataya: Formative" and "Pagtataya: Summative (5 numbered items)".
-- Connect the 6 LCCP integration values to the real theme of the textbook story.
-- Do NOT output generic or made-up placeholder text. Everything must come directly from the textbook JPEG.
+CRITICAL FORMAT & FIDELITY RULES:
+1. STRICT FORMAT PRESERVATION:
+   Do NOT alter, remove, or modify the table schema or structure. Every single row and section must match Kat's official DepEd MATATAG format exactly (4-column metadata row, 2-column Layunin / Paksang Aralin split, 6 official LCCP Integrations, 5-day procedure breakdown, Formative/Summative, and 3 Signatories).
+2. 100% CONTENT GROUNDING ON THE ATTACHED TEXTBOOK JPEG:
+   You MUST base 100% of the content on the attached textbook JPEG:
+   - Read and extract the EXACT lesson title / paksa directly visible in the image.
+   - Read the story / dialogue / reading passage, and incorporate the real characters, setting, and plot into the Motivation and Discussion.
+   - Extract the ACTUAL guide questions written on the page into "Gabay na tanong".
+   - Extract the ACTUAL drill items, multiple choice questions, or exercises from the page into "Pagtataya: Formative" and "Pagtataya: Summative (5 numbered items)".
+   - Connect the 6 LCCP integration values to the real theme of the textbook story.
+   - Zero hallucination: Do NOT output generic or made-up placeholder text. Everything must come directly from the textbook JPEG.
 
 UNREADABLE / NON-BOOK IMAGE RULE:
 If the photo is completely black, blank, unreadable, or does not contain an educational textbook lesson, you MUST respond ONLY with this JSON:
@@ -118,14 +121,17 @@ export function buildLccpSystemPrompt(meta: GenerateRequestMeta, profile?: Teach
 
 Your task is to analyze the attached textbook photo(s) and generate an official LCCP LEARNING PLAN for Kinder 2 - ${subjectDisplay}.
 
-CRITICAL FIDELITY RULE:
-You MUST directly ground your entire learning plan on the attached textbook JPEG.
-- Read and extract the EXACT lesson title and topic from the textbook page.
-- Examine the illustrations, stories, rhymes, or objects on the page and incorporate them directly into Motivation and Learning Strategies.
-- Formulate discussion questions directly about the textbook pictures and text.
-- Include the EXACT workbook tasks shown on the page (matching, circling, coloring, tracing) into Assessment and Assignment.
-- Connect the Catholic Values Statement directly to the specific topic shown in the JPEG.
-- Do NOT output generic filler. Everything must be deeply faithful to the textbook JPEG.
+CRITICAL FORMAT & FIDELITY RULES:
+1. STRICT FORMAT PRESERVATION:
+   Do NOT alter, remove, or modify the table schema or structure. Every single row and section must match Kat's official LCCP Institutional format exactly (School header, 3-column metadata row, Layunin & Subject Matter split, Learning Competencies, Catholic Values Statement, 5-part procedures, Assessment, Closure, Assignment, and 3 Signatories).
+2. 100% CONTENT GROUNDING ON THE ATTACHED TEXTBOOK JPEG:
+   You MUST base 100% of the content on the attached textbook JPEG:
+   - Read and extract the EXACT lesson title and topic from the textbook page.
+   - Examine the illustrations, stories, rhymes, or objects on the page and incorporate them directly into Motivation and Learning Strategies.
+   - Formulate discussion questions directly about the textbook pictures and text.
+   - Include the EXACT workbook tasks shown on the page (matching, circling, coloring, tracing) into Assessment and Assignment.
+   - Connect the Catholic Values Statement directly to the specific topic shown in the JPEG.
+   - Zero hallucination: Do NOT output generic filler. Everything must be deeply faithful to the textbook JPEG.
 
 UNREADABLE / NON-BOOK IMAGE RULE:
 If the photo is completely blank, black, unreadable, or does not contain an educational textbook lesson, you MUST respond ONLY with this JSON:

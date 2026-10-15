@@ -6,6 +6,7 @@ import {
   TableCell,
   TableRow,
   TextRun,
+  ImageRun,
   WidthType,
   AlignmentType,
   BorderStyle,
@@ -13,6 +14,7 @@ import {
   convertInchesToTwip,
 } from "docx";
 import type { MatatagLessonPlan, LccpLearningPlan, TeacherProfile } from "./types";
+import { getLccpBannerBuffer, getLccpCrestBuffer } from "./schoolLogos";
 
 const BORDER_STYLE = {
   style: BorderStyle.SINGLE,
@@ -92,12 +94,27 @@ export async function generateMatatagDocx(plan: MatatagLessonPlan, profile?: Tea
 
   const rows: TableRow[] = [];
 
-  // Row 0: Title Header (Colspan 4)
+  // Row 0: Title Header (Colspan 4 with Official School Banner)
+  const bannerBuffer = getLccpBannerBuffer();
   rows.push(
     new TableRow({
       children: [
         cell(
           [
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 40, after: 60 },
+              children: [
+                new ImageRun({
+                  data: bannerBuffer,
+                  transformation: {
+                    width: 580,
+                    height: 89,
+                  },
+                  type: "jpg",
+                }),
+              ],
+            }),
             p(`Banghay- Aralin sa ${plan.subject.toUpperCase()}`, {
               bold: true,
               align: AlignmentType.CENTER,
@@ -325,12 +342,27 @@ export async function generateLccpDocx(plan: LccpLearningPlan, profile?: Teacher
 
   const rows: TableRow[] = [];
 
-  // Row 0: School Header
+  // Row 0: School Header (Colspan 3 with Official LCCP Crest)
+  const crestBuffer = getLccpCrestBuffer();
   rows.push(
     new TableRow({
       children: [
         cell(
           [
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 40, after: 40 },
+              children: [
+                new ImageRun({
+                  data: crestBuffer,
+                  transformation: {
+                    width: 72,
+                    height: 78,
+                  },
+                  type: "png",
+                }),
+              ],
+            }),
             p(plan.header.institution, { bold: true, align: AlignmentType.CENTER, size: 22 }),
             p(plan.header.address, { align: AlignmentType.CENTER, size: 18 }),
             p(plan.header.title, { bold: true, align: AlignmentType.CENTER, size: 22 }),

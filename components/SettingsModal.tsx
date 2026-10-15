@@ -101,11 +101,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 }
                 className="w-full text-xs px-3 py-2 rounded-lg bg-surface border border-borderMuted focus:outline-none focus:border-sage-500 text-gray-800 cursor-pointer"
               >
-                <option value="auto">Auto-detect Best Active Model (gemini-2.5-flash / Recommended)</option>
-                <option value="gemini-2.5-flash">gemini-2.5-flash (Fastest Vision & Document Analysis)</option>
-                <option value="gemini-2.5-pro">gemini-2.5-pro (High-Capacity Deep Reasoning)</option>
+                <option value="auto">Auto-detect Best Active Model (Prioritizes Gemini 2.5 Pro)</option>
+                <option value="gemini-2.5-pro">gemini-2.5-pro (Gemini Pro — Deep Textbook Multimodal Vision)</option>
+                <option value="gemini-2.5-flash">gemini-2.5-flash (Fast Multimodal Vision)</option>
                 <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-                <option value="gemini-1.5-flash-latest">gemini-1.5-flash-latest</option>
               </select>
             </div>
 

@@ -179,9 +179,16 @@ const MatatagRenderer: React.FC<{
 }> = ({ plan, onUpdateField }) => {
   return (
     <div className="border border-black overflow-x-auto text-[13px] leading-relaxed">
-      {/* Title Header */}
-      <div className="bg-gray-100 p-2.5 text-center border-b border-black font-bold text-sm tracking-wide">
-        Banghay- Aralin sa {plan.subject.toUpperCase()}
+      {/* Title Header with Official School Banner */}
+      <div className="bg-gray-100 p-3 text-center border-b border-black">
+        <img
+          src="/assets/k2_week1_image1.jpeg"
+          alt="La Consolacion College - Pasig Header Banner"
+          className="h-14 sm:h-16 w-auto max-w-full mx-auto mb-2 object-contain"
+        />
+        <div className="font-bold text-sm tracking-wide">
+          Banghay- Aralin sa {plan.subject.toUpperCase()}
+        </div>
         <div className="text-xs font-semibold mt-0.5">{plan.schoolYear}</div>
       </div>
 
@@ -638,8 +645,13 @@ const LccpRenderer: React.FC<{
 }> = ({ plan, onUpdateField }) => {
   return (
     <div className="border border-black overflow-x-auto text-[13px] leading-relaxed">
-      {/* School Header */}
+      {/* School Header with Official LCCP Crest */}
       <div className="bg-gray-100 p-3 text-center border-b border-black">
+        <img
+          src="/assets/k2_image1.png"
+          alt="La Consolacion College - Pasig Crest"
+          className="h-16 w-auto mx-auto mb-2 object-contain"
+        />
         <h2 className="font-bold text-sm tracking-wide">{plan.header.institution}</h2>
         <p className="text-xs text-gray-600">{plan.header.address}</p>
         <p className="font-bold text-xs mt-1">{plan.header.title}</p>
