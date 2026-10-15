@@ -72,8 +72,16 @@ export async function generateLessonPlanWithGemini(
       "Missing Gemini API Key. Please provide your key in Settings or enter it on the page."
     );
   }
-  const apiKey = rawKey.trim();
-  const genAI = new GoogleGenerativeAI(apiKey);
+
+  // Support multiple API keys (separated by commas or newlines) for automatic quota pooling and rotation
+  const candidateKeys = rawKey
+    .split(/[\n,;]+/)
+    .map((k) => k.trim())
+    .filter((k) => k.length > 5);
+
+  if (candidateKeys.length === 0) {
+    throw new Error("Invalid API Key format. Please enter a valid Gemini API Key.");
+  }
 
   const templateType: TemplateType =
     meta.templateType ||
@@ -98,68 +106,75 @@ export async function generateLessonPlanWithGemini(
     });
   }
 
-  // 1. Build ordered list of models to try
-  const activeRemoteModels = await discoverAvailableModels(apiKey);
-  const modelsToTry: string[] = [];
-
-  // If user specified a preferred model, try that first
-  if (profile?.geminiModel && profile.geminiModel !== "auto") {
-    modelsToTry.push(profile.geminiModel);
-  }
-
-  // Next, try discovered remote models that match our candidate models in priority order
-  for (const candidate of CANDIDATE_MODELS) {
-    if (activeRemoteModels.includes(candidate) && !modelsToTry.includes(candidate)) {
-      modelsToTry.push(candidate);
-    }
-  }
-
-  // Always append our candidate models as static fallback
-  for (const candidate of CANDIDATE_MODELS) {
-    if (!modelsToTry.includes(candidate)) {
-      modelsToTry.push(candidate);
-    }
-  }
-
   let lastError: Error | null = null;
 
-  for (const modelName of modelsToTry) {
-    try {
-      console.log(`[Gemini AI] Attempting generation with model: ${modelName}`);
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig: {
-          responseMimeType: "application/json",
-          temperature: 0.2,
-        },
-      });
+  // Try each API key in the pool (automatic quota rotation)
+  for (let keyIndex = 0; keyIndex < candidateKeys.length; keyIndex++) {
+    const apiKey = candidateKeys[keyIndex];
+    const genAI = new GoogleGenerativeAI(apiKey);
 
-      const result = await model.generateContent(parts);
-      const text = result.response.text();
-      console.log(`[Gemini AI] Successfully generated plan with model: ${modelName}`);
-      return parseLessonPlanResponse(text, templateType);
-    } catch (error: unknown) {
-      const errMessage = error instanceof Error ? error.message : String(error);
-      console.warn(`[Gemini AI] Model ${modelName} failed: ${errMessage}`);
-      lastError = error instanceof Error ? error : new Error(errMessage);
+    // 1. Build ordered list of models to try for this key
+    const activeRemoteModels = await discoverAvailableModels(apiKey);
+    const modelsToTry: string[] = [];
 
-      // If it's a 404 / not found / model unsupported or quota/rate-limit error (429), try the next candidate model
-      if (
-        errMessage.includes("not found") ||
-        errMessage.includes("404") ||
-        errMessage.includes("not supported") ||
-        errMessage.includes("RESOURCE_EXHAUSTED") ||
-        errMessage.includes("quota") ||
-        errMessage.includes("429") ||
-        errMessage.includes("limit: 0")
-      ) {
-        console.warn(`[Gemini AI] Model ${modelName} rate-limited or unavailable. Trying next candidate model...`);
-        continue;
+    // If user specified a preferred model, try that first
+    if (profile?.geminiModel && profile.geminiModel !== "auto") {
+      modelsToTry.push(profile.geminiModel);
+    }
+
+    // Next, try discovered remote models that match our candidate models in priority order
+    for (const candidate of CANDIDATE_MODELS) {
+      if (activeRemoteModels.includes(candidate) && !modelsToTry.includes(candidate)) {
+        modelsToTry.push(candidate);
       }
+    }
 
-      // If it's an API key invalid error, throw directly so user knows
-      if (errMessage.includes("API_KEY_INVALID")) {
-        throw error;
+    // Always append our candidate models as static fallback
+    for (const candidate of CANDIDATE_MODELS) {
+      if (!modelsToTry.includes(candidate)) {
+        modelsToTry.push(candidate);
+      }
+    }
+
+    for (const modelName of modelsToTry) {
+      try {
+        console.log(`[Gemini AI] Key #${keyIndex + 1}/${candidateKeys.length}, model: ${modelName}`);
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.2,
+          },
+        });
+
+        const result = await model.generateContent(parts);
+        const text = result.response.text();
+        console.log(`[Gemini AI] Successfully generated plan with model: ${modelName} (Key #${keyIndex + 1})`);
+        return parseLessonPlanResponse(text, templateType);
+      } catch (error: unknown) {
+        const errMessage = error instanceof Error ? error.message : String(error);
+        console.warn(`[Gemini AI] Key #${keyIndex + 1}, model ${modelName} failed: ${errMessage}`);
+        lastError = error instanceof Error ? error : new Error(errMessage);
+
+        // If it's a 404 / not found / model unsupported or quota/rate-limit error (429), try the next candidate model
+        if (
+          errMessage.includes("not found") ||
+          errMessage.includes("404") ||
+          errMessage.includes("not supported") ||
+          errMessage.includes("RESOURCE_EXHAUSTED") ||
+          errMessage.includes("quota") ||
+          errMessage.includes("429") ||
+          errMessage.includes("limit: 0")
+        ) {
+          console.warn(`[Gemini AI] Model ${modelName} rate-limited. Trying next candidate model...`);
+          continue;
+        }
+
+        // If it's an API key invalid error on this key, move to next key in pool
+        if (errMessage.includes("API_KEY_INVALID")) {
+          console.warn(`[Gemini AI] Key #${keyIndex + 1} invalid, moving to next key in pool...`);
+          break;
+        }
       }
     }
   }
@@ -167,7 +182,7 @@ export async function generateLessonPlanWithGemini(
   throw (
     lastError ||
     new Error(
-      "All Gemini models returned not found. Please verify your API key at https://aistudio.google.com/app/apikey"
+      "All Gemini models/keys exceeded quota or returned not found. Please verify your keys at https://aistudio.google.com/app/apikey"
     )
   );
 }

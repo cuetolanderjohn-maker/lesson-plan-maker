@@ -82,7 +82,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
             <input
               type="password"
-              placeholder="AIzaSy..."
+              placeholder="AIzaSy... (or paste multiple keys separated by commas)"
               value={formData.geminiApiKey || ""}
               onChange={(e) =>
                 setFormData({ ...formData, geminiApiKey: e.target.value })
@@ -101,16 +101,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 }
                 className="w-full text-xs px-3 py-2 rounded-lg bg-surface border border-borderMuted focus:outline-none focus:border-sage-500 text-gray-800 cursor-pointer"
               >
-                <option value="auto">Auto-detect Best Active Model (Prioritizes Gemini 2.5 Pro)</option>
-                <option value="gemini-2.5-pro">gemini-2.5-pro (Gemini Pro — Deep Textbook Multimodal Vision)</option>
-                <option value="gemini-2.5-flash">gemini-2.5-flash (Fast Multimodal Vision)</option>
+                <option value="auto">Auto-detect Best Active Model (Gemini 2.5 Flash / Fast & Generous Quota)</option>
+                <option value="gemini-2.5-flash">gemini-2.5-flash (Recommended — 1,500 free requests/day)</option>
+                <option value="gemini-2.5-pro">gemini-2.5-pro (Deep Multimodal Vision)</option>
                 <option value="gemini-2.0-flash">gemini-2.0-flash</option>
               </select>
             </div>
 
-            <p className="text-[11px] text-gray-400">
-              The app automatically detects and queries active models for your API key, avoiding 404 deprecation errors.
-            </p>
+            <div className="bg-sage-50/60 rounded-lg p-2.5 border border-sage-200/50 space-y-1 text-[11px] text-gray-600">
+              <p className="font-semibold text-sage-800 flex items-center space-x-1">
+                <span>⚡ How to get Unlimited Quota:</span>
+              </p>
+              <p>
+                <strong>1. Multi-Key Pooling:</strong> Paste multiple free keys above separated by commas. The system will automatically rotate between them as you generate.
+              </p>
+              <p>
+                <strong>2. Google AI Studio Unlimited:</strong> In Google AI Studio, click <em>Settings → Plan &amp; Billing</em> and add billing to unlock unlimited pay-as-you-go capacity.
+              </p>
+              <p>
+                <strong>3. Built-in Offline Engine:</strong> The built-in Machine Learning OCR mode is 100% free and has <strong>infinite, unlimited quota</strong> with no API key required.
+              </p>
+            </div>
           </div>
 
           {/* Teacher Profile Section */}
