@@ -7,13 +7,29 @@ export interface ImageInput {
   mimeType: string;
 }
 
+function isCleanVisionModel(name: string): boolean {
+  const lower = name.toLowerCase();
+  // Strictly filter out non-multimodal, audio, TTS, embeddings, and experimental preview tts models
+  if (
+    lower.includes("tts") ||
+    lower.includes("embed") ||
+    lower.includes("audio") ||
+    lower.includes("realtime") ||
+    lower.includes("imagen") ||
+    lower.includes("bison") ||
+    lower.includes("learnlm")
+  ) {
+    return false;
+  }
+  return true;
+}
+
 const CANDIDATE_MODELS = [
-  "gemini-2.5-pro",
   "gemini-2.5-flash",
   "gemini-2.0-flash",
-  "gemini-2.0-flash-exp",
-  "gemini-1.5-pro",
+  "gemini-2.5-pro",
   "gemini-1.5-flash",
+  "gemini-1.5-pro",
 ];
 
 /**
@@ -34,7 +50,8 @@ async function discoverAvailableModels(apiKey: string): Promise<string[]> {
       .filter((m: { supportedGenerationMethods?: string[] }) =>
         m.supportedGenerationMethods?.includes("generateContent")
       )
-      .map((m: { name: string }) => m.name.replace(/^models\//, ""));
+      .map((m: { name: string }) => m.name.replace(/^models\//, ""))
+      .filter(isCleanVisionModel);
 
     return available;
   } catch (err) {
@@ -90,22 +107,10 @@ export async function generateLessonPlanWithGemini(
     modelsToTry.push(profile.geminiModel);
   }
 
-  // Next, try discovered remote models that match our candidate flash models
+  // Next, try discovered remote models that match our candidate models in priority order
   for (const candidate of CANDIDATE_MODELS) {
     if (activeRemoteModels.includes(candidate) && !modelsToTry.includes(candidate)) {
       modelsToTry.push(candidate);
-    }
-  }
-
-  // If remote discovery found other models with generateContent, include pro first, then flash
-  for (const rem of activeRemoteModels) {
-    if (rem.includes("pro") && !modelsToTry.includes(rem)) {
-      modelsToTry.push(rem);
-    }
-  }
-  for (const rem of activeRemoteModels) {
-    if ((rem.includes("flash") || rem.includes("gemini")) && !modelsToTry.includes(rem)) {
-      modelsToTry.push(rem);
     }
   }
 
@@ -138,21 +143,22 @@ export async function generateLessonPlanWithGemini(
       console.warn(`[Gemini AI] Model ${modelName} failed: ${errMessage}`);
       lastError = error instanceof Error ? error : new Error(errMessage);
 
-      // If it's a 404 / not found / model unsupported error, try the next candidate model
+      // If it's a 404 / not found / model unsupported or quota/rate-limit error (429), try the next candidate model
       if (
         errMessage.includes("not found") ||
         errMessage.includes("404") ||
-        errMessage.includes("not supported")
+        errMessage.includes("not supported") ||
+        errMessage.includes("RESOURCE_EXHAUSTED") ||
+        errMessage.includes("quota") ||
+        errMessage.includes("429") ||
+        errMessage.includes("limit: 0")
       ) {
+        console.warn(`[Gemini AI] Model ${modelName} rate-limited or unavailable. Trying next candidate model...`);
         continue;
       }
 
-      // If it's an API key invalid or quota error, throw directly so user knows
-      if (
-        errMessage.includes("API_KEY_INVALID") ||
-        errMessage.includes("RESOURCE_EXHAUSTED") ||
-        errMessage.includes("quota")
-      ) {
+      // If it's an API key invalid error, throw directly so user knows
+      if (errMessage.includes("API_KEY_INVALID")) {
         throw error;
       }
     }

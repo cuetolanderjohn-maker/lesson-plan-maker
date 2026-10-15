@@ -352,11 +352,28 @@ export default function HomePage() {
       setCurrentPlan(data.plan);
       handleSavePlanToHistory(data.plan);
     } catch (err: unknown) {
-      console.error("Gemini Generation Error:", err);
-      const msg = err instanceof Error ? err.message : "Failed to generate plan with Gemini AI.";
-      setErrorMessage(
-        `${msg} (Tip: You can switch to the Free Built-in Mode ⚡ below if your API key has quota limits).`
-      );
+      console.warn("Gemini generation encountered an issue, seamlessly engaging built-in Machine Learning engine:", err);
+      try {
+        setProgressStatus("Connecting to built-in Machine Learning OCR engine...");
+        const learned = await handleAnalyzeImages();
+        if (learned) {
+          handleGenerateFromLearned(learned);
+          setScanWarning(
+            "Note: Google Gemini API quota was rate-limited on your key, so we seamlessly generated your official lesson plan using the built-in Machine Learning OCR engine!"
+          );
+        } else {
+          const msg = err instanceof Error ? err.message : "Failed to generate plan with Gemini AI.";
+          setErrorMessage(
+            `${msg} (Tip: You can switch to the Free Built-in Mode ⚡ below if your API key has quota limits).`
+          );
+        }
+      } catch (fallbackErr) {
+        console.error("Fallback error:", fallbackErr);
+        const msg = err instanceof Error ? err.message : "Failed to generate plan with Gemini AI.";
+        setErrorMessage(
+          `${msg} (Tip: You can switch to the Free Built-in Mode ⚡ below if your API key has quota limits).`
+        );
+      }
     } finally {
       setIsGenerating(false);
       setProgressStatus("");
