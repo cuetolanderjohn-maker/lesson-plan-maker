@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Download, Printer, Copy, Check, Edit3, Sparkles } from "lucide-react";
+import { Download, Printer, Copy, Check, Edit3 } from "lucide-react";
 import type { LessonPlan, MatatagLessonPlan, LccpLearningPlan, TeacherProfile } from "@/lib/types";
 import { generateMatatagDocx, generateLccpDocx } from "@/lib/docxGenerator";
 import { saveAs } from "file-saver";
@@ -46,42 +46,44 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({
     let plainText = "";
     if (plan.templateType === "matatag") {
       plainText = `Banghay- Aralin sa ${plan.subject}\n${plan.schoolYear}\n\n` +
-        `Subject: ${plan.subject} | Grade & Section: ${plan.gradeSection} | Date: ${plan.dateCoverage} (${plan.termWeek})\n\n` +
-        `I. Mga Layunin sa Pagkatuto:\n${plan.objectives.map((o) => `• ${o}`).join("\n")}\n\n` +
-        `II. Paksang Aralin:\nPaksa: ${plan.subjectMatter.paksa}\nWika: ${plan.subjectMatter.wika || "—"}\nSanggunian: ${plan.subjectMatter.sanggunian}\nAI Declaration: ${plan.subjectMatter.aiDeclaration}\n\n` +
-        `III. Mga Kasanayan sa Pagkatuto:\n${plan.learningCompetencies}\n\n` +
+        `Subject: ${plan.subject} | Grade & Section: ${plan.gradeSection} | Date Coverage: ${plan.dateCoverage} | Term & Week: ${plan.termWeek}\n\n` +
+        `I. Mga Layunin sa Pagkatuto:\nSa pagtatapos ng talakayan, ang mga mag-aaral ay inaasahang;\n${plan.objectives.map((o) => `• ${o}`).join("\n")}\n\n` +
+        `II. Paksang Aralin:\nPaksa: ${plan.subjectMatter.paksa}\nWika: ${plan.subjectMatter.wika || "—"}\nSanggunian: ${plan.subjectMatter.sanggunian}\nDeklarasyon sa Paggamit ng AI: DO 3 s 2026 Annex\n${plan.subjectMatter.aiDeclaration}\n\n` +
+        `III. Mga Kasanayan sa Pagkatuto:\n● ${plan.learningCompetencies}\n\n` +
         `IV. Integrasyon:\n` +
         `• Laudato Si: ${plan.integrations.laudatoSi}\n` +
-        `• Justice and Peace: ${plan.integrations.justiceAndPeace}\n` +
-        `• Gender & Development: ${plan.integrations.genderAndDevelopment}\n` +
+        `• Justice and Peace Education: ${plan.integrations.justiceAndPeace}\n` +
+        `• Gender and Development: ${plan.integrations.genderAndDevelopment}\n` +
         `• LCCP- Care: ${plan.integrations.lccpCare}\n` +
-        `• Interdisciplinary: ${plan.integrations.interdisciplinary}\n` +
-        `• Tech in Teaching: ${plan.integrations.techTeaching}\n\n` +
-        `Pamamaraan:\n` +
-        `a. Routine: ${plan.procedures.routine.join(", ")}\n` +
+        `• Integrasyong Interdisiplinaryo: ${plan.integrations.interdisciplinary}\n` +
+        `• Paggamit ng Teknolohiya sa Pagtuturo: ${plan.integrations.techTeaching}\n\n` +
+        `• Pamamaraan:\n` +
+        `a. Mga Panimulang Gawain: ${plan.procedures.routine.join(", ")}\n` +
         `b. Pagganyak: ${plan.procedures.motivation}\n` +
-        `c. Pagtalakay: ${plan.procedures.discussion.steps.join("\n")}\n` +
+        `c. Pagtalakay ng Aralin:\n${plan.procedures.discussion.steps.join("\n")}\n` +
         `   Gabay na tanong:\n${plan.procedures.discussion.guideQuestions.map((q, i) => `   ${i + 1}. ${q}`).join("\n")}\n` +
-        `d. Values Integration: ${plan.procedures.valuesIntegration}\n` +
-        `e. Summary: ${plan.procedures.summary}\n\n` +
-        `VI. Pagtataya:\nFormative: ${plan.assessment.formative}\nSummative: ${plan.assessment.summativeInstruction}\n${plan.assessment.summativeItems.map((item, i) => `${i + 1}. ${item}`).join("\n")}\n\n` +
-        `VII. Takdang-Aralin:\n${plan.assignment}\n\n` +
-        `Signatories:\nInihanda ni: ${plan.signatories.preparedBy} | Sinuri ni: ${plan.signatories.checkedBy} | Inobserbahan ni: ${plan.signatories.observedBy}`;
+        `d. Integrasyon ng Pagpapahalaga: ${plan.procedures.valuesIntegration}\n` +
+        `e. Pagbubuod: ${plan.procedures.summary}\n\n` +
+        `VI- Pagtataya:\n• Formative – ${plan.assessment.formative}\n• Summative - Panuto: ${plan.assessment.summativeInstruction}\n${plan.assessment.summativeItems.map((item, i) => `   ${i + 1}. ${item}`).join("\n")}\n\n` +
+        `VII- Takdang- Aralin:\n${plan.assignment}\n\n` +
+        `Mga Tala at Pagninilay:\n${plan.remarks}\n\n` +
+        `Inihanda: ${plan.signatories.preparedBy} | Sinuri: ${plan.signatories.checkedBy} | Inobserbahan: ${plan.signatories.observedBy}`;
     } else {
-      plainText = `${plan.header.institution}\n${plan.header.address}\n${plan.header.title} ${plan.header.schoolYear}\n\n` +
-        `Subject: ${plan.subject} | Grade: ${plan.gradeLevel} | Date: ${plan.dateCoverage} (${plan.term})\n\n` +
-        `I. Learning Objectives:\n${plan.objectives.map((o) => `• ${o}`).join("\n")}\n\n` +
-        `II. Subject Matter:\nLesson: ${plan.subjectMatter.lesson}\nReference/s: ${plan.subjectMatter.references}\n\n` +
-        `III. Learning Competencies:\n${plan.learningCompetencies}\n\n` +
-        `III. Values Statement:\n${plan.valuesStatement}\n\n` +
-        `IV. Procedures:\n` +
-        `a. Routine: ${plan.procedures.routineActivities.join(", ")}\n` +
+      plainText = `${plan.header.institution}\n${plan.header.address}\n${plan.header.title}\n${plan.header.schoolYear}\n\n` +
+        `Subject: ${plan.subject} | Grade Level: ${plan.gradeLevel} | Date Coverage: ${plan.dateCoverage}         ${plan.term}\n\n` +
+        `I Learning Objectives:\n${plan.objectives.map((o) => `• ${o}`).join("\n")}\n\n` +
+        `II Subject Matter\nLesson: ${plan.subjectMatter.lesson}\nReference/s: ${plan.subjectMatter.references}\n\n` +
+        `III - Learning Competencies:\n${plan.learningCompetencies}\n\n` +
+        `III- Values Statement:\n${plan.valuesStatement}\n\n` +
+        `IV- Procedures:\n` +
+        `a. Routine Activities: ${plan.procedures.routineActivities.join(", ")}\n` +
         `b. Motivation: ${plan.procedures.motivation}\n` +
-        `c. Strategies:\n${plan.procedures.learningStrategies.map((s) => `• ${s.title}: ${s.instructions}`).join("\n")}\n\n` +
-        `V. Assessment:\n${plan.assessment.map((a) => `• ${a}`).join("\n")}\n\n` +
-        `VI. Closure:\n${plan.closure}\n\n` +
-        `VII. Assignment:\n${plan.assignment}\n\n` +
-        `Signatories:\nPrepared by: ${plan.signatories.preparedBy} | Checked by: ${plan.signatories.checkedBy} | Observed by: ${plan.signatories.observedBy}`;
+        `c. Learning Strategies:\n${plan.procedures.learningStrategies.map((s) => `• ${s.title}: ${s.instructions}`).join("\n")}\n\n` +
+        `V- Assessment:\n${plan.assessment.map((a) => `• ${a}`).join("\n")}\n\n` +
+        `VI- Closure:\n${plan.closure}\n\n` +
+        `VII- Assignment:\n${plan.assignment}\n\n` +
+        `Remarks:\n${plan.remarks}\n\n` +
+        `Prepared by: ${plan.signatories.preparedBy} | Checked by: ${plan.signatories.checkedBy} | Observed by: ${plan.signatories.observedBy}`;
     }
 
     navigator.clipboard.writeText(plainText).then(() => {
@@ -90,7 +92,6 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({
     });
   };
 
-  // Helper for inline editing of string fields
   const updateField = (path: string, val: string) => {
     const updated = JSON.parse(JSON.stringify(plan));
     const parts = path.split(".");
@@ -112,7 +113,7 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({
             <span>Interactive Live Document</span>
           </span>
           <span className="text-[11px] text-gray-400">
-            (Click any text to edit directly)
+            (Click any text in the table to edit directly)
           </span>
         </div>
 
@@ -171,7 +172,7 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({
   );
 };
 
-/* Sub-renderer for DepEd MATATAG / Banghay-Aralin format */
+/* Sub-renderer for DepEd MATATAG / Banghay-Aralin format (Matching Kat's exact format) */
 const MatatagRenderer: React.FC<{
   plan: MatatagLessonPlan;
   onUpdateField: (path: string, val: string) => void;
@@ -179,13 +180,13 @@ const MatatagRenderer: React.FC<{
   return (
     <div className="border border-black overflow-x-auto text-[13px] leading-relaxed">
       {/* Title Header */}
-      <div className="bg-gray-100 p-2 text-center border-b border-black font-bold text-sm tracking-wide">
+      <div className="bg-gray-100 p-2.5 text-center border-b border-black font-bold text-sm tracking-wide">
         Banghay- Aralin sa {plan.subject.toUpperCase()}
-        <div className="text-xs font-semibold">{plan.schoolYear}</div>
+        <div className="text-xs font-semibold mt-0.5">{plan.schoolYear}</div>
       </div>
 
-      {/* Metadata Row */}
-      <div className="grid grid-cols-3 border-b border-black divide-x divide-black text-xs font-medium">
+      {/* Metadata Row: EXACT 4 Columns */}
+      <div className="grid grid-cols-4 border-b border-black divide-x divide-black text-xs font-medium">
         <div className="p-2">
           <span className="font-bold block">Subject:</span>
           <span
@@ -209,7 +210,7 @@ const MatatagRenderer: React.FC<{
           </span>
         </div>
         <div className="p-2">
-          <span className="font-bold">Date Coverage: </span>
+          <span className="font-bold block">Date Coverage:</span>
           <span
             contentEditable
             suppressContentEditableWarning
@@ -218,8 +219,9 @@ const MatatagRenderer: React.FC<{
           >
             {plan.dateCoverage}
           </span>
-          <br />
-          <span className="font-bold">Term & Week: </span>
+        </div>
+        <div className="p-2">
+          <span className="font-bold block">Term & Week:</span>
           <span
             contentEditable
             suppressContentEditableWarning
@@ -231,13 +233,13 @@ const MatatagRenderer: React.FC<{
         </div>
       </div>
 
-      {/* Objectives and Subject Matter */}
+      {/* Objectives and Subject Matter (2 Columns split) */}
       <div className="grid grid-cols-1 md:grid-cols-2 border-b border-black divide-y md:divide-y-0 md:divide-x divide-black">
         {/* Objectives */}
         <div className="p-3">
           <p className="font-bold mb-1">I. Mga Layunin sa Pagkatuto:</p>
           <p className="text-xs text-gray-600 mb-2">
-            Sa pagtatapos ng talakayan, ang mga mag-aaral ay inaasahang:
+            Sa pagtatapos ng talakayan, ang mga mag-aaral ay inaasahang;
           </p>
           <ul className="list-disc pl-5 space-y-1">
             {plan.objectives.map((obj, i) => (
@@ -297,12 +299,14 @@ const MatatagRenderer: React.FC<{
             </span>
           </div>
           <div className="pt-2 text-xs border-t border-gray-200">
-            <span className="font-bold block">Deklarasyon sa Paggamit ng AI: DO 3 s 2026 Annex</span>
+            <span className="font-bold block">
+              Deklarasyon sa Paggamit ng AI: DO 3 s 2026 Annex (Banggitin kung paano ginamit ang AI sa pagbuo ng plano sa pagtuturo)
+            </span>
             <span
               contentEditable
               suppressContentEditableWarning
               onBlur={(e) => onUpdateField("subjectMatter.aiDeclaration", e.currentTarget.textContent || "")}
-              className="italic text-gray-600 outline-none focus:bg-sage-50"
+              className="italic text-gray-600 outline-none focus:bg-sage-50 block mt-1"
             >
               {plan.subjectMatter.aiDeclaration}
             </span>
@@ -319,7 +323,7 @@ const MatatagRenderer: React.FC<{
           onBlur={(e) => onUpdateField("learningCompetencies", e.currentTarget.textContent || "")}
           className="outline-none focus:bg-sage-50"
         >
-          {plan.learningCompetencies}
+          ● {plan.learningCompetencies.replace(/^●\s*/, "")}
         </p>
       </div>
 
@@ -329,68 +333,68 @@ const MatatagRenderer: React.FC<{
           IV. Integrasyon:
         </div>
         <div className="divide-y divide-black text-xs">
-          <div className="grid grid-cols-3 divide-x divide-black">
-            <div className="p-2 font-semibold">Laudato Si&apos;</div>
+          <div className="grid grid-cols-12 divide-x divide-black">
+            <div className="col-span-4 p-2 font-semibold">Laudato Si</div>
             <div
               contentEditable
               suppressContentEditableWarning
               onBlur={(e) => onUpdateField("integrations.laudatoSi", e.currentTarget.textContent || "")}
-              className="col-span-2 p-2 outline-none focus:bg-sage-50"
+              className="col-span-8 p-2 outline-none focus:bg-sage-50"
             >
               {plan.integrations.laudatoSi || "—"}
             </div>
           </div>
-          <div className="grid grid-cols-3 divide-x divide-black">
-            <div className="p-2 font-semibold">Justice and Peace Education</div>
+          <div className="grid grid-cols-12 divide-x divide-black">
+            <div className="col-span-4 p-2 font-semibold">Justice and Peace Education</div>
             <div
               contentEditable
               suppressContentEditableWarning
               onBlur={(e) => onUpdateField("integrations.justiceAndPeace", e.currentTarget.textContent || "")}
-              className="col-span-2 p-2 outline-none focus:bg-sage-50"
+              className="col-span-8 p-2 outline-none focus:bg-sage-50"
             >
               {plan.integrations.justiceAndPeace}
             </div>
           </div>
-          <div className="grid grid-cols-3 divide-x divide-black">
-            <div className="p-2 font-semibold">Gender and Development</div>
+          <div className="grid grid-cols-12 divide-x divide-black">
+            <div className="col-span-4 p-2 font-semibold">Gender and Development</div>
             <div
               contentEditable
               suppressContentEditableWarning
               onBlur={(e) => onUpdateField("integrations.genderAndDevelopment", e.currentTarget.textContent || "")}
-              className="col-span-2 p-2 outline-none focus:bg-sage-50"
+              className="col-span-8 p-2 outline-none focus:bg-sage-50"
             >
               {plan.integrations.genderAndDevelopment}
             </div>
           </div>
-          <div className="grid grid-cols-3 divide-x divide-black">
-            <div className="p-2 font-semibold">LCCP- Care</div>
+          <div className="grid grid-cols-12 divide-x divide-black">
+            <div className="col-span-4 p-2 font-semibold">LCCP- Care</div>
             <div
               contentEditable
               suppressContentEditableWarning
               onBlur={(e) => onUpdateField("integrations.lccpCare", e.currentTarget.textContent || "")}
-              className="col-span-2 p-2 outline-none focus:bg-sage-50"
+              className="col-span-8 p-2 outline-none focus:bg-sage-50"
             >
               {plan.integrations.lccpCare}
             </div>
           </div>
-          <div className="grid grid-cols-3 divide-x divide-black">
-            <div className="p-2 font-semibold">Integrasyong Interdisiplinaryo</div>
+          <div className="grid grid-cols-12 divide-x divide-black">
+            <div className="col-span-4 p-2 font-semibold">Integrasyong Interdisiplinaryo</div>
             <div
               contentEditable
               suppressContentEditableWarning
               onBlur={(e) => onUpdateField("integrations.interdisciplinary", e.currentTarget.textContent || "")}
-              className="col-span-2 p-2 outline-none focus:bg-sage-50"
+              className="col-span-8 p-2 outline-none focus:bg-sage-50"
             >
               {plan.integrations.interdisciplinary}
             </div>
           </div>
-          <div className="grid grid-cols-3 divide-x divide-black">
-            <div className="p-2 font-semibold">Paggamit ng Teknolohiya sa Pagtuturo</div>
+          <div className="grid grid-cols-12 divide-x divide-black">
+            <div className="col-span-4 p-2 font-semibold">Paggamit ng Teknolohiya sa Pagtuturo</div>
             <div
               contentEditable
               suppressContentEditableWarning
               onBlur={(e) => onUpdateField("integrations.techTeaching", e.currentTarget.textContent || "")}
-              className="col-span-2 p-2 outline-none focus:bg-sage-50"
+              className="col-span-8 p-2 outline-none focus:bg-sage-50"
             >
               {plan.integrations.techTeaching}
             </div>
@@ -400,11 +404,11 @@ const MatatagRenderer: React.FC<{
 
       {/* Procedures */}
       <div className="p-3 border-b border-black space-y-3">
-        <p className="font-bold text-sm">Pamamaraan:</p>
+        <p className="font-bold text-sm">• Pamamaraan:</p>
         
         {/* Routine */}
         <div>
-          <p className="font-semibold text-xs text-gray-700">a. Mga Panimulang Gawain (5-10 mins)</p>
+          <p className="font-semibold text-xs text-gray-700">a. Mga Panimulang Gawain (Day 1/10 mins)</p>
           <ul className="list-disc pl-5 text-xs space-y-0.5 mt-1">
             {plan.procedures.routine.map((r, i) => (
               <li
@@ -426,7 +430,7 @@ const MatatagRenderer: React.FC<{
 
         {/* Motivation */}
         <div>
-          <p className="font-semibold text-xs text-gray-700">b. Pagganyak (15 mins)</p>
+          <p className="font-semibold text-xs text-gray-700">b. Pagganyak (day 1/15 mins)</p>
           <p
             contentEditable
             suppressContentEditableWarning
@@ -472,7 +476,7 @@ const MatatagRenderer: React.FC<{
           </p>
 
           <div className="mt-2 pl-3 border-l-2 border-gray-300 space-y-1">
-            <p className="font-semibold text-xs">Gabay na tanong:</p>
+            <p className="font-semibold text-xs">              Gabay na tanong:</p>
             {plan.procedures.discussion.guideQuestions.map((q, i) => (
               <p
                 key={i}
@@ -503,7 +507,7 @@ const MatatagRenderer: React.FC<{
                     }}
                     className="text-xs outline-none focus:bg-sage-50"
                   >
-                    {i + 1}. {d}
+                    • {d}
                   </p>
                 ))}
               </>
@@ -540,9 +544,9 @@ const MatatagRenderer: React.FC<{
 
       {/* Assessment */}
       <div className="p-3 border-b border-black space-y-2 text-xs">
-        <p className="font-bold text-sm">VI - Pagtataya: (Day 5/ 20 mins)</p>
+        <p className="font-bold text-sm">VI- Pagtataya: (Day 5/ 20 mins)</p>
         <div>
-          <span className="font-semibold">• Formative: </span>
+          <span className="font-semibold">• Formative – </span>
           <span
             contentEditable
             suppressContentEditableWarning
@@ -553,7 +557,7 @@ const MatatagRenderer: React.FC<{
           </span>
         </div>
         <div>
-          <span className="font-semibold">• Summative: </span>
+          <span className="font-semibold">• Summative - Panuto: </span>
           <span
             contentEditable
             suppressContentEditableWarning
@@ -562,29 +566,29 @@ const MatatagRenderer: React.FC<{
           >
             {plan.assessment.summativeInstruction}
           </span>
-          <ol className="list-decimal pl-5 space-y-0.5 mt-1">
+          <div className="pl-4 space-y-1 mt-1.5 font-mono text-[12px]">
             {plan.assessment.summativeItems.map((item, i) => (
-              <li
+              <p
                 key={i}
                 contentEditable
                 suppressContentEditableWarning
                 onBlur={(e) => {
                   const updated = [...plan.assessment.summativeItems];
-                  updated[i] = e.currentTarget.textContent || "";
+                  updated[i] = e.currentTarget.textContent?.replace(/^_______\s*\d+\.\s*/, "") || "";
                   onUpdateField("assessment.summativeItems", updated as unknown as string);
                 }}
                 className="outline-none focus:bg-sage-50"
               >
-                {item}
-              </li>
+                _______ {i + 1}. {item}
+              </p>
             ))}
-          </ol>
+          </div>
         </div>
       </div>
 
       {/* Assignment */}
       <div className="p-3 border-b border-black text-xs">
-        <p className="font-bold text-sm mb-1">VII – Takdang Aralin:</p>
+        <p className="font-bold text-sm mb-1">VII- Takdang- Aralin:</p>
         <p
           contentEditable
           suppressContentEditableWarning
@@ -608,19 +612,19 @@ const MatatagRenderer: React.FC<{
         </p>
       </div>
 
-      {/* Signatories */}
+      {/* Signatories: EXACT Kat Format */}
       <div className="grid grid-cols-3 divide-x divide-black p-3 text-xs">
         <div>
-          <span className="font-bold block">Inihanda ni:</span>
-          <span>{plan.signatories.preparedBy}</span>
+          <span className="font-bold block">Inihanda:</span>
+          <span className="block mt-1">{plan.signatories.preparedBy}</span>
         </div>
         <div className="pl-3">
-          <span className="font-bold block">Sinuri ni:</span>
-          <span>{plan.signatories.checkedBy}</span>
+          <span className="font-bold block">Sinuri:</span>
+          <span className="block mt-1">{plan.signatories.checkedBy}</span>
         </div>
         <div className="pl-3">
-          <span className="font-bold block">Inobserbahan ni:</span>
-          <span>{plan.signatories.observedBy}</span>
+          <span className="font-bold block">Inobserbahan:</span>
+          <span className="block mt-1">{plan.signatories.observedBy}</span>
         </div>
       </div>
     </div>
@@ -676,8 +680,7 @@ const LccpRenderer: React.FC<{
           >
             {plan.dateCoverage}
           </span>
-          <br />
-          <span className="font-bold">Term: </span>
+          <span className="font-bold ml-2">Term: </span>
           <span
             contentEditable
             suppressContentEditableWarning
@@ -740,18 +743,20 @@ const LccpRenderer: React.FC<{
         </div>
       </div>
 
-      {/* Competencies */}
-      <div className="p-3 border-b border-black">
-        <p className="font-bold mb-1">III - Learning Competencies:</p>
-        <p
-          contentEditable
-          suppressContentEditableWarning
-          onBlur={(e) => onUpdateField("learningCompetencies", e.currentTarget.textContent || "")}
-          className="outline-none focus:bg-sage-50"
-        >
-          {plan.learningCompetencies}
-        </p>
-      </div>
+      {/* Competencies (when available) */}
+      {plan.learningCompetencies && (
+        <div className="p-3 border-b border-black">
+          <p className="font-bold mb-1">III - Learning Competencies:</p>
+          <p
+            contentEditable
+            suppressContentEditableWarning
+            onBlur={(e) => onUpdateField("learningCompetencies", e.currentTarget.textContent || "")}
+            className="outline-none focus:bg-sage-50"
+          >
+            {plan.learningCompetencies}
+          </p>
+        </div>
+      )}
 
       {/* Values Statement */}
       <div className="p-3 border-b border-black">
@@ -919,15 +924,15 @@ const LccpRenderer: React.FC<{
       <div className="grid grid-cols-3 divide-x divide-black p-3 text-xs">
         <div>
           <span className="font-bold block">Prepared by:</span>
-          <span>{plan.signatories.preparedBy}</span>
+          <span className="block mt-1">{plan.signatories.preparedBy}</span>
         </div>
         <div className="pl-3">
           <span className="font-bold block">Checked by:</span>
-          <span>{plan.signatories.checkedBy}</span>
+          <span className="block mt-1">{plan.signatories.checkedBy}</span>
         </div>
         <div className="pl-3">
           <span className="font-bold block">Observed by:</span>
-          <span>{plan.signatories.observedBy}</span>
+          <span className="block mt-1">{plan.signatories.observedBy}</span>
         </div>
       </div>
     </div>

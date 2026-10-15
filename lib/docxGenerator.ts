@@ -29,10 +29,18 @@ const TABLE_BORDERS = {
   insideVertical: BORDER_STYLE,
 };
 
-function p(text: string, options?: { bold?: boolean; align?: (typeof AlignmentType)[keyof typeof AlignmentType]; size?: number; italic?: boolean }) {
+function p(
+  text: string,
+  options?: {
+    bold?: boolean;
+    align?: (typeof AlignmentType)[keyof typeof AlignmentType];
+    size?: number;
+    italic?: boolean;
+  }
+) {
   return new Paragraph({
     alignment: options?.align || AlignmentType.LEFT,
-    spacing: { before: 40, after: 40, line: 240 },
+    spacing: { before: 30, after: 30, line: 240 },
     children: [
       new TextRun({
         text,
@@ -63,10 +71,10 @@ function cell(
       ? { fill: options.shadingColor }
       : undefined,
     margins: {
-      top: 100,
-      bottom: 100,
-      left: 140,
-      right: 140,
+      top: 80,
+      bottom: 80,
+      left: 120,
+      right: 120,
     },
     verticalAlign: VerticalAlign.TOP,
     children,
@@ -84,42 +92,54 @@ export async function generateMatatagDocx(plan: MatatagLessonPlan, profile?: Tea
 
   const rows: TableRow[] = [];
 
-  // Row 0: Title Header
+  // Row 0: Title Header (Colspan 4)
   rows.push(
     new TableRow({
       children: [
         cell(
           [
-            p(`Banghay- Aralin sa ${plan.subject.toUpperCase()}`, { bold: true, align: AlignmentType.CENTER, size: 24 }),
-            p(plan.schoolYear || "S.Y. 2026-2027", { bold: true, align: AlignmentType.CENTER, size: 20 }),
+            p(`Banghay- Aralin sa ${plan.subject.toUpperCase()}`, {
+              bold: true,
+              align: AlignmentType.CENTER,
+              size: 24,
+            }),
+            p(plan.schoolYear || "S.Y. 2026-2027", {
+              bold: true,
+              align: AlignmentType.CENTER,
+              size: 20,
+            }),
           ],
-          { colSpan: 3, shadingColor: "F2F2F2" }
+          { colSpan: 4, shadingColor: "F2F2F2" }
         ),
       ],
     })
   );
 
-  // Row 1: Metadata Row (3 columns)
+  // Row 1: Metadata Row (Exact 4 Columns matching Kat's PDF)
   rows.push(
     new TableRow({
       children: [
-        cell([
-          p("Subject:", { bold: true }),
-          p(plan.subject),
-        ], { widthPercent: 33 }),
-        cell([
-          p("Grade & Section:", { bold: true }),
-          p(plan.gradeSection),
-        ], { widthPercent: 33 }),
-        cell([
-          p(`Date Coverage: ${plan.dateCoverage}`, { bold: true }),
-          p(`Term & Week: ${plan.termWeek}`, { bold: true }),
-        ], { widthPercent: 34 }),
+        cell(
+          [p("Subject:", { bold: true }), p(plan.subject)],
+          { widthPercent: 22 }
+        ),
+        cell(
+          [p("Grade & Section:", { bold: true }), p(plan.gradeSection)],
+          { widthPercent: 28 }
+        ),
+        cell(
+          [p(`Date Coverage: ${plan.dateCoverage}`, { bold: true })],
+          { widthPercent: 28 }
+        ),
+        cell(
+          [p(`Term & Week: ${plan.termWeek}`, { bold: true })],
+          { widthPercent: 22 }
+        ),
       ],
     })
   );
 
-  // Row 2: Objectives & Subject Matter (2 columns split)
+  // Row 2: Objectives & Subject Matter (2 columns split, 50% each)
   const objParagraphs: Paragraph[] = [
     p("I. Mga Layunin sa Pagkatuto:", { bold: true }),
     p("Sa pagtatapos ng talakayan, ang mga mag-aaral ay inaasahang;"),
@@ -131,46 +151,53 @@ export async function generateMatatagDocx(plan: MatatagLessonPlan, profile?: Tea
     p(`Paksa: ${plan.subjectMatter.paksa}`),
     ...(plan.subjectMatter.wika ? [p(`Wika: ${plan.subjectMatter.wika}`)] : []),
     p(`Sanggunian: ${plan.subjectMatter.sanggunian}`),
-    p("Deklarasyon sa Paggamit ng AI: DO 3 s 2026 Annex", { bold: true, size: 18 }),
-    p(plan.subjectMatter.aiDeclaration, { italic: true, size: 18 }),
+    p("Deklarasyon sa Paggamit ng AI: DO 3 s 2026 Annex (Banggitin kung paano ginamit ang AI sa pagbuo ng plano sa pagtuturo)", {
+      bold: true,
+      size: 17,
+    }),
+    p(
+      plan.subjectMatter.aiDeclaration ||
+        "Ang banghay- aralin na ay binuo sa tulong ng AI upang masiguro ang pagka-ayon nito sa mga Pamantayan ng Kurikulum ng DepEd MATATAG K-12.",
+      { italic: true, size: 17 }
+    ),
   ];
 
   rows.push(
     new TableRow({
       children: [
-        cell(objParagraphs, { widthPercent: 50, colSpan: 1 }),
+        cell(objParagraphs, { widthPercent: 50, colSpan: 2 }),
         cell(subjParagraphs, { widthPercent: 50, colSpan: 2 }),
       ],
     })
   );
 
-  // Row 3: Learning Competencies
+  // Row 3: Learning Competencies (Colspan 4)
   rows.push(
     new TableRow({
       children: [
         cell(
           [
             p("III. Mga Kasanayan sa Pagkatuto:", { bold: true }),
-            p(plan.learningCompetencies),
+            p(`● ${plan.learningCompetencies}`),
           ],
-          { colSpan: 3 }
+          { colSpan: 4 }
         ),
       ],
     })
   );
 
-  // Row 4: Integrasyon Title
+  // Row 4: Integrasyon Title (Colspan 4)
   rows.push(
     new TableRow({
       children: [
-        cell([p("IV. Integrasyon:", { bold: true })], { colSpan: 3, shadingColor: "F8F8F8" }),
+        cell([p("IV. Integrasyon:", { bold: true })], { colSpan: 4, shadingColor: "F8F8F8" }),
       ],
     })
   );
 
-  // Rows 5-10: 6 Integration Items
+  // Rows 5-10: 6 Integration Items (Exact Kat Format: 35% / 65%)
   const integrationsList = [
-    { name: "Laudato Si'", val: plan.integrations.laudatoSi },
+    { name: "Laudato Si", val: plan.integrations.laudatoSi },
     { name: "Justice and Peace Education", val: plan.integrations.justiceAndPeace },
     { name: "Gender and Development", val: plan.integrations.genderAndDevelopment },
     { name: "LCCP- Care", val: plan.integrations.lccpCare },
@@ -182,29 +209,29 @@ export async function generateMatatagDocx(plan: MatatagLessonPlan, profile?: Tea
     rows.push(
       new TableRow({
         children: [
-          cell([p(item.name, { bold: true })], { widthPercent: 35 }),
+          cell([p(item.name, { bold: true })], { colSpan: 2, widthPercent: 35 }),
           cell([p(item.val || "—")], { colSpan: 2, widthPercent: 65 }),
         ],
       })
     );
   }
 
-  // Row 11: Procedures (Pamamaraan)
+  // Row 11: Procedures (Pamamaraan) (Colspan 4)
   const procParagraphs: Paragraph[] = [
-    p("Pamamaraan:", { bold: true, size: 22 }),
-    p("a. Mga Panimulang Gawain (5-10 mins)", { bold: true }),
+    p("• Pamamaraan:", { bold: true, size: 22 }),
+    p("a. Mga Panimulang Gawain (Day 1/10 mins)", { bold: true }),
     ...plan.procedures.routine.map((r) => p(`  • ${r}`)),
-    p("b. Pagganyak (15 mins)", { bold: true }),
+    p("b. Pagganyak (day 1/15 mins)", { bold: true }),
     p(`  ${plan.procedures.motivation}`),
     p("c. Pagtalakay ng Aralin: (Day 1-4/30 mins)", { bold: true }),
     ...plan.procedures.discussion.steps.map((st) => p(`  • ${st}`)),
     p(`  Pamamaraan sa Pagturo: ${plan.procedures.discussion.teachingMethods}`, { italic: true }),
-    p("  Gabay na tanong:", { bold: true }),
-    ...plan.procedures.discussion.guideQuestions.map((q, i) => p(`    ${i + 1}. ${q}`)),
+    p("              Gabay na tanong:", { bold: true }),
+    ...plan.procedures.discussion.guideQuestions.map((q, i) => p(`  ${i + 1}. ${q}`)),
     ...(plan.procedures.discussion.deepening.length > 0
       ? [
           p("  Pagpapalalim:", { bold: true }),
-          ...plan.procedures.discussion.deepening.map((d, i) => p(`    ${i + 1}. ${d}`)),
+          ...plan.procedures.discussion.deepening.map((d, i) => p(`  • ${d}`)),
         ]
       : []),
     p("d. Integrasyon ng Pagpapahalaga: (Day 4/ 15 mins)", { bold: true }),
@@ -215,44 +242,44 @@ export async function generateMatatagDocx(plan: MatatagLessonPlan, profile?: Tea
 
   rows.push(
     new TableRow({
-      children: [cell(procParagraphs, { colSpan: 3 })],
+      children: [cell(procParagraphs, { colSpan: 4 })],
     })
   );
 
-  // Row 12: Assessment
+  // Row 12: Assessment (Colspan 4)
   const assessParagraphs: Paragraph[] = [
-    p("VI - Pagtataya: (Day 5/ 20 mins)", { bold: true }),
+    p("VI- Pagtataya: (Day 5/ 20 mins)", { bold: true }),
     p(`• Formative – ${plan.assessment.formative}`),
-    p(`• Summative – ${plan.assessment.summativeInstruction}`),
+    p(`• Summative - Panuto: ${plan.assessment.summativeInstruction}`),
     ...plan.assessment.summativeItems.map((item, idx) => p(`    ${idx + 1}. ${item}`)),
   ];
-  rows.push(new TableRow({ children: [cell(assessParagraphs, { colSpan: 3 })] }));
+  rows.push(new TableRow({ children: [cell(assessParagraphs, { colSpan: 4 })] }));
 
-  // Row 13: Assignment
+  // Row 13: Assignment (Colspan 4)
   rows.push(
     new TableRow({
       children: [
-        cell([p("VII – Takdang Aralin:", { bold: true }), p(plan.assignment)], { colSpan: 3 }),
+        cell([p("VII- Takdang- Aralin:", { bold: true }), p(plan.assignment)], { colSpan: 4 }),
       ],
     })
   );
 
-  // Row 14: Remarks / Reflections
+  // Row 14: Remarks / Reflections (Colspan 4)
   rows.push(
     new TableRow({
       children: [
-        cell([p("Mga Tala at Pagninilay:", { bold: true }), p(plan.remarks || "N/A")], { colSpan: 3 }),
+        cell([p("Mga Tala at Pagninilay:", { bold: true }), p(plan.remarks || "N/A")], { colSpan: 4 }),
       ],
     })
   );
 
-  // Row 15: Signatories (3 columns)
+  // Row 15: Signatories (Exact Kat Format: Inihanda / Sinuri / Inobserbahan)
   rows.push(
     new TableRow({
       children: [
-        cell([p("Inihanda ni:", { bold: true }), p(prepName)], { widthPercent: 33 }),
-        cell([p("Sinuri ni:", { bold: true }), p(checkName)], { widthPercent: 33 }),
-        cell([p("Inobserbahan ni:", { bold: true }), p(obsName)], { widthPercent: 34 }),
+        cell([p("Inihanda:", { bold: true }), p(prepName)], { colSpan: 1, widthPercent: 33 }),
+        cell([p("Sinuri:", { bold: true }), p(checkName)], { colSpan: 1, widthPercent: 33 }),
+        cell([p("Inobserbahan:", { bold: true }), p(obsName)], { colSpan: 2, widthPercent: 34 }),
       ],
     })
   );
@@ -263,10 +290,10 @@ export async function generateMatatagDocx(plan: MatatagLessonPlan, profile?: Tea
         properties: {
           page: {
             margin: {
-              top: convertInchesToTwip(0.6),
-              bottom: convertInchesToTwip(0.6),
-              left: convertInchesToTwip(0.6),
-              right: convertInchesToTwip(0.6),
+              top: convertInchesToTwip(0.5),
+              bottom: convertInchesToTwip(0.5),
+              left: convertInchesToTwip(0.5),
+              right: convertInchesToTwip(0.5),
             },
           },
         },
@@ -319,9 +346,9 @@ export async function generateLccpDocx(plan: LccpLearningPlan, profile?: Teacher
   rows.push(
     new TableRow({
       children: [
-        cell([p(`Subject: ${plan.subject}`, { bold: true })], { widthPercent: 33 }),
-        cell([p(`Grade Level: ${plan.gradeLevel}`, { bold: true })], { widthPercent: 33 }),
-        cell([p(`Date Coverage: ${plan.dateCoverage} | ${plan.term}`, { bold: true })], { widthPercent: 34 }),
+        cell([p(`Subject: ${plan.subject}`, { bold: true })], { widthPercent: 30 }),
+        cell([p(`Grade Level: ${plan.gradeLevel}`, { bold: true })], { widthPercent: 30 }),
+        cell([p(`Date Coverage: ${plan.dateCoverage}         ${plan.term}`, { bold: true })], { widthPercent: 40 }),
       ],
     })
   );
@@ -329,7 +356,7 @@ export async function generateLccpDocx(plan: LccpLearningPlan, profile?: Teacher
   // Row 2: Objectives & Subject Matter
   const objParagraphs: Paragraph[] = [
     p("I Learning Objectives: At the end of the lesson the students will be able to:", { bold: true }),
-    ...plan.objectives.map((obj) => p(`• ${obj}`)),
+    ...plan.objectives.map((obj) => p(`${obj}`)),
   ];
 
   const subjParagraphs: Paragraph[] = [
@@ -341,20 +368,22 @@ export async function generateLccpDocx(plan: LccpLearningPlan, profile?: Teacher
   rows.push(
     new TableRow({
       children: [
-        cell(objParagraphs, { widthPercent: 50 }),
-        cell(subjParagraphs, { widthPercent: 50, colSpan: 2 }),
+        cell(objParagraphs, { widthPercent: 55 }),
+        cell(subjParagraphs, { widthPercent: 45, colSpan: 2 }),
       ],
     })
   );
 
-  // Row 3: Learning Competencies
-  rows.push(
-    new TableRow({
-      children: [
-        cell([p("III - Learning Competencies:", { bold: true }), p(plan.learningCompetencies)], { colSpan: 3 }),
-      ],
-    })
-  );
+  // Row 3: Learning Competencies (Included when present)
+  if (plan.learningCompetencies) {
+    rows.push(
+      new TableRow({
+        children: [
+          cell([p("III - Learning Competencies:", { bold: true }), p(plan.learningCompetencies)], { colSpan: 3 }),
+        ],
+      })
+    );
+  }
 
   // Row 4: Values Statement
   rows.push(
@@ -369,12 +398,12 @@ export async function generateLccpDocx(plan: LccpLearningPlan, profile?: Teacher
   const procParagraphs: Paragraph[] = [
     p("IV- Procedures:", { bold: true }),
     p("a. Routine Activities", { bold: true }),
-    ...plan.procedures.routineActivities.map((r) => p(`  • ${r}`)),
+    ...plan.procedures.routineActivities.map((r) => p(`  ${r}`)),
     p(`b. Motivation: ${plan.procedures.motivation}`, { bold: true }),
     p("c. Learning Strategies", { bold: true }),
     ...plan.procedures.learningStrategies.flatMap((strat) => [
-      p(`  • ${strat.title}: ${strat.instructions}`, { bold: false }),
-      ...(strat.questions ? strat.questions.map((q) => p(`     - ${q}`)) : []),
+      p(`  ${strat.title}: ${strat.instructions}`, { bold: false }),
+      ...(strat.questions ? [p("  Questions:", { bold: true }), ...strat.questions.map((q) => p(`    ${q}`))] : []),
     ]),
   ];
 
@@ -391,7 +420,7 @@ export async function generateLccpDocx(plan: LccpLearningPlan, profile?: Teacher
         cell(
           [
             p("V- Assessment:", { bold: true }),
-            ...plan.assessment.map((a) => p(`• ${a}`)),
+            ...plan.assessment.map((a) => p(`${a}`)),
           ],
           { colSpan: 3 }
         ),
@@ -421,12 +450,12 @@ export async function generateLccpDocx(plan: LccpLearningPlan, profile?: Teacher
   rows.push(
     new TableRow({
       children: [
-        cell([p("Remarks:", { bold: true }), p(plan.remarks || "Accomplished successfully.")], { colSpan: 3 }),
+        cell([p("Remarks:", { bold: true }), p(plan.remarks || "")], { colSpan: 3 }),
       ],
     })
   );
 
-  // Row 10: Signatories
+  // Row 10: Signatories (Prepared by / Checked by / Observed by)
   rows.push(
     new TableRow({
       children: [
@@ -443,10 +472,10 @@ export async function generateLccpDocx(plan: LccpLearningPlan, profile?: Teacher
         properties: {
           page: {
             margin: {
-              top: convertInchesToTwip(0.6),
-              bottom: convertInchesToTwip(0.6),
-              left: convertInchesToTwip(0.6),
-              right: convertInchesToTwip(0.6),
+              top: convertInchesToTwip(0.5),
+              bottom: convertInchesToTwip(0.5),
+              left: convertInchesToTwip(0.5),
+              right: convertInchesToTwip(0.5),
             },
           },
         },

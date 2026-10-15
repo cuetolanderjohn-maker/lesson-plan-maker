@@ -1,7 +1,7 @@
 /**
- * High-performance browser-based computer vision preprocessor for textbook photos.
- * Enhances contrast, removes paper shadows, sharpens font edges, and normalizes
- * resolution to optimize machine learning OCR accuracy.
+ * Gentle, non-destructive computer vision preprocessor for textbook photos.
+ * Preserves anti-aliased font edges, boosts local contrast gently, and avoids
+ * harsh binary thresholding that causes black blobs or erased text.
  */
 
 export interface PreprocessedImageResult {
@@ -13,17 +13,16 @@ export interface PreprocessedImageResult {
 export async function preprocessTextbookImage(
   base64Data: string
 ): Promise<PreprocessedImageResult> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
 
     img.onload = () => {
       try {
-        const TARGET_MAX_DIM = 2000;
+        const TARGET_MAX_DIM = 2200; // Optimal resolution for Tesseract character recognition
         let width = img.width;
         let height = img.height;
 
-        // Scale to optimal OCR dimension
         if (width > TARGET_MAX_DIM || height > TARGET_MAX_DIM) {
           if (width > height) {
             height = Math.round((height * TARGET_MAX_DIM) / width);
@@ -56,45 +55,40 @@ export async function preprocessTextbookImage(
         const data = imageData.data;
         const numPixels = width * height;
 
-        // 1. Grayscale & Luminance Histogram
+        // 1. Convert to smooth Grayscale and find min/max luminance
         const gray = new Uint8Array(numPixels);
         let minLum = 255;
         let maxLum = 0;
-        let sumLum = 0;
 
         for (let i = 0; i < numPixels; i++) {
           const idx = i * 4;
-          // Rec. 601 luma formula
+          // ITU-R BT.601 luma formula
           const lum = Math.round(
             0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2]
           );
           gray[i] = lum;
-          sumLum += lum;
           if (lum < minLum) minLum = lum;
           if (lum > maxLum) maxLum = lum;
         }
 
-        const avgLum = sumLum / numPixels;
-
-        // 2. Contrast Stretching & Adaptive Binarization
-        // Normalize range
+        // 2. Gentle linear contrast stretch (avoid harsh binary cutoff)
         const lumRange = maxLum - minLum || 1;
-        const threshold = Math.max(90, Math.min(185, avgLum * 0.92));
 
         for (let i = 0; i < numPixels; i++) {
           const idx = i * 4;
           const currentLum = gray[i];
 
-          // Contrast stretch
-          const stretched = Math.round(((currentLum - minLum) / lumRange) * 255);
+          // Normalize to [0, 255]
+          let stretched = Math.round(((currentLum - minLum) / lumRange) * 255);
 
-          // Thresholding with soft roll-off for text readability
-          const finalVal = stretched < threshold ? Math.max(0, stretched - 30) : 255;
+          // Apply gentle gamma curve to make ink darker without destroying background
+          // gamma = 1.3 pushes midtones slightly darker so light text is visible
+          stretched = Math.min(255, Math.max(0, Math.round(255 * Math.pow(stretched / 255, 1.25))));
 
-          data[idx] = finalVal;
-          data[idx + 1] = finalVal;
-          data[idx + 2] = finalVal;
-          data[idx + 3] = 255; // Full opacity
+          data[idx] = stretched;
+          data[idx + 1] = stretched;
+          data[idx + 2] = stretched;
+          data[idx + 3] = 255;
         }
 
         ctx.putImageData(imageData, 0, 0);

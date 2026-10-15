@@ -30,7 +30,9 @@ import {
   FileCheck,
   AlertCircle,
   Brain,
-  CheckCircle,
+  Camera,
+  FileText,
+  HelpCircle,
 } from "lucide-react";
 
 export default function HomePage() {
@@ -51,20 +53,26 @@ export default function HomePage() {
   const [bookReference, setBookReference] = useState("");
   const [images, setImages] = useState<ImageInput[]>([]);
 
+  // Input Mode: "photo" (camera/file upload) vs "directText" (paste/type directly)
+  const [inputMode, setInputMode] = useState<"photo" | "directText">("photo");
+  const [directText, setDirectText] = useState("");
+
   // Machine Learning & Analysis State
   const [learnedContent, setLearnedContent] = useState<LearnedTextbookContent | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [progressStatus, setProgressStatus] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [scanWarning, setScanWarning] = useState<string | null>(null);
   const [currentPlan, setCurrentPlan] = useState<LessonPlan | null>(null);
 
-  // Reset learned content when user removes all images
+  // Reset learned content when user removes all images in photo mode
   useEffect(() => {
-    if (images.length === 0) {
+    if (inputMode === "photo" && images.length === 0) {
       setLearnedContent(null);
+      setScanWarning(null);
     }
-  }, [images]);
+  }, [images, inputMode]);
 
   // Load profile and history from localStorage on mount
   useEffect(() => {
@@ -154,7 +162,7 @@ export default function HomePage() {
     }
   };
 
-  // Step 1: Analyze & Learn from Attached JPG
+  // Step 1: Analyze & Learn from Attached Photos
   const handleAnalyzeImages = async (): Promise<LearnedTextbookContent | null> => {
     if (images.length === 0) {
       setErrorMessage("Please attach at least one photo of the lesson from the book.");
@@ -163,31 +171,58 @@ export default function HomePage() {
 
     setIsAnalyzing(true);
     setErrorMessage(null);
+    setScanWarning(null);
 
     try {
       let combinedText = "";
 
       for (let i = 0; i < images.length; i++) {
-        // A. Image Preprocessing (Shadow removal, contrast boost, font sharpening)
-        setProgressStatus(`Enhancing image contrast & sharpening page ${i + 1}...`);
+        // A. Gentle, non-destructive canvas contrast enhancement
+        setProgressStatus(`Optimizing page ${i + 1} for high-fidelity reading...`);
         const preprocessed = await preprocessTextbookImage(images[i].base64Data);
 
-        // B. Machine Learning OCR (Tesseract)
-        setProgressStatus(`Reading textbook page ${i + 1} with Machine Learning OCR...`);
-        const result = await Tesseract.recognize(preprocessed.ocrDataUrl, "eng", {
-          logger: (m) => {
-            if (m.status === "recognizing text" && typeof m.progress === "number") {
-              setProgressStatus(
-                `Reading page ${i + 1} of ${images.length} (${Math.round(m.progress * 100)}%)...`
-              );
-            }
-          },
-        });
+        // B. Machine Learning OCR with dual Filipino & English dictionary
+        setProgressStatus(`Scanning textbook page ${i + 1} with Machine Learning OCR...`);
+        
+        let ocrText = "";
+        try {
+          // Attempt Filipino + English recognition
+          const result = await Tesseract.recognize(preprocessed.ocrDataUrl, "fil+eng", {
+            logger: (m) => {
+              if (m.status === "recognizing text" && typeof m.progress === "number") {
+                setProgressStatus(
+                  `Reading page ${i + 1} (${Math.round(m.progress * 100)}%)...`
+                );
+              }
+            },
+          });
+          ocrText = result.data.text || "";
+        } catch {
+          // Fallback to English OCR if Filipino language file is unavailable
+          const fallbackResult = await Tesseract.recognize(preprocessed.ocrDataUrl, "eng", {
+            logger: (m) => {
+              if (m.status === "recognizing text" && typeof m.progress === "number") {
+                setProgressStatus(
+                  `Reading page ${i + 1} (${Math.round(m.progress * 100)}%)...`
+                );
+              }
+            },
+          });
+          ocrText = fallbackResult.data.text || "";
+        }
 
-        combinedText += "\n" + (result.data.text || "");
+        combinedText += "\n" + ocrText;
       }
 
-      // C. Semantic NLP Analyzer (Title, questions, vocabulary, exercises)
+      // Check if scan yielded sufficient text
+      const cleanLen = combinedText.trim().replace(/\s+/g, " ").length;
+      if (cleanLen < 30) {
+        setScanWarning(
+          "The photo had glare or low contrast. We extracted what we could—you can easily review, type, or paste the lesson title and story in the review card below."
+        );
+      }
+
+      // C. Semantic NLP Analyzer
       setProgressStatus("Extracting lesson concepts, vocabulary, and questions...");
       const learned = analyzeTextbookText(combinedText, subject, gradeLevel);
 
@@ -203,6 +238,19 @@ export default function HomePage() {
       setIsAnalyzing(false);
       setProgressStatus("");
     }
+  };
+
+  // Step 1 (Alternate): Analyze Direct Pasted Text
+  const handleAnalyzeDirectText = () => {
+    if (!directText.trim()) {
+      setErrorMessage("Please type or paste some text from the lesson or textbook.");
+      return;
+    }
+    setErrorMessage(null);
+    setScanWarning(null);
+
+    const learned = analyzeTextbookText(directText, subject, gradeLevel);
+    setLearnedContent(learned);
   };
 
   // Step 2: Generate Official Lesson Plan from Learned Content
@@ -235,11 +283,21 @@ export default function HomePage() {
     }
   };
 
-  // Combined action: Analyze & Generate in one click if teacher prefers
+  // Combined action: Analyze & Generate in one click
   const handleAnalyzeAndGenerate = async () => {
-    const learned = await handleAnalyzeImages();
-    if (learned) {
+    if (inputMode === "directText") {
+      if (!directText.trim()) {
+        setErrorMessage("Please type or paste some lesson text first.");
+        return;
+      }
+      const learned = analyzeTextbookText(directText, subject, gradeLevel);
+      setLearnedContent(learned);
       handleGenerateFromLearned(learned);
+    } else {
+      const learned = await handleAnalyzeImages();
+      if (learned) {
+        handleGenerateFromLearned(learned);
+      }
     }
   };
 
@@ -255,6 +313,7 @@ export default function HomePage() {
       setCurrentPlan(sampleLccpPlan);
     }
     setErrorMessage(null);
+    setScanWarning(null);
   };
 
   return (
@@ -288,25 +347,97 @@ export default function HomePage() {
               onChangeBookReference={setBookReference}
             />
 
-            {/* Photo Uploader */}
-            <ImageUploader
-              images={images}
-              onImagesChange={(newImgs) => {
-                setImages(newImgs);
-                setLearnedContent(null); // Fresh analysis needed for new images
-              }}
-              disabled={isAnalyzing || isGenerating}
-            />
+            {/* Input Method Tabs: Photo vs Direct Text */}
+            <div className="bg-surface rounded-2xl border border-borderMuted p-1.5 flex gap-1 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setInputMode("photo")}
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all ${
+                  inputMode === "photo"
+                    ? "bg-sage-50 text-sage-700 border border-sage-200 shadow-2xs"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-canvas"
+                }`}
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>Textbook Photo Scanner</span>
+              </button>
 
-            {/* Step 1 Action: Analyze Textbook Photo (if not yet analyzed) */}
-            {images.length > 0 && !learnedContent && (
+              <button
+                type="button"
+                onClick={() => setInputMode("directText")}
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all ${
+                  inputMode === "directText"
+                    ? "bg-sage-50 text-sage-700 border border-sage-200 shadow-2xs"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-canvas"
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Paste / Type Lesson Text</span>
+              </button>
+            </div>
+
+            {/* Method A: Photo Uploader */}
+            {inputMode === "photo" && (
+              <ImageUploader
+                images={images}
+                onImagesChange={(newImgs) => {
+                  setImages(newImgs);
+                  setLearnedContent(null);
+                  setScanWarning(null);
+                }}
+                disabled={isAnalyzing || isGenerating}
+              />
+            )}
+
+            {/* Method B: Direct Text Paste Input */}
+            {inputMode === "directText" && (
+              <div className="bg-surface rounded-2xl border border-borderMuted p-5 shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Lesson Content / Notes
+                  </h2>
+                  <span className="text-[11px] text-sage-600 bg-sage-50 px-2 py-0.5 rounded-full border border-sage-200">
+                    Instant Analysis
+                  </span>
+                </div>
+                <textarea
+                  rows={6}
+                  value={directText}
+                  onChange={(e) => setDirectText(e.target.value)}
+                  placeholder="Paste or type your lesson title, story, or exercises here (e.g. Aralin 5: Ang Munting Gamu-gamo... Pahina 42... Gabay na Tanong...)"
+                  className="w-full text-xs p-3.5 rounded-xl bg-canvas border border-borderMuted focus:outline-none focus:border-sage-500 font-sans leading-relaxed text-gray-800"
+                />
+                <button
+                  type="button"
+                  onClick={handleAnalyzeDirectText}
+                  className="w-full py-2.5 px-3 rounded-xl text-xs font-semibold text-sage-700 bg-sage-50 border border-sage-200 hover:bg-sage-100 transition-colors flex items-center justify-center space-x-1.5"
+                >
+                  <Brain className="w-3.5 h-3.5" />
+                  <span>Analyze Pasted Text</span>
+                </button>
+              </div>
+            )}
+
+            {/* Scan Warning Notice (if photo had glare/shadow) */}
+            {scanWarning && (
+              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start space-x-2.5 animate-in fade-in">
+                <HelpCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+                <div className="flex-1">
+                  <p className="font-semibold text-[11px]">Notice on Scan Quality</p>
+                  <p className="mt-0.5 text-[11px] leading-relaxed">{scanWarning}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Step 1 Action Button: Analyze Textbook Photo */}
+            {inputMode === "photo" && images.length > 0 && !learnedContent && (
               <div className="p-4 rounded-2xl bg-surface border border-sage-200 shadow-xs space-y-3">
                 <div className="flex items-center space-x-2 text-xs font-semibold text-gray-700">
                   <Brain className="w-4 h-4 text-sage-600" />
                   <span>Machine Learning Textbook Reader</span>
                 </div>
                 <p className="text-[11px] text-gray-500 leading-relaxed">
-                  The system will read, understand, and extract the lesson title, reading story, vocabulary words, and practice exercises directly from your photo.
+                  The system will read and understand the lesson title, reading story, vocabulary words, and practice exercises directly from your photo.
                 </p>
 
                 <button
@@ -340,12 +471,17 @@ export default function HomePage() {
               />
             )}
 
-            {/* Direct 1-Click Generate Button (if no card yet) */}
+            {/* Direct 1-Click Generate Button (if card not visible yet) */}
             {!learnedContent && (
               <button
                 type="button"
                 onClick={handleAnalyzeAndGenerate}
-                disabled={isAnalyzing || isGenerating || images.length === 0}
+                disabled={
+                  isAnalyzing ||
+                  isGenerating ||
+                  (inputMode === "photo" && images.length === 0) ||
+                  (inputMode === "directText" && !directText.trim())
+                }
                 className="w-full py-3.5 px-6 rounded-2xl text-sm font-semibold text-white bg-sage-500 hover:bg-sage-600 active:scale-[0.99] transition-all shadow-md shadow-sage-500/20 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isAnalyzing || isGenerating ? (
@@ -376,7 +512,7 @@ export default function HomePage() {
             {/* Quick Demo Previews */}
             <div className="pt-2 text-center">
               <span className="text-[11px] text-gray-400 block mb-2 font-medium">
-                Want to test without uploading right now?
+                Want to test Kat&apos;s official school templates right now?
               </span>
               <div className="flex items-center justify-center space-x-2">
                 <button
@@ -412,10 +548,10 @@ export default function HomePage() {
                 </div>
                 <div className="max-w-xs">
                   <h3 className="text-sm font-semibold text-gray-700">
-                    Your Official Lesson Plan Will Appear Here
+                    Your Official School Lesson Plan
                   </h3>
                   <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                    Attach a photo of the lesson page in your book and the machine learning engine will extract the topic, questions, and exercises to build your official DepEd / LCCP document.
+                    Attach a photo of the lesson page or paste your lesson notes. The system extracts the topic, questions, and exercises into Kat&apos;s exact DepEd MATATAG or LCCP document format.
                   </p>
                 </div>
               </div>
