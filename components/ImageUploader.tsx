@@ -19,29 +19,72 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const processFiles = (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-
-    const newImages: Promise<ImageInput>[] = Array.from(files).map((file) => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
+  const compressImage = (file: File): Promise<ImageInput> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX_DIM = 1600;
+          let width = img.width;
+          let height = img.height;
+          if (width > MAX_DIM || height > MAX_DIM) {
+            if (width > height) {
+              height = Math.round((height * MAX_DIM) / width);
+              width = MAX_DIM;
+            } else {
+              width = Math.round((width * MAX_DIM) / height);
+              height = MAX_DIM;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            resolve({
+              base64Data: reader.result as string,
+              mimeType: file.type || "image/jpeg",
+            });
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.82);
+          resolve({
+            base64Data: compressedBase64,
+            mimeType: "image/jpeg",
+          });
+        };
+        img.onerror = () => {
           resolve({
             base64Data: reader.result as string,
             mimeType: file.type || "image/jpeg",
           });
         };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => {
+        resolve({
+          base64Data: "",
+          mimeType: "image/jpeg",
+        });
+      };
+      reader.readAsDataURL(file);
     });
+  };
+
+  const processFiles = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    const newImages = Array.from(files).map((file) => compressImage(file));
 
     Promise.all(newImages)
       .then((loaded) => {
-        onImagesChange([...images, ...loaded]);
+        const valid = loaded.filter((img) => img.base64Data && img.base64Data.length > 0);
+        onImagesChange([...images, ...valid]);
       })
       .catch((err) => {
-        console.error("Error reading file:", err);
+        console.error("Error compressing image:", err);
       });
   };
 

@@ -38,3 +38,21 @@ test("parseLessonPlanResponse handles json wrapped in markdown code blocks", () 
   assert.strictEqual(parsedLccp.templateType, "lccp");
   assert.strictEqual(parsedLccp.subject, "Language");
 });
+
+test("parseLessonPlanResponse throws friendly error when model returns an error object", () => {
+  const errorJson = JSON.stringify({
+    error: "The textbook image is too blurry to read. Please upload a clearer photo.",
+  });
+  assert.throws(
+    () => parseLessonPlanResponse(errorJson, "matatag"),
+    /blurry/
+  );
+});
+
+test("parseLessonPlanResponse throws friendly error when model returns conversational non-json text", () => {
+  const nonJson = "I am sorry, but I cannot read this textbook image because it is dark.";
+  assert.throws(
+    () => parseLessonPlanResponse(nonJson, "matatag"),
+    /could not be parsed/
+  );
+});

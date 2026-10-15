@@ -78,9 +78,9 @@ function cell(
  * Matching Kat's files: Grade 1 - FILIPINO - LP- WEEK 10 and K2 - LP - WEEK 1-3.docx
  */
 export async function generateMatatagDocx(plan: MatatagLessonPlan, profile?: TeacherProfile) {
-  const prepName = profile?.teacherNameFilipino || plan.signatories.preparedBy;
-  const checkName = profile?.coordinatorGrade1 || plan.signatories.checkedBy;
-  const obsName = profile?.coordinatorGrade1 || plan.signatories.observedBy;
+  const prepName = plan.signatories?.preparedBy || profile?.teacherNameFilipino || "Bb. Kathrynn Ross L. Acola";
+  const checkName = plan.signatories?.checkedBy || profile?.coordinatorGrade1 || "Bb. Sta. Ana Florence";
+  const obsName = plan.signatories?.observedBy || profile?.coordinatorGrade1 || "Bb. Sta. Ana Florence";
 
   const rows: TableRow[] = [];
 
@@ -292,9 +292,9 @@ export async function generateMatatagDocx(plan: MatatagLessonPlan, profile?: Tea
  * Matching Kat's files: K2-LANGUAGE-LP.docx and K2-SCIENCE LP.docx
  */
 export async function generateLccpDocx(plan: LccpLearningPlan, profile?: TeacherProfile) {
-  const prepName = profile?.teacherName || plan.signatories.preparedBy;
-  const checkName = profile?.coordinatorKinder || plan.signatories.checkedBy;
-  const obsName = profile?.coordinatorKinder || plan.signatories.observedBy;
+  const prepName = plan.signatories?.preparedBy || profile?.teacherName || "Ms. Kathrynn Ross L. Acola";
+  const checkName = plan.signatories?.checkedBy || profile?.coordinatorKinder || "Mrs. Emma P. Dunque Lpt.";
+  const obsName = plan.signatories?.observedBy || profile?.coordinatorKinder || "Mrs. Emma P. Dunque Lpt.";
 
   const rows: TableRow[] = [];
 

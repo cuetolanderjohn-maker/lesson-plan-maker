@@ -11,6 +11,10 @@ export function buildMatatagSystemPrompt(meta: GenerateRequestMeta, profile?: Te
 
 Your task is to analyze the attached textbook photo(s) and generate an official Banghay-Aralin (Lesson Plan) formatted EXACTLY for ${gradeLabel} - ${meta.subject.toUpperCase()}.
 
+UNREADABLE / NON-BOOK IMAGE RULE:
+If the photo is too blurry, dark, unreadable, or does not contain an educational textbook lesson, you MUST respond ONLY with this JSON:
+{"error": "The textbook image is too blurry, unreadable, or does not appear to be a lesson page. Please take a clearer, well-lit photo of the textbook page."}
+
 CRITICAL SCHOOL REQUIREMENTS:
 1. DepEd MATATAG Curriculum Alignment:
    - II. Paksang Aralin MUST include:
@@ -45,7 +49,7 @@ CRITICAL SCHOOL REQUIREMENTS:
    - Inobserbahan ni: "${prof.coordinatorGrade1 || 'Bb. Sta. Ana Florence'}"
 
 OUTPUT FORMAT:
-You MUST respond with ONLY a valid JSON object (no commentary, no conversational text) matching the schema:
+You MUST respond with ONLY a valid JSON object matching the schema:
 {
   "templateType": "matatag",
   "schoolYear": "${prof.schoolYear || 'S.Y. 2026-2027'}",
@@ -104,6 +108,10 @@ export function buildLccpSystemPrompt(meta: GenerateRequestMeta, profile?: Teach
   return `You are an expert early childhood curriculum assistant for LA CONSOLACION COLLEGE-PASIG (Pasig City).
 
 Your task is to analyze the attached textbook photo(s) and generate an official LCCP LEARNING PLAN for Kinder 2 - ${subjectDisplay}.
+
+UNREADABLE / NON-BOOK IMAGE RULE:
+If the photo is too blurry, dark, unreadable, or does not contain an educational textbook lesson, you MUST respond ONLY with this JSON:
+{"error": "The textbook image is too blurry, unreadable, or does not appear to be a lesson page. Please take a clearer, well-lit photo of the textbook page."}
 
 CRITICAL SCHOOL REQUIREMENTS:
 1. Header & Identity:
@@ -185,7 +193,25 @@ export function parseLessonPlanResponse(rawText: string, expectedType: "matatag"
     cleaned = cleaned.replace(/^```\s*/, "").replace(/\s*```$/, "");
   }
 
-  const parsed = JSON.parse(cleaned);
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error(
+      "The AI response could not be parsed as a lesson plan. Please ensure the textbook photo is clear and well-lit."
+    );
+  }
+
+  if (typeof parsed.error === "string" && parsed.error.trim().length > 0) {
+    throw new Error(parsed.error);
+  }
+
+  if (!parsed.objectives || !parsed.subjectMatter) {
+    throw new Error(
+      "The textbook photo did not contain enough readable content to generate a complete lesson plan. Please upload a clearer photo."
+    );
+  }
+
   parsed.templateType = expectedType;
-  return parsed;
+  return parsed as unknown as MatatagLessonPlan | LccpLearningPlan;
 }

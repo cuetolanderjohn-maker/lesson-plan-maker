@@ -61,11 +61,41 @@ export default function HomePage() {
   }, []);
 
   const handleSaveProfile = (newProfile: TeacherProfile) => {
-    setProfile(newProfile);
+    const cleaned = {
+      ...newProfile,
+      geminiApiKey: newProfile.geminiApiKey?.trim() || undefined,
+    };
+    setProfile(cleaned);
     try {
-      localStorage.setItem("kat_teacher_profile", JSON.stringify(newProfile));
+      localStorage.setItem("kat_teacher_profile", JSON.stringify(cleaned));
     } catch (e) {
       console.error("Failed to save profile:", e);
+    }
+  };
+
+  const handleUpdateCurrentPlan = (updated: LessonPlan) => {
+    setCurrentPlan(updated);
+    if (historyItems.length > 0) {
+      const topic =
+        updated.templateType === "matatag"
+          ? updated.subjectMatter.paksa
+          : updated.subjectMatter.lesson;
+      const updatedHistory = historyItems.map((item, idx) => {
+        if (idx === 0) {
+          return {
+            ...item,
+            plan: updated,
+            topic: topic || item.topic,
+          };
+        }
+        return item;
+      });
+      setHistoryItems(updatedHistory);
+      try {
+        localStorage.setItem("kat_plan_history", JSON.stringify(updatedHistory));
+      } catch (e) {
+        console.error("Failed to update history in storage:", e);
+      }
     }
   };
 
@@ -263,7 +293,7 @@ export default function HomePage() {
               <LessonPlanPreview
                 plan={currentPlan}
                 profile={profile}
-                onUpdatePlan={(updated) => setCurrentPlan(updated)}
+                onUpdatePlan={handleUpdateCurrentPlan}
               />
             ) : (
               <div className="bg-surface rounded-2xl border border-dashed border-borderMuted p-12 text-center flex flex-col items-center justify-center text-gray-400 space-y-3 min-h-[460px]">

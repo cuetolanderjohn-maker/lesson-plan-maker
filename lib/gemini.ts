@@ -13,16 +13,17 @@ export async function generateLessonPlanWithGemini(
   profile?: TeacherProfile,
   customApiKey?: string
 ): Promise<LessonPlan> {
-  const apiKey = customApiKey || process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  const rawKey = customApiKey || process.env.GEMINI_API_KEY;
+  if (!rawKey || !rawKey.trim()) {
     throw new Error(
       "Missing Gemini API Key. Please provide a key in Settings or set GEMINI_API_KEY in .env.local"
     );
   }
+  const apiKey = rawKey.trim();
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  // Default to gemini-2.5-flash with fallback to gemini-1.5-flash
-  const modelName = "gemini-2.5-flash";
+  // Default to gemini-2.0-flash with fallback to gemini-1.5-flash
+  const modelName = "gemini-2.0-flash";
   const model = genAI.getGenerativeModel({
     model: modelName,
     generationConfig: {

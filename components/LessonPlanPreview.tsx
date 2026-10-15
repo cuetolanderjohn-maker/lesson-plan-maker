@@ -407,7 +407,19 @@ const MatatagRenderer: React.FC<{
           <p className="font-semibold text-xs text-gray-700">a. Mga Panimulang Gawain (5-10 mins)</p>
           <ul className="list-disc pl-5 text-xs space-y-0.5 mt-1">
             {plan.procedures.routine.map((r, i) => (
-              <li key={i}>{r}</li>
+              <li
+                key={i}
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(e) => {
+                  const updated = [...plan.procedures.routine];
+                  updated[i] = e.currentTarget.textContent || "";
+                  onUpdateField("procedures.routine", updated as unknown as string);
+                }}
+                className="outline-none focus:bg-sage-50"
+              >
+                {r}
+              </li>
             ))}
           </ul>
         </div>
@@ -430,17 +442,49 @@ const MatatagRenderer: React.FC<{
           <p className="font-semibold text-xs text-gray-700">c. Pagtalakay ng Aralin: (Day 1-4/30 mins)</p>
           <ul className="list-disc pl-5 text-xs space-y-1">
             {plan.procedures.discussion.steps.map((st, i) => (
-              <li key={i}>{st}</li>
+              <li
+                key={i}
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(e) => {
+                  const updated = [...plan.procedures.discussion.steps];
+                  updated[i] = e.currentTarget.textContent || "";
+                  onUpdateField("procedures.discussion.steps", updated as unknown as string);
+                }}
+                className="outline-none focus:bg-sage-50"
+              >
+                {st}
+              </li>
             ))}
           </ul>
           <p className="text-xs italic text-gray-600">
-            Pamamaraan sa Pagturo: {plan.procedures.discussion.teachingMethods}
+            Pamamaraan sa Pagturo:{" "}
+            <span
+              contentEditable
+              suppressContentEditableWarning
+              onBlur={(e) =>
+                onUpdateField("procedures.discussion.teachingMethods", e.currentTarget.textContent || "")
+              }
+              className="outline-none focus:bg-sage-50 not-italic"
+            >
+              {plan.procedures.discussion.teachingMethods}
+            </span>
           </p>
 
           <div className="mt-2 pl-3 border-l-2 border-gray-300 space-y-1">
             <p className="font-semibold text-xs">Gabay na tanong:</p>
             {plan.procedures.discussion.guideQuestions.map((q, i) => (
-              <p key={i} className="text-xs">
+              <p
+                key={i}
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(e) => {
+                  const updated = [...plan.procedures.discussion.guideQuestions];
+                  updated[i] = e.currentTarget.textContent?.replace(/^\d+\.\s*/, "") || "";
+                  onUpdateField("procedures.discussion.guideQuestions", updated as unknown as string);
+                }}
+                className="text-xs outline-none focus:bg-sage-50"
+              >
                 {i + 1}. {q}
               </p>
             ))}
@@ -448,7 +492,17 @@ const MatatagRenderer: React.FC<{
               <>
                 <p className="font-semibold text-xs pt-1">Pagpapalalim:</p>
                 {plan.procedures.discussion.deepening.map((d, i) => (
-                  <p key={i} className="text-xs">
+                  <p
+                    key={i}
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => {
+                      const updated = [...plan.procedures.discussion.deepening];
+                      updated[i] = e.currentTarget.textContent?.replace(/^\d+\.\s*/, "") || "";
+                      onUpdateField("procedures.discussion.deepening", updated as unknown as string);
+                    }}
+                    className="text-xs outline-none focus:bg-sage-50"
+                  >
                     {i + 1}. {d}
                   </p>
                 ))}
@@ -510,7 +564,19 @@ const MatatagRenderer: React.FC<{
           </span>
           <ol className="list-decimal pl-5 space-y-0.5 mt-1">
             {plan.assessment.summativeItems.map((item, i) => (
-              <li key={i}>{item}</li>
+              <li
+                key={i}
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(e) => {
+                  const updated = [...plan.assessment.summativeItems];
+                  updated[i] = e.currentTarget.textContent || "";
+                  onUpdateField("assessment.summativeItems", updated as unknown as string);
+                }}
+                className="outline-none focus:bg-sage-50"
+              >
+                {item}
+              </li>
             ))}
           </ol>
         </div>
@@ -707,7 +773,19 @@ const LccpRenderer: React.FC<{
           <p className="font-semibold text-xs text-gray-700">a. Routine Activities</p>
           <ul className="list-disc pl-5 text-xs space-y-0.5 mt-1">
             {plan.procedures.routineActivities.map((r, i) => (
-              <li key={i}>{r}</li>
+              <li
+                key={i}
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(e) => {
+                  const updated = [...plan.procedures.routineActivities];
+                  updated[i] = e.currentTarget.textContent || "";
+                  onUpdateField("procedures.routineActivities", updated as unknown as string);
+                }}
+                className="outline-none focus:bg-sage-50"
+              >
+                {r}
+              </li>
             ))}
           </ul>
         </div>
@@ -726,12 +804,48 @@ const LccpRenderer: React.FC<{
           <p className="font-semibold text-xs text-gray-700">c. Learning Strategies</p>
           {plan.procedures.learningStrategies.map((strat, idx) => (
             <div key={idx} className="pl-3 border-l-2 border-gray-200 text-xs">
-              <span className="font-bold">{strat.title} – </span>
-              <span>{strat.instructions}</span>
+              <span
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(e) => {
+                  const updated = [...plan.procedures.learningStrategies];
+                  updated[idx] = { ...updated[idx], title: e.currentTarget.textContent?.replace(/\s*–\s*$/, "") || "" };
+                  onUpdateField("procedures.learningStrategies", updated as unknown as string);
+                }}
+                className="font-bold outline-none focus:bg-sage-50"
+              >
+                {strat.title} –{" "}
+              </span>
+              <span
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(e) => {
+                  const updated = [...plan.procedures.learningStrategies];
+                  updated[idx] = { ...updated[idx], instructions: e.currentTarget.textContent || "" };
+                  onUpdateField("procedures.learningStrategies", updated as unknown as string);
+                }}
+                className="outline-none focus:bg-sage-50"
+              >
+                {strat.instructions}
+              </span>
               {strat.questions && (
                 <ul className="list-disc pl-5 mt-1 space-y-0.5 text-gray-600">
                   {strat.questions.map((q, qi) => (
-                    <li key={qi}>{q}</li>
+                    <li
+                      key={qi}
+                      contentEditable
+                      suppressContentEditableWarning
+                      onBlur={(e) => {
+                        const updated = [...plan.procedures.learningStrategies];
+                        const questions = [...(updated[idx].questions || [])];
+                        questions[qi] = e.currentTarget.textContent || "";
+                        updated[idx] = { ...updated[idx], questions };
+                        onUpdateField("procedures.learningStrategies", updated as unknown as string);
+                      }}
+                      className="outline-none focus:bg-sage-50"
+                    >
+                      {q}
+                    </li>
                   ))}
                 </ul>
               )}
@@ -745,7 +859,19 @@ const LccpRenderer: React.FC<{
         <p className="font-bold text-sm mb-1">V- Assessment:</p>
         <ul className="list-disc pl-5 space-y-0.5">
           {plan.assessment.map((a, i) => (
-            <li key={i}>{a}</li>
+            <li
+              key={i}
+              contentEditable
+              suppressContentEditableWarning
+              onBlur={(e) => {
+                const updated = [...plan.assessment];
+                updated[i] = e.currentTarget.textContent || "";
+                onUpdateField("assessment", updated as unknown as string);
+              }}
+              className="outline-none focus:bg-sage-50"
+            >
+              {a}
+            </li>
           ))}
         </ul>
       </div>
