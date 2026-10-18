@@ -24,9 +24,13 @@ All continuous deployments are automatically triggered via GitHub commits to thi
 
 - **Zero-Key Multimodal Cloud Vision (100% Free):**
   - Powered by active vision models (`nvidia/nemotron-3.5-super-vl:free` with 1M context, `dots-studio/dots-3-note-preview:free`, and `openrouter/free`).
-  - No API key, account, or credit card required.
-- **Google Gemini Vision Integration:**
-  - Direct integration with `gemini-3.8-flash` and `gemini-3.1-pro-preview` with dynamic API listing.
+  - No API key, account, or credit card required. Works out of the box!
+- **Google Gemini Direct Browser Vision:**
+  - Direct client-to-API communication bypassing serverless function execution limits.
+  - Automatically tests and auto-rotates active Google Gemini models (`gemini-2.0-flash`, `gemini-2.5-flash`, `gemini-3.8-flash`, etc.).
+  - Enter your free key at **[aistudio.google.com](https://aistudio.google.com/app/apikey)** directly in the web app, or configure `NEXT_PUBLIC_GEMINI_API_KEY` on Netlify for site-wide access.
+- **Fail-Safe Offline ML Engine:**
+  - If any cloud AI provider is busy or unreachable, the browser seamlessly falls back to the built-in Machine Learning OCR engine (Tesseract.js + local curriculum NLP parser) without crashing or failing.
 - **Client-Side Smart Compression:**
   - Automatically downsamples uploaded textbook photos to ~150KB (1200px max dimension at 0.78 quality), accelerating uploads by 10x and eliminating gateway timeouts.
 - **Grounded Vision Extraction (No Machine Presets):**
@@ -37,6 +41,26 @@ All continuous deployments are automatically triggered via GitHub commits to thi
 - **Live In-Place Document Editor:** Click directly into any table cell in the browser to refine content before exporting.
 - **Word Document (.docx) Generation:** Exports ready-to-submit Microsoft Word files embedding the authentic La Consolacion College Pasig banner and crest.
 - **Print & PDF Stylesheet:** Formatted for standard paper printing with background cleanup.
+
+---
+
+## Configuring AI Keys for the Live Domain (Optional)
+
+You can provide your Google Gemini API key in two easy ways:
+
+### Option 1: Directly on the Website (Per Teacher)
+1. Open **[https://katlessonplan.netlify.app/](https://katlessonplan.netlify.app/)**.
+2. Click **Google Gemini** on the studio card.
+3. Paste your key (`AIzaSy...`) into the inline box or click **Curriculum Settings & Profile**.
+4. The key is securely saved in your browser's private storage and works immediately.
+
+### Option 2: Netlify Environment Variable (For All Users)
+1. Go to your **[Netlify Dashboard](https://app.netlify.com/)** &rarr; Select your site (`katlessonplan`).
+2. Navigate to **Site configuration** &rarr; **Environment variables**.
+3. Add a new variable:
+   - **Key:** `NEXT_PUBLIC_GEMINI_API_KEY`
+   - **Value:** `your-gemini-api-key-here`
+4. Trigger a re-deploy. All visitors to your live site will now have Gemini Vision enabled automatically!
 
 ---
 

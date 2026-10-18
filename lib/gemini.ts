@@ -25,10 +25,10 @@ function isCleanVisionModel(name: string): boolean {
 }
 
 const CANDIDATE_MODELS = [
+  "gemini-2.0-flash",
+  "gemini-2.5-flash",
   "gemini-3.8-flash",
   "gemini-3.1-pro-preview",
-  "gemini-2.5-flash",
-  "gemini-2.0-flash",
   "gemini-2.0-flash-exp",
   "gemini-1.5-flash-8b",
   "gemini-1.5-flash",
@@ -70,7 +70,10 @@ export async function generateLessonPlanWithGemini(
   profile?: TeacherProfile,
   customApiKey?: string
 ): Promise<LessonPlan> {
-  const rawKey = customApiKey || profile?.geminiApiKey || process.env.GEMINI_API_KEY;
+  const envKey = typeof process !== "undefined"
+    ? (process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY)
+    : undefined;
+  const rawKey = customApiKey || profile?.geminiApiKey || envKey;
   if (!rawKey || !rawKey.trim()) {
     throw new Error(
       "Missing Gemini API Key. Please provide your key in Settings or enter it on the page."

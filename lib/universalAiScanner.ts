@@ -168,7 +168,10 @@ export async function generateLessonPlanUniversal(req: ScanRequest): Promise<Les
 
   // 2. OpenRouter Free Tier
   if (provider === "openrouter") {
-    const key = profile?.openRouterApiKey?.trim() || process.env.OPENROUTER_API_KEY;
+    const envKey = typeof process !== "undefined"
+      ? (process.env.NEXT_PUBLIC_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY)
+      : undefined;
+    const key = profile?.openRouterApiKey?.trim() || envKey;
     if (!key) {
       throw new Error("Missing OpenRouter API Key. Please provide it in Settings or switch to Zero-Key Free Cloud mode.");
     }
@@ -207,7 +210,10 @@ export async function generateLessonPlanUniversal(req: ScanRequest): Promise<Les
 
   // 3. Mistral AI Vision (Pixtral)
   if (provider === "mistral") {
-    const key = profile?.mistralApiKey?.trim() || process.env.MISTRAL_API_KEY;
+    const envKey = typeof process !== "undefined"
+      ? (process.env.NEXT_PUBLIC_MISTRAL_API_KEY || process.env.MISTRAL_API_KEY)
+      : undefined;
+    const key = profile?.mistralApiKey?.trim() || envKey;
     if (!key) {
       throw new Error("Missing Mistral API Key. Please provide it in Settings.");
     }

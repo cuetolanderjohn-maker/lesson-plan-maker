@@ -23,6 +23,7 @@ import {
 } from "@/lib/sampleData";
 import { generatePlanFromExtractedText } from "@/lib/freeLessonPlanner";
 import { generateLessonPlanWithGemini } from "@/lib/gemini";
+import { generateLessonPlanUniversal } from "@/lib/universalAiScanner";
 import { analyzeTextbookText, LearnedTextbookContent } from "@/lib/nlpAnalyzer";
 import { preprocessTextbookImage } from "@/lib/imagePreprocessor";
 import Tesseract from "tesseract.js";
@@ -65,10 +66,23 @@ function getProviderDisplayName(provider?: AIProvider): string {
 function isKeyConfigured(p: TeacherProfile): boolean {
   const provider = p.aiProvider || "free_cloud";
   if (provider === "free_cloud") return true;
-  if (provider === "openrouter") return Boolean(p.openRouterApiKey?.trim());
-  if (provider === "mistral") return Boolean(p.mistralApiKey?.trim());
+  if (provider === "openrouter") {
+    return Boolean(
+      p.openRouterApiKey?.trim() ||
+      (typeof process !== "undefined" && process.env.NEXT_PUBLIC_OPENROUTER_API_KEY)
+    );
+  }
+  if (provider === "mistral") {
+    return Boolean(
+      p.mistralApiKey?.trim() ||
+      (typeof process !== "undefined" && process.env.NEXT_PUBLIC_MISTRAL_API_KEY)
+    );
+  }
   if (provider === "custom_openai") return Boolean(p.customBaseUrl?.trim());
-  return Boolean(p.geminiApiKey?.trim());
+  return Boolean(
+    p.geminiApiKey?.trim() ||
+    (typeof process !== "undefined" && (process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY))
+  );
 }
 
 export default function HomePage() {
@@ -363,8 +377,24 @@ export default function HomePage() {
       return;
     }
 
-    const providerName = getProviderDisplayName(profile.aiProvider);
-    if (!isKeyConfigured(profile)) {
+    // Auto-save quick API key if entered in the inline input
+    let activeProfile = { ...profile };
+    if (quickApiKey.trim()) {
+      const provider = activeProfile.aiProvider || "gemini";
+      if (provider === "openrouter") {
+        activeProfile.openRouterApiKey = quickApiKey.trim();
+      } else if (provider === "mistral") {
+        activeProfile.mistralApiKey = quickApiKey.trim();
+      } else {
+        activeProfile.geminiApiKey = quickApiKey.trim();
+      }
+      handleSaveProfile(activeProfile);
+      setQuickApiKey("");
+      setShowKeyInput(false);
+    }
+
+    const providerName = getProviderDisplayName(activeProfile.aiProvider);
+    if (!isKeyConfigured(activeProfile)) {
       setShowKeyInput(true);
       setErrorMessage(
         `Please provide your ${providerName} key or switch to Zero-Key Free Cloud mode.`
@@ -391,11 +421,11 @@ export default function HomePage() {
 
       let plan: LessonPlan;
 
-      // When using Google Gemini with an API key, call directly from browser to bypass Netlify 10-second serverless timeout!
-      if (profile.aiProvider === "gemini" && profile.geminiApiKey?.trim()) {
-        plan = await generateLessonPlanWithGemini(
+      // Direct client-side multimodal execution for ALL providers (eliminates Netlify 10-second serverless timeout!)
+      try {
+        plan = await generateLessonPlanUniversal({
           images,
-          {
+          meta: {
             gradeLevel,
             subject,
             weekNumber,
@@ -403,16 +433,18 @@ export default function HomePage() {
             dateCoverage,
             bookReference,
           },
-          profile
-        );
-      } else {
-        // For Zero-Key Free Cloud Vision and other providers, call the serverless API
-        const res = await fetch("/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            images,
-            meta: {
+          profile: activeProfile,
+        });
+      } catch (cloudErr: unknown) {
+        console.warn(`[Client AI] Direct cloud execution failed with ${providerName}:`, cloudErr);
+
+        // If cloud gateway is rate-limited, busy, or unreachable, seamlessly fall back to built-in Machine Learning OCR engine
+        setProgressStatus("Cloud model busy — switching to built-in Machine Learning engine...");
+        const learned = await handleAnalyzeImages();
+        if (learned) {
+          plan = generatePlanFromExtractedText(
+            learned,
+            {
               gradeLevel,
               subject,
               weekNumber,
@@ -420,33 +452,14 @@ export default function HomePage() {
               dateCoverage,
               bookReference,
             },
-            profile,
-          }),
-        });
-
-        const rawText = await res.text();
-        let data: { success?: boolean; plan?: LessonPlan; error?: string };
-        try {
-          data = JSON.parse(rawText);
-        } catch {
-          if (res.status === 504 || rawText.includes("504") || rawText.includes("Time-out")) {
-            throw new Error(
-              "Netlify serverless function reached its timeout limit (504). Please switch to Google Gemini mode (runs directly in your browser without proxy limits) or upload a single page."
-            );
-          } else if (res.status === 413 || rawText.includes("413") || rawText.includes("Too Large")) {
-            throw new Error(
-              "Uploaded photo payload exceeds the hosting upload limit (413). Try uploading a single page."
-            );
-          } else {
-            throw new Error(`Server returned HTTP ${res.status}: ${rawText.slice(0, 150)}`);
-          }
+            activeProfile
+          );
+          setScanWarning(
+            `Notice: ${providerName} was rate-limited or busy, so your official lesson plan was seamlessly generated using the built-in Machine Learning engine.`
+          );
+        } else {
+          throw cloudErr;
         }
-
-        if (!res.ok || !data.success || !data.plan) {
-          throw new Error(data.error || `Failed to generate lesson plan with ${providerName}.`);
-        }
-
-        plan = data.plan;
       }
 
       clearTimeout(timer1);
@@ -682,6 +695,35 @@ export default function HomePage() {
                   </button>
                 </div>
 
+                {/* Active Key Indicator */}
+                {isKeyConfigured(profile) && !showKeyInput && profile.aiProvider !== "free_cloud" && (
+                  <div className="flex items-center justify-between p-3 px-3.5 rounded-xl bg-emerald-50/80 border border-emerald-200 text-xs text-emerald-900">
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div>
+                        <span className="font-semibold">{getProviderDisplayName(profile.aiProvider)} Active</span>
+                        <span className="ml-1.5 font-mono text-[11px] text-emerald-700">
+                          {(() => {
+                            const k = profile.aiProvider === "openrouter"
+                              ? profile.openRouterApiKey
+                              : profile.aiProvider === "mistral"
+                              ? profile.mistralApiKey
+                              : profile.geminiApiKey;
+                            return k?.trim() ? `(...${k.slice(-4)})` : "(Environment Variable Active)";
+                          })()}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowKeyInput(true)}
+                      className="text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 underline underline-offset-2 cursor-pointer"
+                    >
+                      Update Key
+                    </button>
+                  </div>
+                )}
+
                 {/* Inline API Key Input */}
                 {(!isKeyConfigured(profile) || showKeyInput) && profile.aiProvider !== "free_cloud" && (
                   <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 space-y-2.5">
@@ -727,6 +769,21 @@ export default function HomePage() {
                         className="px-4 py-2 rounded-xl text-xs font-semibold bg-stone-900 text-white hover:bg-stone-800 cursor-pointer"
                       >
                         Save Key
+                      </button>
+                    </div>
+                    <div className="pt-1 flex items-center justify-between text-[11px] text-stone-500">
+                      <span>Key is stored securely on your browser.</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = { ...profile, aiProvider: "free_cloud" as const };
+                          handleSaveProfile(updated);
+                          setShowKeyInput(false);
+                        }}
+                        className="text-emerald-700 hover:text-emerald-800 font-medium underline flex items-center space-x-1 cursor-pointer"
+                      >
+                        <Zap className="w-3 h-3 text-emerald-600" />
+                        <span>Use Zero-Key Cloud Instead</span>
                       </button>
                     </div>
                   </div>
