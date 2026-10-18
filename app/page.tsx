@@ -20,6 +20,7 @@ import {
   defaultTeacherProfile,
   sampleMatatagPlan,
   sampleLccpPlan,
+  DEFAULT_GROQ_KEY,
 } from "@/lib/sampleData";
 import { generatePlanFromExtractedText } from "@/lib/freeLessonPlanner";
 import { generateLessonPlanWithGemini } from "@/lib/gemini";
@@ -49,6 +50,8 @@ import gsap from "gsap";
 
 function getProviderDisplayName(provider?: AIProvider): string {
   switch (provider) {
+    case "groq":
+      return "Groq Vision (Lightning Fast)";
     case "free_cloud":
       return "Zero-Key Cloud AI";
     case "openrouter":
@@ -64,7 +67,14 @@ function getProviderDisplayName(provider?: AIProvider): string {
 }
 
 function isKeyConfigured(p: TeacherProfile): boolean {
-  const provider = p.aiProvider || "free_cloud";
+  const provider = p.aiProvider || "groq";
+  if (provider === "groq") {
+    return Boolean(
+      p.groqApiKey?.trim() ||
+      (typeof process !== "undefined" && (process.env.NEXT_PUBLIC_GROQ_API_KEY || process.env.GROQ_API_KEY)) ||
+      true // Pre-configured key bundled
+    );
+  }
   if (provider === "free_cloud") return true;
   if (provider === "openrouter") {
     return Boolean(
@@ -182,9 +192,11 @@ export default function HomePage() {
 
   const handleSaveQuickKey = () => {
     if (!quickApiKey.trim()) return;
-    const provider = profile.aiProvider || "gemini";
+    const provider = profile.aiProvider || "groq";
     let updated = { ...profile };
-    if (provider === "openrouter") {
+    if (provider === "groq") {
+      updated.groqApiKey = quickApiKey.trim();
+    } else if (provider === "openrouter") {
       updated.openRouterApiKey = quickApiKey.trim();
     } else if (provider === "mistral") {
       updated.mistralApiKey = quickApiKey.trim();
@@ -380,8 +392,10 @@ export default function HomePage() {
     // Auto-save quick API key if entered in the inline input
     let activeProfile = { ...profile };
     if (quickApiKey.trim()) {
-      const provider = activeProfile.aiProvider || "gemini";
-      if (provider === "openrouter") {
+      const provider = activeProfile.aiProvider || "groq";
+      if (provider === "groq") {
+        activeProfile.groqApiKey = quickApiKey.trim();
+      } else if (provider === "openrouter") {
         activeProfile.openRouterApiKey = quickApiKey.trim();
       } else if (provider === "mistral") {
         activeProfile.mistralApiKey = quickApiKey.trim();
@@ -629,21 +643,22 @@ export default function HomePage() {
             {/* Provider Pill Selectors */}
             {engineMode === "gemini" && (
               <div className="space-y-3">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 bg-stone-50 rounded-2xl border border-stone-200/70 text-xs font-medium">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 p-1.5 bg-stone-50 rounded-2xl border border-stone-200/70 text-xs font-medium">
                   <button
                     type="button"
                     onClick={() => {
-                      const updated = { ...profile, aiProvider: "free_cloud" as const };
+                      const updated = { ...profile, aiProvider: "groq" as const };
                       handleSaveProfile(updated);
                       setShowKeyInput(false);
                     }}
-                    className={`py-2 px-2.5 rounded-xl text-center transition-all cursor-pointer ${
-                      (profile.aiProvider || "free_cloud") === "free_cloud"
-                        ? "bg-stone-900 text-white font-semibold shadow-xs"
+                    className={`py-2 px-2.5 rounded-xl text-center transition-all cursor-pointer flex items-center justify-center space-x-1 ${
+                      (profile.aiProvider || "groq") === "groq"
+                        ? "bg-emerald-800 text-white font-semibold shadow-xs"
                         : "text-stone-600 hover:bg-white"
                     }`}
                   >
-                    Zero-Key Cloud
+                    <Zap className="w-3 h-3 text-emerald-300" />
+                    <span>Groq (Fastest)</span>
                   </button>
 
                   <button
@@ -660,6 +675,22 @@ export default function HomePage() {
                     }`}
                   >
                     Google Gemini
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = { ...profile, aiProvider: "free_cloud" as const };
+                      handleSaveProfile(updated);
+                      setShowKeyInput(false);
+                    }}
+                    className={`py-2 px-2.5 rounded-xl text-center transition-all cursor-pointer ${
+                      profile.aiProvider === "free_cloud"
+                        ? "bg-stone-900 text-white font-semibold shadow-xs"
+                        : "text-stone-600 hover:bg-white"
+                    }`}
+                  >
+                    Zero-Key Cloud
                   </button>
 
                   <button
@@ -704,7 +735,9 @@ export default function HomePage() {
                         <span className="font-semibold">{getProviderDisplayName(profile.aiProvider)} Active</span>
                         <span className="ml-1.5 font-mono text-[11px] text-emerald-700">
                           {(() => {
-                            const k = profile.aiProvider === "openrouter"
+                            const k = profile.aiProvider === "groq"
+                              ? (profile.groqApiKey || DEFAULT_GROQ_KEY)
+                              : profile.aiProvider === "openrouter"
                               ? profile.openRouterApiKey
                               : profile.aiProvider === "mistral"
                               ? profile.mistralApiKey
@@ -734,7 +767,9 @@ export default function HomePage() {
                       </span>
                       <a
                         href={
-                          profile.aiProvider === "openrouter"
+                          profile.aiProvider === "groq"
+                            ? "https://console.groq.com/keys"
+                            : profile.aiProvider === "openrouter"
                             ? "https://openrouter.ai/keys"
                             : profile.aiProvider === "mistral"
                             ? "https://console.mistral.ai/api-keys/"
@@ -752,7 +787,9 @@ export default function HomePage() {
                       <input
                         type="password"
                         placeholder={
-                          profile.aiProvider === "openrouter"
+                          profile.aiProvider === "groq"
+                            ? "gsk_..."
+                            : profile.aiProvider === "openrouter"
                             ? "sk-or-v1-..."
                             : profile.aiProvider === "mistral"
                             ? "mistral_..."

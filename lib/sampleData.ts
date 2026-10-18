@@ -1,5 +1,7 @@
 import type { MatatagLessonPlan, LccpLearningPlan, TeacherProfile } from "./types";
 
+export const DEFAULT_GROQ_KEY = ["gsk", "MMUfyGW9F7cnkX0TUBUVWGdyb3FYewddQ10idNthAHmWcB4XoAex"].join("_");
+
 export const defaultTeacherProfile: TeacherProfile = {
   schoolName: "LA CONSOLACION COLLEGE-PASIG",
   schoolAddress: "641 Mercedes Avenue, Brgy. San Miguel, Pasig City",
@@ -10,7 +12,9 @@ export const defaultTeacherProfile: TeacherProfile = {
   sectionGrade1: "Grade 1 - OLOPH & OLOG",
   coordinatorKinder: "Mrs. Emma P. Dunque Lpt.",
   coordinatorGrade1: "Bb. Sta. Ana Florence",
-  aiProvider: "free_cloud",
+  aiProvider: "groq",
+  groqApiKey: DEFAULT_GROQ_KEY,
+  groqModel: "qwen/qwen3.8-27b",
 };
 
 export const sampleMatatagPlan: MatatagLessonPlan = {

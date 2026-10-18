@@ -7,7 +7,7 @@ export interface ImageInput {
   mimeType: string;
 }
 
-export type AIProvider = "gemini" | "openrouter" | "mistral" | "free_cloud" | "custom_openai";
+export type AIProvider = "groq" | "gemini" | "openrouter" | "mistral" | "free_cloud" | "custom_openai";
 
 export interface TeacherProfile {
   schoolName: string;
@@ -19,6 +19,8 @@ export interface TeacherProfile {
   sectionGrade1: string;
   coordinatorKinder: string;
   coordinatorGrade1: string;
+  groqApiKey?: string;
+  groqModel?: string;
   geminiApiKey?: string;
   geminiModel?: string;
   aiProvider?: AIProvider;

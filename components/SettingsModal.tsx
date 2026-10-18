@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { X, User, School, Check, UserCheck, ExternalLink, Zap } from "lucide-react";
 import type { TeacherProfile } from "@/lib/types";
+import { DEFAULT_GROQ_KEY } from "@/lib/sampleData";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -83,12 +84,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
 
             {/* Provider Selector Tabs */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-surface rounded-lg border border-borderMuted text-xs font-medium">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 p-1 bg-surface rounded-lg border border-borderMuted text-xs font-medium">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, aiProvider: "groq" })}
+                className={`py-1.5 px-2 rounded-md transition-all text-center ${
+                  (formData.aiProvider || "groq") === "groq"
+                    ? "bg-sage-600 text-white shadow-xs font-semibold"
+                    : "text-gray-600 hover:bg-canvas"
+                }`}
+              >
+                Groq (Fastest)
+              </button>
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, aiProvider: "gemini" })}
                 className={`py-1.5 px-2 rounded-md transition-all text-center ${
-                  (formData.aiProvider || "gemini") === "gemini"
+                  formData.aiProvider === "gemini"
                     ? "bg-sage-600 text-white shadow-xs font-semibold"
                     : "text-gray-600 hover:bg-canvas"
                 }`}
@@ -130,8 +142,52 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </button>
             </div>
 
+            {/* Sub-view: Groq Vision */}
+            {(formData.aiProvider || "groq") === "groq" && (
+              <div className="space-y-2 pt-1 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-gray-600">Groq API Key:</span>
+                  <a
+                    href="https://console.groq.com/keys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-sage-600 hover:text-sage-700 underline flex items-center space-x-0.5"
+                  >
+                    <span>console.groq.com</span>
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                </div>
+                <input
+                  type="password"
+                  placeholder="gsk_..."
+                  value={formData.groqApiKey || DEFAULT_GROQ_KEY}
+                  onChange={(e) =>
+                    setFormData({ ...formData, groqApiKey: e.target.value })
+                  }
+                  className="w-full text-xs font-mono px-3.5 py-2 rounded-lg bg-surface border border-borderMuted focus:outline-none focus:border-sage-500"
+                />
+                <div>
+                  <label className="text-[11px] font-medium text-gray-600 block mb-1">
+                    Groq Vision Model
+                  </label>
+                  <select
+                    value={formData.groqModel || "qwen/qwen3.8-27b"}
+                    onChange={(e) =>
+                      setFormData({ ...formData, groqModel: e.target.value })
+                    }
+                    className="w-full text-xs px-3 py-1.5 rounded-lg bg-surface border border-borderMuted focus:outline-none focus:border-sage-500 text-gray-800 cursor-pointer"
+                  >
+                    <option value="qwen/qwen3.8-27b">qwen/qwen3.8-27b (Lightning Fast Multimodal Vision - Active)</option>
+                  </select>
+                </div>
+                <p className="text-[11px] text-emerald-800 bg-emerald-50/80 p-2 rounded-md border border-emerald-200">
+                  Active Groq key configured. Direct browser execution completes multimodal lesson analysis in 2–3 seconds.
+                </p>
+              </div>
+            )}
+
             {/* Sub-view: Google Gemini */}
-            {(formData.aiProvider || "gemini") === "gemini" && (
+            {formData.aiProvider === "gemini" && (
               <div className="space-y-2 pt-1 animate-in fade-in duration-150">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-medium text-gray-600">Gemini API Key:</span>
