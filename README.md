@@ -4,7 +4,18 @@ An automated curriculum architecture studio designed specifically for **Ms. Kath
 
 It transforms textbook photos into officially formatted lesson plans for **Kindergarten 2** and **Grade 1** matching the school's exact Microsoft Word documents and DepEd MATATAG guidelines.
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/cuetolanderjohn-maker/lesson-plan-maker)
+
 ---
+
+## Live Domain Deployment (Vercel)
+
+You can launch this application on a free, permanent public domain (e.g. `https://lesson-plan-maker.vercel.app`) in under 1 minute:
+
+1. Click the **Deploy with Vercel** button above or visit [vercel.com/new](https://vercel.com/new).
+2. Connect your GitHub account (`cuetolanderjohn-maker`) and select **`lesson-plan-maker`**.
+3. Click **Deploy**. Vercel will automatically build the Next.js app and assign a free global domain with automatic SSL and continuous deployment on every `git push`.
+
 
 ## Features
 
