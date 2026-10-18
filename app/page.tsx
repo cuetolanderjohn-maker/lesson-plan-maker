@@ -22,6 +22,7 @@ import {
   sampleLccpPlan,
 } from "@/lib/sampleData";
 import { generatePlanFromExtractedText } from "@/lib/freeLessonPlanner";
+import { generateLessonPlanWithGemini } from "@/lib/gemini";
 import { analyzeTextbookText, LearnedTextbookContent } from "@/lib/nlpAnalyzer";
 import { preprocessTextbookImage } from "@/lib/imagePreprocessor";
 import Tesseract from "tesseract.js";
@@ -387,12 +388,14 @@ export default function HomePage() {
 
     try {
       setProgressStatus(`Analyzing textbook photo with ${providerName}...`);
-      const res = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+
+      let plan: LessonPlan;
+
+      // When using Google Gemini with an API key, call directly from browser to bypass Netlify 10-second serverless timeout!
+      if (profile.aiProvider === "gemini" && profile.geminiApiKey?.trim()) {
+        plan = await generateLessonPlanWithGemini(
           images,
-          meta: {
+          {
             gradeLevel,
             subject,
             weekNumber,
@@ -400,21 +403,58 @@ export default function HomePage() {
             dateCoverage,
             bookReference,
           },
-          profile,
-        }),
-      });
+          profile
+        );
+      } else {
+        // For Zero-Key Free Cloud Vision and other providers, call the serverless API
+        const res = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            images,
+            meta: {
+              gradeLevel,
+              subject,
+              weekNumber,
+              term,
+              dateCoverage,
+              bookReference,
+            },
+            profile,
+          }),
+        });
+
+        const rawText = await res.text();
+        let data: { success?: boolean; plan?: LessonPlan; error?: string };
+        try {
+          data = JSON.parse(rawText);
+        } catch {
+          if (res.status === 504 || rawText.includes("504") || rawText.includes("Time-out")) {
+            throw new Error(
+              "Netlify serverless function reached its timeout limit (504). Please switch to Google Gemini mode (runs directly in your browser without proxy limits) or upload a single page."
+            );
+          } else if (res.status === 413 || rawText.includes("413") || rawText.includes("Too Large")) {
+            throw new Error(
+              "Uploaded photo payload exceeds the hosting upload limit (413). Try uploading a single page."
+            );
+          } else {
+            throw new Error(`Server returned HTTP ${res.status}: ${rawText.slice(0, 150)}`);
+          }
+        }
+
+        if (!res.ok || !data.success || !data.plan) {
+          throw new Error(data.error || `Failed to generate lesson plan with ${providerName}.`);
+        }
+
+        plan = data.plan;
+      }
 
       clearTimeout(timer1);
       clearTimeout(timer2);
       clearTimeout(timer3);
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || `Failed to generate lesson plan with ${providerName}.`);
-      }
-
-      setCurrentPlan(data.plan);
-      handleSavePlanToHistory(data.plan);
+      setCurrentPlan(plan);
+      handleSavePlanToHistory(plan);
     } catch (err: unknown) {
       clearTimeout(timer1);
       clearTimeout(timer2);
