@@ -4,17 +4,23 @@ An automated curriculum architecture studio designed specifically for **Ms. Kath
 
 It transforms textbook photos into officially formatted lesson plans for **Kindergarten 2** and **Grade 1** matching the school's exact Microsoft Word documents and DepEd MATATAG guidelines.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/cuetolanderjohn-maker/lesson-plan-maker)
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/cuetolanderjohn-maker/lesson-plan-maker)
 
 ---
 
-## Live Domain Deployment (Vercel)
+## Live Domain Deployment (No Vercel Required)
 
-You can launch this application on a free, permanent public domain (e.g. `https://lesson-plan-maker.vercel.app`) in under 1 minute:
+You can launch this application on a permanent, public HTTPS domain for free without using Vercel:
 
-1. Click the **Deploy with Vercel** button above or visit [vercel.com/new](https://vercel.com/new).
-2. Connect your GitHub account (`cuetolanderjohn-maker`) and select **`lesson-plan-maker`**.
-3. Click **Deploy**. Vercel will automatically build the Next.js app and assign a free global domain with automatic SSL and continuous deployment on every `git push`.
+### Option 1: Netlify (Recommended — Instant 1-Click)
+- **Direct 1-Click Link**: [Deploy on Netlify](https://app.netlify.com/start/deploy?repository=https://github.com/cuetolanderjohn-maker/lesson-plan-maker)
+- **Domain Provided**: Free `https://lesson-plan-maker.netlify.app` with automatic SSL.
+- **Continuous Deployment**: Automatically rebuilds on every `git push` to `master`.
+
+### Option 2: Render
+- **Direct 1-Click Link**: [Deploy on Render](https://dashboard.render.com/select-repo?type=web)
+- **Domain Provided**: Free `https://lesson-plan-maker.onrender.com`.
+- Uses [`render.yaml`](./render.yaml) preconfigured with Node.js 20 and automated Next.js build.
 
 
 ## Features
