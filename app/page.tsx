@@ -138,12 +138,33 @@ export default function HomePage() {
   const bentoRef = useRef<HTMLDivElement>(null);
   const studioAnchorRef = useRef<HTMLDivElement>(null);
 
-  // Load saved profile and history from localStorage
+  // Load saved profile and history from localStorage with automatic Groq migration
   useEffect(() => {
     try {
       const savedProfile = localStorage.getItem("kat_teacher_profile");
       if (savedProfile) {
-        setProfile((prev) => ({ ...prev, ...JSON.parse(savedProfile) }));
+        const parsed = JSON.parse(savedProfile);
+        const merged: TeacherProfile = {
+          ...defaultTeacherProfile,
+          ...parsed,
+          groqApiKey: parsed.groqApiKey || DEFAULT_GROQ_KEY,
+          groqModel: parsed.groqModel || "qwen/qwen3.8-27b",
+        };
+        if (merged.aiProvider === "free_cloud" || !merged.aiProvider) {
+          merged.aiProvider = "groq";
+        }
+        setProfile(merged);
+        try {
+          localStorage.setItem("kat_teacher_profile", JSON.stringify(merged));
+        } catch {
+          // ignore storage error
+        }
+      } else {
+        try {
+          localStorage.setItem("kat_teacher_profile", JSON.stringify(defaultTeacherProfile));
+        } catch {
+          // ignore
+        }
       }
       const savedHistory = localStorage.getItem("kat_plan_history");
       if (savedHistory) {
