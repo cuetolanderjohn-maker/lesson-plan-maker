@@ -190,8 +190,8 @@ export async function generateLessonPlanUniversal(req: ScanRequest): Promise<Les
           images,
           systemInstruction,
           extraHeaders: {
-            "HTTP-Referer": "https://localhost:3000",
-            "X-Title": "Kat's Lesson Plan Generator",
+            "HTTP-Referer": "https://katlessonplan.netlify.app",
+            "X-Title": "Lesson Plan Maker (LCCP Edition)",
           },
         });
         return parseLessonPlanResponse(rawText, templateType);

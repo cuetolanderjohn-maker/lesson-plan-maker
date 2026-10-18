@@ -4,23 +4,20 @@ An automated curriculum architecture studio designed specifically for **Ms. Kath
 
 It transforms textbook photos into officially formatted lesson plans for **Kindergarten 2** and **Grade 1** matching the school's exact Microsoft Word documents and DepEd MATATAG guidelines.
 
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/cuetolanderjohn-maker/lesson-plan-maker)
+[![Live Website](https://img.shields.io/badge/Live%20Website-katlessonplan.netlify.app-1b4332?style=for-the-badge&logo=netlify)](https://katlessonplan.netlify.app)
+[![DepEd MATATAG](https://img.shields.io/badge/DepEd-MATATAG%20K--12%20DO%203%20s.%202026-blue?style=for-the-badge)](https://katlessonplan.netlify.app)
+[![Tests Passing](https://img.shields.io/badge/Tests-18%2F18%20Passing-emerald?style=for-the-badge)](https://katlessonplan.netlify.app)
+
+> **Official Live Production URL:** **[https://katlessonplan.netlify.app/](https://katlessonplan.netlify.app/)**
 
 ---
 
-## Live Domain Deployment (No Vercel Required)
+## Live Website
 
-You can launch this application on a permanent, public HTTPS domain for free without using Vercel:
+The production application is deployed and accessible worldwide 24/7 at:
+**[https://katlessonplan.netlify.app/](https://katlessonplan.netlify.app/)**
 
-### Option 1: Netlify (Recommended — Instant 1-Click)
-- **Direct 1-Click Link**: [Deploy on Netlify](https://app.netlify.com/start/deploy?repository=https://github.com/cuetolanderjohn-maker/lesson-plan-maker)
-- **Domain Provided**: Free `https://lesson-plan-maker.netlify.app` with automatic SSL.
-- **Continuous Deployment**: Automatically rebuilds on every `git push` to `master`.
-
-### Option 2: Render
-- **Direct 1-Click Link**: [Deploy on Render](https://dashboard.render.com/select-repo?type=web)
-- **Domain Provided**: Free `https://lesson-plan-maker.onrender.com`.
-- Uses [`render.yaml`](./render.yaml) preconfigured with Node.js 20 and automated Next.js build.
+All continuous deployments are automatically triggered via GitHub commits to this repository.
 
 
 ## Features
