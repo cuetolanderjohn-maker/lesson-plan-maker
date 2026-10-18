@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Sparkles, Calendar, BookOpen, Layers } from "lucide-react";
+import { Sparkles, Calendar, BookOpen, Layers, Languages, FlaskConical, Calculator } from "lucide-react";
 import type { GradeLevel, Subject, TemplateType } from "@/lib/types";
 
 interface SelectorBarProps {
@@ -78,46 +78,50 @@ export const SelectorBar: React.FC<SelectorBarProps> = ({
           <button
             type="button"
             onClick={() => onChangeSubject("filipino")}
-            className={`py-2 px-3 rounded-xl text-xs font-medium border transition-all ${
+            className={`py-2 px-3 rounded-xl text-xs font-medium border transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
               subject === "filipino"
-                ? "bg-pastel-peach-bg border-pastel-peach-border text-pastel-peach-text font-semibold shadow-xs"
-                : "bg-surface border-borderMuted text-gray-600 hover:bg-canvas"
+                ? "bg-stone-900 border-stone-900 text-white font-semibold shadow-xs"
+                : "bg-white border-stone-200 text-stone-700 hover:bg-stone-50"
             }`}
           >
-            🇵🇭 Filipino
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Filipino</span>
           </button>
           <button
             type="button"
             onClick={() => onChangeSubject("language")}
-            className={`py-2 px-3 rounded-xl text-xs font-medium border transition-all ${
+            className={`py-2 px-3 rounded-xl text-xs font-medium border transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
               subject === "language"
-                ? "bg-pastel-lavender-bg border-pastel-lavender-border text-pastel-lavender-text font-semibold shadow-xs"
-                : "bg-surface border-borderMuted text-gray-600 hover:bg-canvas"
+                ? "bg-stone-900 border-stone-900 text-white font-semibold shadow-xs"
+                : "bg-white border-stone-200 text-stone-700 hover:bg-stone-50"
             }`}
           >
-            📖 Language / English
+            <Languages className="w-3.5 h-3.5" />
+            <span>Language</span>
           </button>
           <button
             type="button"
             onClick={() => onChangeSubject("science")}
-            className={`py-2 px-3 rounded-xl text-xs font-medium border transition-all ${
+            className={`py-2 px-3 rounded-xl text-xs font-medium border transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
               subject === "science"
-                ? "bg-pastel-mint-bg border-pastel-mint-border text-pastel-mint-text font-semibold shadow-xs"
-                : "bg-surface border-borderMuted text-gray-600 hover:bg-canvas"
+                ? "bg-stone-900 border-stone-900 text-white font-semibold shadow-xs"
+                : "bg-white border-stone-200 text-stone-700 hover:bg-stone-50"
             }`}
           >
-            🔬 Science
+            <FlaskConical className="w-3.5 h-3.5" />
+            <span>Science</span>
           </button>
           <button
             type="button"
             onClick={() => onChangeSubject("math")}
-            className={`py-2 px-3 rounded-xl text-xs font-medium border transition-all ${
+            className={`py-2 px-3 rounded-xl text-xs font-medium border transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
               subject === "math"
-                ? "bg-pastel-butter-bg border-pastel-butter-border text-pastel-butter-text font-semibold shadow-xs"
-                : "bg-surface border-borderMuted text-gray-600 hover:bg-canvas"
+                ? "bg-stone-900 border-stone-900 text-white font-semibold shadow-xs"
+                : "bg-white border-stone-200 text-stone-700 hover:bg-stone-50"
             }`}
           >
-            📐 Mathematics
+            <Calculator className="w-3.5 h-3.5" />
+            <span>Math</span>
           </button>
         </div>
       </div>

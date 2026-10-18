@@ -27,7 +27,7 @@ export function generatePlanFromExtractedText(
 
   const ref =
     meta.bookReference ||
-    (learned.pageNumber ? `Gr.1 Dawani, ${learned.pageNumber}` : "Gr.1 Dawani");
+    (learned.pageNumber ? `Batayang Aklat, ${learned.pageNumber}` : "Batayang Aklat");
 
   const isMatatag =
     meta.templateType === "matatag" ||
@@ -35,8 +35,8 @@ export function generatePlanFromExtractedText(
     meta.subject === "filipino";
 
   if (isMatatag) {
-    // Determine Wika / Gramatika topic if mentioned
-    let detectedWika = "Pangungusap at Hindi Pangungusap";
+    // Determine Wika / Gramatika topic if mentioned, otherwise derive dynamically from topic
+    let detectedWika = topic ? `Pagbasa at Pagtalakay sa ${topic}` : "Pagbasa at Talasalitaan";
     const lowerRaw = learned.rawText.toLowerCase();
     if (lowerRaw.includes("paturol") || lowerRaw.includes("pasalaysay")) {
       detectedWika = "Pangungusap na Paturol o Pasalaysay";

@@ -10,6 +10,7 @@ export const defaultTeacherProfile: TeacherProfile = {
   sectionGrade1: "Grade 1 - OLOPH & OLOG",
   coordinatorKinder: "Mrs. Emma P. Dunque Lpt.",
   coordinatorGrade1: "Bb. Sta. Ana Florence",
+  aiProvider: "free_cloud",
 };
 
 export const sampleMatatagPlan: MatatagLessonPlan = {

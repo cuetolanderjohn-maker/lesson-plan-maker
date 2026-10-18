@@ -43,7 +43,8 @@ module.exports = {
         borderMuted: "#EAE6DF",
       },
       fontFamily: {
-        sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
+        sans: ["Outfit", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        serif: ["Georgia", "Cambria", "serif"],
       },
     },
   },

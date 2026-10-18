@@ -211,19 +211,33 @@ You MUST respond with ONLY a valid JSON object matching the schema:
 
 export function parseLessonPlanResponse(rawText: string, expectedType: "matatag" | "lccp"): MatatagLessonPlan | LccpLearningPlan {
   let cleaned = rawText.trim();
-  if (cleaned.startsWith("```json")) {
-    cleaned = cleaned.replace(/^```json\s*/, "").replace(/\s*```$/, "");
-  } else if (cleaned.startsWith("```")) {
-    cleaned = cleaned.replace(/^```\s*/, "").replace(/\s*```$/, "");
+
+  // 1. Try to extract from fenced code blocks (```json ... ``` or ``` ... ```)
+  const codeBlockMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (codeBlockMatch && codeBlockMatch[1]) {
+    cleaned = codeBlockMatch[1].trim();
+  } else {
+    // 2. Look for the outermost JSON object bounds { ... }
+    const firstBrace = cleaned.indexOf("{");
+    const lastBrace = cleaned.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      cleaned = cleaned.substring(firstBrace, lastBrace + 1).trim();
+    }
   }
 
   let parsed: Record<string, unknown>;
   try {
     parsed = JSON.parse(cleaned);
   } catch {
-    throw new Error(
-      "The AI response could not be parsed as a lesson plan. Please ensure the textbook photo is clear and well-lit."
-    );
+    // Attempt cleaning trailing commas
+    try {
+      const relaxed = cleaned.replace(/,\s*([}\]])/g, "$1");
+      parsed = JSON.parse(relaxed);
+    } catch {
+      throw new Error(
+        "The AI response could not be parsed as a lesson plan. Please ensure the textbook photo is clear and well-lit."
+      );
+    }
   }
 
   if (typeof parsed.error === "string" && parsed.error.trim().length > 0) {
@@ -234,6 +248,14 @@ export function parseLessonPlanResponse(rawText: string, expectedType: "matatag"
     throw new Error(
       "The textbook photo did not contain enough readable content to generate a complete lesson plan. Please upload a clearer photo."
     );
+  }
+
+  // Normalize string objectives into array if needed
+  if (typeof parsed.objectives === "string") {
+    parsed.objectives = (parsed.objectives as string)
+      .split("\n")
+      .map((s) => s.replace(/^[•\-\*\d\.]+\s*/, "").trim())
+      .filter((s) => s.length > 0);
   }
 
   parsed.templateType = expectedType;

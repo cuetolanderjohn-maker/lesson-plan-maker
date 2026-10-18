@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, User, School, Check, UserCheck } from "lucide-react";
+import { X, User, School, Check, UserCheck, ExternalLink, Zap } from "lucide-react";
 import type { TeacherProfile } from "@/lib/types";
 
 interface SettingsModalProps {
@@ -64,62 +64,229 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Gemini AI Key Section */}
-          <div className="space-y-1.5 p-4 rounded-xl bg-canvas border border-sage-200">
+          {/* AI Vision Provider Section (from awesome-free-llm-apis) */}
+          <div className="space-y-3 p-4 rounded-xl bg-canvas border border-sage-200">
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold text-gray-700 flex items-center space-x-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>Google Gemini AI Key</span>
+                <span>AI Vision Engine (Awesome Free LLM APIs)</span>
               </label>
               <a
-                href="https://aistudio.google.com/app/apikey"
+                href="https://github.com/mnfst/awesome-free-llm-apis"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[11px] text-sage-600 hover:text-sage-700 font-medium underline underline-offset-2"
+                className="text-[11px] text-sage-600 hover:text-sage-700 font-medium underline underline-offset-2 flex items-center space-x-1"
               >
-                Get a free key (Google AI Studio)
+                <span>Free LLMs Repo</span>
+                <ExternalLink className="w-3 h-3" />
               </a>
             </div>
-            <input
-              type="password"
-              placeholder="AIzaSy... (or paste multiple keys separated by commas)"
-              value={formData.geminiApiKey || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, geminiApiKey: e.target.value })
-              }
-              className="w-full text-xs font-mono px-3.5 py-2.5 rounded-lg bg-surface border border-borderMuted focus:outline-none focus:border-sage-500 transition-colors"
-            />
-            
-            <div className="pt-2">
-              <label className="text-[11px] font-medium text-gray-600 block mb-1">
-                Gemini Model Version
-              </label>
-              <select
-                value={formData.geminiModel || "auto"}
-                onChange={(e) =>
-                  setFormData({ ...formData, geminiModel: e.target.value })
-                }
-                className="w-full text-xs px-3 py-2 rounded-lg bg-surface border border-borderMuted focus:outline-none focus:border-sage-500 text-gray-800 cursor-pointer"
+
+            {/* Provider Selector Tabs */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-surface rounded-lg border border-borderMuted text-xs font-medium">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, aiProvider: "gemini" })}
+                className={`py-1.5 px-2 rounded-md transition-all text-center ${
+                  (formData.aiProvider || "gemini") === "gemini"
+                    ? "bg-sage-600 text-white shadow-xs font-semibold"
+                    : "text-gray-600 hover:bg-canvas"
+                }`}
               >
-                <option value="auto">Auto-detect Best Active Model (Gemini 2.5 Flash / Fast & Generous Quota)</option>
-                <option value="gemini-2.5-flash">gemini-2.5-flash (Recommended — 1,500 free requests/day)</option>
-                <option value="gemini-2.5-pro">gemini-2.5-pro (Deep Multimodal Vision)</option>
-                <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-              </select>
+                Google Gemini
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, aiProvider: "free_cloud" })}
+                className={`py-1.5 px-2 rounded-md transition-all text-center ${
+                  formData.aiProvider === "free_cloud"
+                    ? "bg-sage-600 text-white shadow-xs font-semibold"
+                    : "text-gray-600 hover:bg-canvas"
+                }`}
+              >
+                Zero-Key Cloud
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, aiProvider: "openrouter" })}
+                className={`py-1.5 px-2 rounded-md transition-all text-center ${
+                  formData.aiProvider === "openrouter"
+                    ? "bg-sage-600 text-white shadow-xs font-semibold"
+                    : "text-gray-600 hover:bg-canvas"
+                }`}
+              >
+                OpenRouter
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, aiProvider: "mistral" })}
+                className={`py-1.5 px-2 rounded-md transition-all text-center ${
+                  formData.aiProvider === "mistral"
+                    ? "bg-sage-600 text-white shadow-xs font-semibold"
+                    : "text-gray-600 hover:bg-canvas"
+                }`}
+              >
+                Mistral AI
+              </button>
             </div>
+
+            {/* Sub-view: Google Gemini */}
+            {(formData.aiProvider || "gemini") === "gemini" && (
+              <div className="space-y-2 pt-1 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-gray-600">Gemini API Key:</span>
+                  <a
+                    href="https://aistudio.google.com/app/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-sage-600 hover:text-sage-700 underline flex items-center space-x-0.5"
+                  >
+                    <span>Get free key</span>
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                </div>
+                <input
+                  type="password"
+                  placeholder="AIzaSy... (or paste multiple keys separated by commas)"
+                  value={formData.geminiApiKey || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, geminiApiKey: e.target.value })
+                  }
+                  className="w-full text-xs font-mono px-3.5 py-2 rounded-lg bg-surface border border-borderMuted focus:outline-none focus:border-sage-500"
+                />
+                <div>
+                  <label className="text-[11px] font-medium text-gray-600 block mb-1">
+                    Gemini Model
+                  </label>
+                  <select
+                    value={formData.geminiModel || "auto"}
+                    onChange={(e) =>
+                      setFormData({ ...formData, geminiModel: e.target.value })
+                    }
+                    className="w-full text-xs px-3 py-1.5 rounded-lg bg-surface border border-borderMuted focus:outline-none focus:border-sage-500 text-gray-800 cursor-pointer"
+                  >
+                    <option value="auto">Auto-detect Best Active Model (Gemini 3.8 Flash / Fast &amp; High Fidelity)</option>
+                    <option value="gemini-3.8-flash">gemini-3.8-flash (Latest Official Vision Model)</option>
+                    <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (Deep Multimodal Vision)</option>
+                    <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Sub-view: Zero-Key Free Cloud Vision */}
+            {formData.aiProvider === "free_cloud" && (
+              <div className="space-y-2 pt-1 animate-in fade-in duration-150">
+                <div className="p-3 bg-emerald-50/80 rounded-lg border border-emerald-200 text-xs text-emerald-800 space-y-1">
+                  <p className="font-semibold flex items-center space-x-1.5">
+                    <Zap className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Zero-Key Free Cloud Vision Active</span>
+                  </p>
+                  <p className="text-[11px] text-emerald-700">
+                    No API key or credit card needed! Uses public cloud multimodal gateways (from awesome-free-llm-apis) powered by <strong>Dots-3-Note Preview</strong> &amp; <strong>Nemotron 3.5 Super VL</strong> with 200 free requests/hour.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Sub-view: OpenRouter */}
+            {formData.aiProvider === "openrouter" && (
+              <div className="space-y-2 pt-1 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-gray-600">OpenRouter API Key:</span>
+                  <a
+                    href="https://openrouter.ai/keys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-sage-600 hover:text-sage-700 underline flex items-center space-x-0.5"
+                  >
+                    <span>Get free key (openrouter.ai)</span>
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                </div>
+                <input
+                  type="password"
+                  placeholder="sk-or-v1-..."
+                  value={formData.openRouterApiKey || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, openRouterApiKey: e.target.value })
+                  }
+                  className="w-full text-xs font-mono px-3.5 py-2 rounded-lg bg-surface border border-borderMuted focus:outline-none focus:border-sage-500"
+                />
+                <div>
+                  <label className="text-[11px] font-medium text-gray-600 block mb-1">
+                    OpenRouter Free Vision Model
+                  </label>
+                  <select
+                    value={formData.openRouterModel || "google/gemma-4-31b-it:free"}
+                    onChange={(e) =>
+                      setFormData({ ...formData, openRouterModel: e.target.value })
+                    }
+                    className="w-full text-xs px-3 py-1.5 rounded-lg bg-surface border border-borderMuted focus:outline-none focus:border-sage-500 text-gray-800 cursor-pointer"
+                  >
+                    <option value="google/gemma-4-31b-it:free">google/gemma-4-31b-it:free (262K context / Multimodal)</option>
+                    <option value="dots-studio/dots-3-note-preview:free">dots-studio/dots-3-note-preview:free (Specialized for textbooks/notes)</option>
+                    <option value="nvidia/nemotron-3.5-super-vl:free">nvidia/nemotron-3.5-super-vl:free (1M context)</option>
+                    <option value="openrouter/free">openrouter/free (Auto Free Router)</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Sub-view: Mistral AI */}
+            {formData.aiProvider === "mistral" && (
+              <div className="space-y-2 pt-1 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-gray-600">Mistral API Key:</span>
+                  <a
+                    href="https://console.mistral.ai/api-keys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-sage-600 hover:text-sage-700 underline flex items-center space-x-0.5"
+                  >
+                    <span>Get free key ($10/mo free credit)</span>
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                </div>
+                <input
+                  type="password"
+                  placeholder="mistral-..."
+                  value={formData.mistralApiKey || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, mistralApiKey: e.target.value })
+                  }
+                  className="w-full text-xs font-mono px-3.5 py-2 rounded-lg bg-surface border border-borderMuted focus:outline-none focus:border-sage-500"
+                />
+                <div>
+                  <label className="text-[11px] font-medium text-gray-600 block mb-1">
+                    Mistral Vision Model
+                  </label>
+                  <select
+                    value={formData.mistralModel || "pixtral-12b-2409"}
+                    onChange={(e) =>
+                      setFormData({ ...formData, mistralModel: e.target.value })
+                    }
+                    className="w-full text-xs px-3 py-1.5 rounded-lg bg-surface border border-borderMuted focus:outline-none focus:border-sage-500 text-gray-800 cursor-pointer"
+                  >
+                    <option value="pixtral-12b-2409">pixtral-12b-2409 (Dedicated High-Accuracy Vision OCR)</option>
+                    <option value="mistral-small-latest">mistral-small-latest (Multimodal Vision)</option>
+                  </select>
+                </div>
+              </div>
+            )}
 
             <div className="bg-sage-50/60 rounded-lg p-2.5 border border-sage-200/50 space-y-1 text-[11px] text-gray-600">
               <p className="font-semibold text-sage-800 flex items-center space-x-1">
-                <span>⚡ How to get Unlimited Quota:</span>
+                <span>Free &amp; Unlimited Intelligence Guide:</span>
               </p>
               <p>
-                <strong>1. Multi-Key Pooling:</strong> Paste multiple free keys above separated by commas. The system will automatically rotate between them as you generate.
+                <strong>Google Gemini:</strong> 1,500 free generations daily. Supports multi-key pooling.
               </p>
               <p>
-                <strong>2. Google AI Studio Unlimited:</strong> In Google AI Studio, click <em>Settings → Plan &amp; Billing</em> and add billing to unlock unlimited pay-as-you-go capacity.
+                <strong>Zero-Key Cloud:</strong> No API key required at all! Uses community-verified free cloud vision endpoints.
               </p>
               <p>
-                <strong>3. Built-in Offline Engine:</strong> The built-in Machine Learning OCR mode is 100% free and has <strong>infinite, unlimited quota</strong> with no API key required.
+                <strong>OpenRouter / Mistral:</strong> Generous free tiers with SOTA open-weights vision models (Gemma, Pixtral, Nemotron).
               </p>
             </div>
           </div>

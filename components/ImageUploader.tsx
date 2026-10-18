@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { UploadCloud, Camera, X, Image as ImageIcon } from "lucide-react";
+import { UploadCloud, Camera, X, Image as ImageIcon, ZoomIn } from "lucide-react";
 import type { ImageInput } from "@/lib/types";
 
 interface ImageUploaderProps {
@@ -16,6 +16,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   disabled = false,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -25,7 +26,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       reader.onload = (e) => {
         const img = new Image();
         img.onload = () => {
-          const MAX_DIM = 1600;
+          const MAX_DIM = 1200;
           let width = img.width;
           let height = img.height;
           if (width > MAX_DIM || height > MAX_DIM) {
@@ -49,7 +50,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             return;
           }
           ctx.drawImage(img, 0, 0, width, height);
-          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.82);
+          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.78);
           resolve({
             base64Data: compressedBase64,
             mimeType: "image/jpeg",
@@ -195,15 +196,22 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             {images.map((img, idx) => (
               <div
                 key={idx}
-                className="relative group rounded-xl border border-borderMuted overflow-hidden bg-canvas aspect-3/4 flex items-center justify-center shadow-2xs"
+                onClick={() => setPreviewImage(img.base64Data)}
+                className="relative group rounded-xl border border-borderMuted overflow-hidden bg-canvas aspect-3/4 flex items-center justify-center shadow-2xs cursor-pointer hover:border-sage-400 transition-all"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={img.base64Data}
                   alt={`Lesson Page ${idx + 1}`}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                 />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2">
+                  <span
+                    className="p-1.5 rounded-full bg-white/90 text-gray-700 hover:bg-white shadow-sm transition-transform hover:scale-110"
+                    title="Zoom in & inspect"
+                  >
+                    <ZoomIn className="w-4 h-4" />
+                  </span>
                   <button
                     type="button"
                     onClick={(e) => {
@@ -221,6 +229,42 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox / Full-size Image Inspection Modal */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] bg-surface rounded-2xl overflow-hidden shadow-2xl p-2.5 border border-borderMuted"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-2 px-2 border-b border-borderMuted mb-2">
+              <span className="text-xs font-semibold text-gray-700 flex items-center space-x-1.5">
+                <ImageIcon className="w-3.5 h-3.5 text-sage-600" />
+                <span>Textbook Photo Inspection (Clarity & Readability Check)</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-canvas transition-colors"
+                title="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="overflow-auto max-h-[78vh] flex items-center justify-center rounded-xl bg-canvas">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewImage}
+                alt="Full resolution textbook page"
+                className="max-h-[78vh] w-auto object-contain rounded-lg"
+              />
+            </div>
           </div>
         </div>
       )}

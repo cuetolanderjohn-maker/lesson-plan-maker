@@ -7,6 +7,8 @@ export interface ImageInput {
   mimeType: string;
 }
 
+export type AIProvider = "gemini" | "openrouter" | "mistral" | "free_cloud" | "custom_openai";
+
 export interface TeacherProfile {
   schoolName: string;
   schoolAddress: string;
@@ -19,6 +21,14 @@ export interface TeacherProfile {
   coordinatorGrade1: string;
   geminiApiKey?: string;
   geminiModel?: string;
+  aiProvider?: AIProvider;
+  openRouterApiKey?: string;
+  openRouterModel?: string;
+  mistralApiKey?: string;
+  mistralModel?: string;
+  customBaseUrl?: string;
+  customApiKey?: string;
+  customModel?: string;
 }
 
 /**

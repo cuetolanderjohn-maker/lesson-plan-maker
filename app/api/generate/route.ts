@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateLessonPlanWithGemini, ImageInput } from "@/lib/gemini";
-import type { GenerateRequestMeta, TeacherProfile } from "@/lib/types";
+import { generateLessonPlanUniversal } from "@/lib/universalAiScanner";
+import type { GenerateRequestMeta, TeacherProfile, ImageInput } from "@/lib/types";
 
 export const maxDuration = 60; // 60 seconds timeout for vision processing
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { images, meta, profile, apiKey } = body as {
+    const { images, meta, profile } = body as {
       images: ImageInput[];
       meta: GenerateRequestMeta;
       profile?: TeacherProfile;
-      apiKey?: string;
     };
 
     if (!images || !Array.isArray(images) || images.length === 0) {
@@ -28,7 +27,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const plan = await generateLessonPlanWithGemini(images, meta, profile, apiKey);
+    const plan = await generateLessonPlanUniversal({ images, meta, profile });
 
     return NextResponse.json({
       success: true,

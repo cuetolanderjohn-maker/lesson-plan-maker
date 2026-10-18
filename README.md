@@ -1,42 +1,46 @@
-# Kat's Lesson Plan Generator (LCCP Edition) 🌸
+# Lesson Plan Maker (LCCP Edition)
 
-An automated, minimalist pastel web application designed specifically for **Ms. Kathrynn Ross L. Acola (Kat)** at **La Consolacion College - Pasig**.
+An automated curriculum architecture studio designed specifically for **Ms. Kathrynn Ross L. Acola (Kat)** at **La Consolacion College - Pasig**.
 
-It transforms textbook photos into officially formatted lesson plans for **Kindergarten 2** and **Grade 1** matching the school's exact Microsoft Word documents and DepEd MATATAG guidelines — **100% free, runs directly in the browser, with no API keys or setup required**.
-
----
-
-## ✨ Features
-
-- 🧠 **Built-in Machine Learning Engine (Zero API Keys / $0 Cost):**
-  - **Computer Vision Preprocessor:** Automatically enhances contrast, sharpens textbook fonts, and removes paper shadows from smartphone camera photos.
-  - **Machine Learning OCR:** Reads Philippine curriculum textbook pages with high character accuracy.
-  - **Deep Semantic NLP Analyzer:** Extracts and understands the **Lesson Title / Paksa**, **Key Vocabulary**, **Reading Story Passages**, **Comprehension Questions**, and **Practice Exercises**.
-- 🔍 **Interactive "What the AI Learned" Inspector:**
-  - Shows you what was extracted from your textbook photo *before* generating the final plan.
-  - Review or fine-tune the detected lesson title, add or remove vocabulary tags, and inspect the raw scanned text.
-- 🏫 **School-Accurate Templates:**
-  1. **Grade 1 & K2 Filipino:** DepEd MATATAG Banghay-Aralin format with DepEd DO 3 s 2026 AI declaration, 6 official LCCP core values (*Laudato Si'*, *Justice & Peace*, *Gender & Dev*, *LCCP Care*, *Values Ed / Religion*, and *Canva Tech*), 5-day procedure breakdown, and formative/summative quizzes using the exercises identified from the book.
-  2. **Kinder 2 English / Science / Math:** LCCP Institutional Learning Plan format with Catholic Values Statement, Routine Activities, Motivation, Learning Strategies, Assessment, Closure, and Assignment.
-- ✏️ **Interactive Live Editor:** Click directly into any text on screen to tweak questions, objectives, or instructions before downloading.
-- 📥 **Exact Word Export (`.docx`):** Generates clean, ready-to-submit Microsoft Word tables with exact borders, column widths, and 3-column signature rows.
-- 🖨️ **Print & PDF:** Formatted for standard paper printing without sidebar buttons.
-- ⚙️ **Kat's Teacher Profile:** Pre-fills Kat's name, school year, and coordinators by default, with a Settings modal to update coordinator names anytime.
+It transforms textbook photos into officially formatted lesson plans for **Kindergarten 2** and **Grade 1** matching the school's exact Microsoft Word documents and DepEd MATATAG guidelines.
 
 ---
 
-## 🚀 How to Run on Windows (1-Click)
+## Features
 
-1. Double-click the **`start.bat`** file in this folder.
-2. The script will automatically install any missing dependencies and open **`http://localhost:3000`** in your browser.
-3. No API key or account is needed! Simply attach your textbook photo and click **"Analyze & Learn from Textbook (ML)"**.
+- **Zero-Key Multimodal Cloud Vision (100% Free):**
+  - Powered by active vision models (`nvidia/nemotron-3.5-super-vl:free` with 1M context, `dots-studio/dots-3-note-preview:free`, and `openrouter/free`).
+  - No API key, account, or credit card required.
+- **Google Gemini Vision Integration:**
+  - Direct integration with `gemini-3.8-flash` and `gemini-3.1-pro-preview` with dynamic API listing.
+- **Client-Side Smart Compression:**
+  - Automatically downsamples uploaded textbook photos to ~150KB (1200px max dimension at 0.78 quality), accelerating uploads by 10x and eliminating gateway timeouts.
+- **Grounded Vision Extraction (No Machine Presets):**
+  - Directly extracts lesson titles, stories, vocabulary, guide questions, and exercises from uploaded textbook pages without fallback to generic dummy templates.
+- **School-Accurate Curriculum Architecture:**
+  1. **DepEd MATATAG Banghay-Aralin Format (Grade 1 & Filipino):** Official 4-column layout with DepEd Order No. 3 s. 2026 Annex AI declaration, Augustinian Core Values (*Laudato Si'*, *Justice and Peace*, *Gender and Development*, *LCCP Care*), 5-part procedures, and quiz items.
+  2. **LCCP Institutional Learning Plan (Kinder 2):** Official institutional format with Catholic Values Statement, Routine Activities, Motivation, Learning Strategies, Assessment, Closure, Assignment, and 3 Signatories.
+- **Live In-Place Document Editor:** Click directly into any table cell in the browser to refine content before exporting.
+- **Word Document (.docx) Generation:** Exports ready-to-submit Microsoft Word files embedding the authentic La Consolacion College Pasig banner and crest.
+- **Print & PDF Stylesheet:** Formatted for standard paper printing with background cleanup.
 
 ---
 
-## 🧪 Testing & Verification
+## Quick Start on Windows
 
-Run the automated test suite anytime:
+1. Run the local development server:
+   ```bash
+   npm run dev
+   ```
+2. Open **`http://localhost:3000`** in your browser.
+3. Attach textbook photos or select a demonstration sample, then click **Generate DepEd / LCCP Lesson Plan**.
+
+---
+
+## Test Suite
+
+Run the automated test suite:
 ```bash
-npm.cmd test
+npm test
 ```
-All 16 unit tests verify schema compliance, NLP analysis, and Word `.docx` table generation.
+All 18 unit tests verify schema compliance, vision parsing, and DOCX table generation.

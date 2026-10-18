@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/Header";
 import { SelectorBar } from "@/components/SelectorBar";
 import { ImageUploader } from "@/components/ImageUploader";
@@ -14,6 +14,7 @@ import type {
   LessonPlan,
   TeacherProfile,
   ImageInput,
+  AIProvider,
 } from "@/lib/types";
 import {
   defaultTeacherProfile,
@@ -36,10 +37,41 @@ import {
   Key,
   ExternalLink,
   Zap,
+  ArrowRight,
+  ShieldCheck,
+  BookOpen,
+  CheckCircle2,
+  SlidersHorizontal,
 } from "lucide-react";
+import gsap from "gsap";
+
+function getProviderDisplayName(provider?: AIProvider): string {
+  switch (provider) {
+    case "free_cloud":
+      return "Zero-Key Cloud AI";
+    case "openrouter":
+      return "OpenRouter Free Vision";
+    case "mistral":
+      return "Mistral AI Vision";
+    case "custom_openai":
+      return "Custom AI Vision";
+    case "gemini":
+    default:
+      return "Google Gemini Vision";
+  }
+}
+
+function isKeyConfigured(p: TeacherProfile): boolean {
+  const provider = p.aiProvider || "free_cloud";
+  if (provider === "free_cloud") return true;
+  if (provider === "openrouter") return Boolean(p.openRouterApiKey?.trim());
+  if (provider === "mistral") return Boolean(p.mistralApiKey?.trim());
+  if (provider === "custom_openai") return Boolean(p.customBaseUrl?.trim());
+  return Boolean(p.geminiApiKey?.trim());
+}
 
 export default function HomePage() {
-  // Navigation & modals
+  // Navigation and modal controls
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
@@ -56,62 +88,78 @@ export default function HomePage() {
   const [bookReference, setBookReference] = useState("");
   const [images, setImages] = useState<ImageInput[]>([]);
 
-  // Engine Mode: "gemini" (Deep Vision AI) vs "builtIn" (Free On-Device ML)
+  // Engine Mode: Cloud Vision AI vs Free On-Device ML
   const [engineMode, setEngineMode] = useState<"gemini" | "builtIn">("gemini");
   const [quickApiKey, setQuickApiKey] = useState("");
   const [showKeyInput, setShowKeyInput] = useState(false);
 
-  // Input Mode: "photo" (camera/file upload) vs "directText" (paste/type directly)
+  // Input Mode: Camera/File Upload vs Direct Text Paste
   const [inputMode, setInputMode] = useState<"photo" | "directText">("photo");
   const [directText, setDirectText] = useState("");
 
-  // Machine Learning & Analysis State
+  // Analysis and Generation State
   const [learnedContent, setLearnedContent] = useState<LearnedTextbookContent | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [progressStatus, setProgressStatus] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [scanWarning, setScanWarning] = useState<string | null>(null);
+
+  // Generated Plan
   const [currentPlan, setCurrentPlan] = useState<LessonPlan | null>(null);
 
-  // Reset learned content when user removes all images in photo mode
-  useEffect(() => {
-    if (inputMode === "photo" && images.length === 0) {
-      setLearnedContent(null);
-      setScanWarning(null);
-    }
-  }, [images, inputMode]);
+  // GSAP Animation Refs
+  const heroRef = useRef<HTMLDivElement>(null);
+  const bentoRef = useRef<HTMLDivElement>(null);
+  const studioAnchorRef = useRef<HTMLDivElement>(null);
 
-  // Load profile and history from localStorage on mount
+  // Load saved profile and history from localStorage
   useEffect(() => {
     try {
       const savedProfile = localStorage.getItem("kat_teacher_profile");
       if (savedProfile) {
-        const parsed: TeacherProfile = JSON.parse(savedProfile);
-        setProfile(parsed);
-        if (parsed.geminiApiKey?.trim()) {
-          setEngineMode("gemini");
-        } else {
-          setEngineMode("builtIn");
-        }
+        setProfile((prev) => ({ ...prev, ...JSON.parse(savedProfile) }));
       }
       const savedHistory = localStorage.getItem("kat_plan_history");
       if (savedHistory) {
         setHistoryItems(JSON.parse(savedHistory));
       }
     } catch (e) {
-      console.error("Failed to load local storage:", e);
+      console.error("Failed to load stored preferences:", e);
     }
   }, []);
 
-  const handleSaveProfile = (newProfile: TeacherProfile) => {
-    const cleaned = {
-      ...newProfile,
-      geminiApiKey: newProfile.geminiApiKey?.trim() || undefined,
-    };
-    setProfile(cleaned);
+  // GSAP Staggered Entrance Animation
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      if (heroRef.current) {
+        gsap.from(heroRef.current.querySelectorAll(".gsap-hero-item"), {
+          opacity: 0,
+          y: 28,
+          duration: 0.9,
+          stagger: 0.12,
+          ease: "power3.out",
+        });
+      }
+      if (bentoRef.current) {
+        gsap.from(bentoRef.current.querySelectorAll(".gsap-bento-card"), {
+          opacity: 0,
+          y: 35,
+          duration: 0.85,
+          stagger: 0.1,
+          ease: "power2.out",
+          delay: 0.25,
+        });
+      }
+    });
+
+    return () => ctx.revert();
+  }, []);
+
+  const handleSaveProfile = (updated: TeacherProfile) => {
+    setProfile(updated);
     try {
-      localStorage.setItem("kat_teacher_profile", JSON.stringify(cleaned));
+      localStorage.setItem("kat_teacher_profile", JSON.stringify(updated));
     } catch (e) {
       console.error("Failed to save profile:", e);
     }
@@ -119,14 +167,18 @@ export default function HomePage() {
 
   const handleSaveQuickKey = () => {
     if (!quickApiKey.trim()) return;
-    const updated = {
-      ...profile,
-      geminiApiKey: quickApiKey.trim(),
-    };
+    const provider = profile.aiProvider || "gemini";
+    let updated = { ...profile };
+    if (provider === "openrouter") {
+      updated.openRouterApiKey = quickApiKey.trim();
+    } else if (provider === "mistral") {
+      updated.mistralApiKey = quickApiKey.trim();
+    } else {
+      updated.geminiApiKey = quickApiKey.trim();
+    }
     handleSaveProfile(updated);
     setQuickApiKey("");
     setShowKeyInput(false);
-    setEngineMode("gemini");
   };
 
   const handleUpdateCurrentPlan = (updated: LessonPlan) => {
@@ -150,7 +202,7 @@ export default function HomePage() {
       try {
         localStorage.setItem("kat_plan_history", JSON.stringify(updatedHistory));
       } catch (e) {
-        console.error("Failed to update history in storage:", e);
+        console.error("Failed to update history:", e);
       }
     }
   };
@@ -170,7 +222,7 @@ export default function HomePage() {
       topic: topic || "Lesson Plan",
     };
 
-    const updated = [newItem, ...historyItems.slice(0, 24)]; // Keep last 25
+    const updated = [newItem, ...historyItems.slice(0, 24)];
     setHistoryItems(updated);
     try {
       localStorage.setItem("kat_plan_history", JSON.stringify(updated));
@@ -192,7 +244,7 @@ export default function HomePage() {
     }
   };
 
-  // Step 1: Analyze & Learn from Attached Photos (Local OCR & Vision NLP)
+  // Local OCR Analysis for On-Device Machine Learning Mode
   const handleAnalyzeImages = async (): Promise<LearnedTextbookContent | null> => {
     if (images.length === 0) {
       setErrorMessage("Please attach at least one photo of the lesson from the book.");
@@ -242,7 +294,7 @@ export default function HomePage() {
       const cleanLen = combinedText.trim().replace(/\s+/g, " ").length;
       if (cleanLen < 30) {
         setScanWarning(
-          "The photo had glare or low contrast. You can type or paste the lesson title and story in the review card below or switch to Gemini AI mode for deep photo analysis."
+          "The photo had glare or low contrast. For full fidelity, ensure the photo is well lit or switch to Cloud AI Vision."
         );
       }
 
@@ -253,8 +305,7 @@ export default function HomePage() {
       return learned;
     } catch (err: unknown) {
       console.error("Analysis error:", err);
-      const msg =
-        err instanceof Error ? err.message : "Failed to analyze textbook photo.";
+      const msg = err instanceof Error ? err.message : "Failed to analyze textbook photo.";
       setErrorMessage(msg);
       return null;
     } finally {
@@ -263,7 +314,6 @@ export default function HomePage() {
     }
   };
 
-  // Step 1 (Alternate): Analyze Direct Pasted Text
   const handleAnalyzeDirectText = () => {
     if (!directText.trim()) {
       setErrorMessage("Please type or paste some text from the lesson or textbook.");
@@ -276,7 +326,6 @@ export default function HomePage() {
     setLearnedContent(learned);
   };
 
-  // Step 2: Generate Official Lesson Plan from Learned Content
   const handleGenerateFromLearned = (learnedToUse?: LearnedTextbookContent) => {
     const sourceLearned = learnedToUse || learnedContent;
     if (!sourceLearned) return;
@@ -306,17 +355,19 @@ export default function HomePage() {
     }
   };
 
-  // Generate with Gemini Vision AI (Deep Multimodal Analysis of the JPEG)
-  const handleGenerateWithGemini = async () => {
+  // Cloud AI Vision Generation (Multimodal Reading of the JPEG)
+  const handleGenerateCloudAI = async () => {
     if (images.length === 0) {
       setErrorMessage("Please attach at least one photo of the lesson from the book.");
       return;
     }
 
-    const hasKey = Boolean(profile.geminiApiKey?.trim());
-    if (!hasKey) {
+    const providerName = getProviderDisplayName(profile.aiProvider);
+    if (!isKeyConfigured(profile)) {
       setShowKeyInput(true);
-      setErrorMessage("Please provide your Google Gemini API key to use Gemini Vision AI mode.");
+      setErrorMessage(
+        `Please provide your ${providerName} key or switch to Zero-Key Free Cloud mode.`
+      );
       return;
     }
 
@@ -324,8 +375,18 @@ export default function HomePage() {
     setErrorMessage(null);
     setScanWarning(null);
 
+    const timer1 = setTimeout(() => {
+      setProgressStatus(`Reading story, characters, and vocabulary with ${providerName}...`);
+    }, 2500);
+    const timer2 = setTimeout(() => {
+      setProgressStatus("Extracting comprehension questions, grammar concepts & exercises...");
+    }, 7000);
+    const timer3 = setTimeout(() => {
+      setProgressStatus("Assembling official DepEd MATATAG / LCCP lesson plan table...");
+    }, 14000);
+
     try {
-      setProgressStatus("Sending textbook photo to Google Gemini 2.0 Flash Vision...");
+      setProgressStatus(`Analyzing textbook photo with ${providerName}...`);
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -340,47 +401,38 @@ export default function HomePage() {
             bookReference,
           },
           profile,
-          apiKey: profile.geminiApiKey,
         }),
       });
 
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to generate lesson plan with Gemini AI.");
+        throw new Error(data.error || `Failed to generate lesson plan with ${providerName}.`);
       }
 
       setCurrentPlan(data.plan);
       handleSavePlanToHistory(data.plan);
     } catch (err: unknown) {
-      console.warn("Gemini generation encountered an issue, seamlessly engaging built-in Machine Learning engine:", err);
-      try {
-        setProgressStatus("Connecting to built-in Machine Learning OCR engine...");
-        const learned = await handleAnalyzeImages();
-        if (learned) {
-          handleGenerateFromLearned(learned);
-          setScanWarning(
-            "Note: Google Gemini API quota was rate-limited on your key, so we seamlessly generated your official lesson plan using the built-in Machine Learning OCR engine!"
-          );
-        } else {
-          const msg = err instanceof Error ? err.message : "Failed to generate plan with Gemini AI.";
-          setErrorMessage(
-            `${msg} (Tip: You can switch to the Free Built-in Mode ⚡ below if your API key has quota limits).`
-          );
-        }
-      } catch (fallbackErr) {
-        console.error("Fallback error:", fallbackErr);
-        const msg = err instanceof Error ? err.message : "Failed to generate plan with Gemini AI.";
-        setErrorMessage(
-          `${msg} (Tip: You can switch to the Free Built-in Mode ⚡ below if your API key has quota limits).`
-        );
-      }
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      console.error("Cloud AI generation failed:", err);
+      const msg = err instanceof Error ? err.message : `Failed to generate plan with ${providerName}.`;
+      setErrorMessage(
+        `${msg} — We never substitute preset dummy data. Please verify your internet connection, ensure the textbook photo is clear and well-lit, or switch to Zero-Key Cloud above.`
+      );
     } finally {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
       setIsGenerating(false);
       setProgressStatus("");
     }
   };
 
-  // Primary Action Button Handler
   const handlePrimaryGenerate = async () => {
     if (inputMode === "directText") {
       if (!directText.trim()) {
@@ -391,9 +443,8 @@ export default function HomePage() {
       setLearnedContent(learned);
       handleGenerateFromLearned(learned);
     } else {
-      // In Photo mode: Check which engine is active
       if (engineMode === "gemini") {
-        await handleGenerateWithGemini();
+        await handleGenerateCloudAI();
       } else {
         const learned = await handleAnalyzeImages();
         if (learned) {
@@ -403,7 +454,6 @@ export default function HomePage() {
     }
   };
 
-  // Load sample template for instant testing
   const handleLoadSample = (type: "matatag" | "lccp") => {
     if (type === "matatag") {
       setGradeLevel("grade1");
@@ -418,9 +468,13 @@ export default function HomePage() {
     setScanWarning(null);
   };
 
+  const scrollToStudio = () => {
+    studioAnchorRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
-    <div className="min-h-screen bg-canvas flex flex-col">
-      {/* Header */}
+    <main className="overflow-x-hidden w-full max-w-full min-h-screen bg-[#FAF9F6] text-stone-900 selection:bg-stone-200 selection:text-stone-900 flex flex-col">
+      {/* Floating Header */}
       <Header
         profile={profile}
         onOpenSettings={() => setIsSettingsOpen(true)}
@@ -428,149 +482,248 @@ export default function HomePage() {
         historyCount={historyItems.length}
       />
 
-      {/* Main Workspace */}
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Column: Inputs & Controls (5 cols) */}
-          <div className="no-print lg:col-span-5 space-y-5">
-            {/* Template & Preset Selectors */}
-            <SelectorBar
-              gradeLevel={gradeLevel}
-              subject={subject}
-              weekNumber={weekNumber}
-              term={term}
-              dateCoverage={dateCoverage}
-              bookReference={bookReference}
-              onChangeGrade={setGradeLevel}
-              onChangeSubject={setSubject}
-              onChangeWeekNumber={setWeekNumber}
-              onChangeTerm={setTerm}
-              onChangeDateCoverage={setDateCoverage}
-              onChangeBookReference={setBookReference}
-            />
+      {/* Cinematic Center Hero (AIDA: Attention) */}
+      <section ref={heroRef} className="pt-20 pb-16 md:pt-28 md:pb-24 px-4 sm:px-6 lg:px-8 text-center relative">
+        <div className="max-w-5xl mx-auto space-y-6">
+          <div className="gsap-hero-item inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-stone-100 border border-stone-200/90 text-[11px] font-medium text-stone-700 shadow-2xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+            <span>La Consolacion College Pasig Official Curriculum Architecture</span>
+          </div>
 
-            {/* AI Engine Selector: Gemini Vision AI vs Free Built-in Mode */}
-            <div className="p-3.5 rounded-2xl bg-surface border border-sage-200 shadow-2xs space-y-2.5">
-              <div className="flex items-center justify-between text-xs font-semibold text-gray-700">
-                <span className="flex items-center space-x-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-sage-600" />
-                  <span>AI Generation Engine:</span>
-                </span>
-                {profile.geminiApiKey?.trim() && (
-                  <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                    Gemini Key Active
-                  </span>
-                )}
+          <h1 className="gsap-hero-item text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-stone-900 leading-[1.12] max-w-5xl mx-auto">
+            Official Lesson Plan Studio for La Consolacion College Pasig
+          </h1>
+
+          <p className="gsap-hero-item text-sm sm:text-base md:text-lg text-stone-600 font-normal max-w-3xl mx-auto leading-relaxed">
+            Multimodal vision intelligence that reads textbook photos and constructs compliant DepEd MATATAG and LCCP institutional curriculum architectures with authentic school assets.
+          </p>
+
+          <div className="gsap-hero-item flex flex-wrap items-center justify-center gap-3 pt-4">
+            <button
+              onClick={scrollToStudio}
+              className="px-6 py-3 rounded-xl bg-stone-900 text-white text-xs sm:text-sm font-semibold hover:bg-stone-800 active:scale-[0.98] transition-all shadow-sm hover:shadow-md cursor-pointer flex items-center space-x-2"
+            >
+              <span>Capture &amp; Analyze Textbook</span>
+              <ArrowRight className="w-4 h-4 text-stone-300" />
+            </button>
+
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="px-5 py-3 rounded-xl bg-white text-stone-800 text-xs sm:text-sm font-medium border border-stone-200/90 hover:bg-stone-50 active:scale-[0.98] transition-all shadow-2xs cursor-pointer flex items-center space-x-2"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-stone-500" />
+              <span>Curriculum Settings &amp; Profile</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Studio Workspace Anchor */}
+      <div ref={studioAnchorRef} />
+
+      {/* Gapless Bento Grid Workspace (AIDA: Interest, Desire, Action) */}
+      <section ref={bentoRef} className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 grid-flow-dense items-start">
+          
+          {/* Bento Card 1: Textbook Capture Studio (Col 8) */}
+          <div className="gsap-bento-card lg:col-span-8 bg-white rounded-3xl border border-stone-200/90 p-6 sm:p-8 shadow-xs hover:shadow-md transition-shadow duration-300 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-stone-100 pb-5">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <Camera className="w-4 h-4 text-stone-800" />
+                  <h2 className="text-base sm:text-lg font-semibold tracking-tight text-stone-900">
+                    Textbook Capture Studio
+                  </h2>
+                </div>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Direct multimodal vision extraction from lesson pages without preset template fallbacks
+                </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              {/* Engine Mode Tabs */}
+              <div className="flex items-center p-1 bg-stone-100 rounded-xl border border-stone-200/80 text-xs">
                 <button
                   type="button"
                   onClick={() => {
                     setEngineMode("gemini");
-                    if (!profile.geminiApiKey?.trim()) {
-                      setShowKeyInput(true);
-                    }
+                    if (!isKeyConfigured(profile)) setShowKeyInput(true);
                   }}
-                  className={`py-2 px-3 rounded-xl text-xs font-medium border flex items-center justify-center space-x-1.5 transition-all ${
+                  className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center space-x-1.5 ${
                     engineMode === "gemini"
-                      ? "bg-sage-50 border-sage-500 text-sage-700 font-semibold shadow-2xs"
-                      : "bg-surface border-borderMuted text-gray-500 hover:bg-canvas"
+                      ? "bg-white text-stone-900 shadow-2xs font-semibold"
+                      : "text-stone-600 hover:text-stone-900"
                   }`}
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-sage-600" />
-                  <span>Gemini Vision AI</span>
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>Cloud Vision AI</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setEngineMode("builtIn")}
-                  className={`py-2 px-3 rounded-xl text-xs font-medium border flex items-center justify-center space-x-1.5 transition-all ${
+                  className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center space-x-1.5 ${
                     engineMode === "builtIn"
-                      ? "bg-pastel-mint-bg border-pastel-mint-border text-pastel-mint-text font-semibold shadow-2xs"
-                      : "bg-surface border-borderMuted text-gray-500 hover:bg-canvas"
+                      ? "bg-white text-stone-900 shadow-2xs font-semibold"
+                      : "text-stone-600 hover:text-stone-900"
                   }`}
                 >
-                  <Zap className="w-3.5 h-3.5 text-sage-600" />
-                  <span>Free Built-in (No Key)</span>
+                  <Zap className="w-3.5 h-3.5 text-stone-600" />
+                  <span>Offline ML</span>
                 </button>
               </div>
-
-              {/* Gemini Key Inline Input if missing */}
-              {engineMode === "gemini" && (!profile.geminiApiKey?.trim() || showKeyInput) && (
-                <div className="pt-1.5 border-t border-borderMuted space-y-2 animate-in fade-in duration-150">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-semibold text-gray-700 flex items-center space-x-1">
-                      <Key className="w-3 h-3 text-sage-600" />
-                      <span>Enter Gemini API Key:</span>
-                    </span>
-                    <a
-                      href="https://aistudio.google.com/app/apikey"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sage-600 hover:text-sage-700 font-medium underline underline-offset-2 flex items-center space-x-0.5"
-                    >
-                      <span>Get free key</span>
-                      <ExternalLink className="w-2.5 h-2.5" />
-                    </a>
-                  </div>
-                  <div className="flex items-center space-x-1.5">
-                    <input
-                      type="password"
-                      placeholder="AIzaSy..."
-                      value={quickApiKey}
-                      onChange={(e) => setQuickApiKey(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleSaveQuickKey())}
-                      className="flex-1 text-xs font-mono px-3 py-1.5 rounded-lg bg-canvas border border-borderMuted focus:outline-none focus:border-sage-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSaveQuickKey}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-sage-500 text-white hover:bg-sage-600"
-                    >
-                      Save Key
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <p className="text-[11px] text-gray-400 leading-relaxed">
-                {engineMode === "gemini"
-                  ? "✨ Deep Multimodal Vision: Directly reads textbook JPEGs, analyzing stories, illustrations, and questions with high relevance."
-                  : "⚡ 100% Free on-device machine learning: Reads textbook text inside your browser without needing any API keys."}
-              </p>
             </div>
 
-            {/* Input Method Tabs: Photo vs Direct Text */}
-            <div className="bg-surface rounded-2xl border border-borderMuted p-1.5 flex gap-1 shadow-2xs">
+            {/* Provider Pill Selectors */}
+            {engineMode === "gemini" && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 bg-stone-50 rounded-2xl border border-stone-200/70 text-xs font-medium">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = { ...profile, aiProvider: "free_cloud" as const };
+                      handleSaveProfile(updated);
+                      setShowKeyInput(false);
+                    }}
+                    className={`py-2 px-2.5 rounded-xl text-center transition-all cursor-pointer ${
+                      (profile.aiProvider || "free_cloud") === "free_cloud"
+                        ? "bg-stone-900 text-white font-semibold shadow-xs"
+                        : "text-stone-600 hover:bg-white"
+                    }`}
+                  >
+                    Zero-Key Cloud
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = { ...profile, aiProvider: "gemini" as const };
+                      handleSaveProfile(updated);
+                      if (!updated.geminiApiKey?.trim()) setShowKeyInput(true);
+                    }}
+                    className={`py-2 px-2.5 rounded-xl text-center transition-all cursor-pointer ${
+                      profile.aiProvider === "gemini"
+                        ? "bg-stone-900 text-white font-semibold shadow-xs"
+                        : "text-stone-600 hover:bg-white"
+                    }`}
+                  >
+                    Google Gemini
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = { ...profile, aiProvider: "openrouter" as const };
+                      handleSaveProfile(updated);
+                      if (!updated.openRouterApiKey?.trim()) setShowKeyInput(true);
+                    }}
+                    className={`py-2 px-2.5 rounded-xl text-center transition-all cursor-pointer ${
+                      profile.aiProvider === "openrouter"
+                        ? "bg-stone-900 text-white font-semibold shadow-xs"
+                        : "text-stone-600 hover:bg-white"
+                    }`}
+                  >
+                    OpenRouter
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = { ...profile, aiProvider: "mistral" as const };
+                      handleSaveProfile(updated);
+                      if (!updated.mistralApiKey?.trim()) setShowKeyInput(true);
+                    }}
+                    className={`py-2 px-2.5 rounded-xl text-center transition-all cursor-pointer ${
+                      profile.aiProvider === "mistral"
+                        ? "bg-stone-900 text-white font-semibold shadow-xs"
+                        : "text-stone-600 hover:bg-white"
+                    }`}
+                  >
+                    Mistral AI
+                  </button>
+                </div>
+
+                {/* Inline API Key Input */}
+                {(!isKeyConfigured(profile) || showKeyInput) && profile.aiProvider !== "free_cloud" && (
+                  <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 space-y-2.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-stone-800 flex items-center space-x-1.5">
+                        <Key className="w-3.5 h-3.5 text-stone-600" />
+                        <span>Enter {getProviderDisplayName(profile.aiProvider)} API Key</span>
+                      </span>
+                      <a
+                        href={
+                          profile.aiProvider === "openrouter"
+                            ? "https://openrouter.ai/keys"
+                            : profile.aiProvider === "mistral"
+                            ? "https://console.mistral.ai/api-keys/"
+                            : "https://aistudio.google.com/app/apikey"
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-stone-600 hover:text-stone-900 underline underline-offset-2 flex items-center space-x-1"
+                      >
+                        <span>Acquire key</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="password"
+                        placeholder={
+                          profile.aiProvider === "openrouter"
+                            ? "sk-or-v1-..."
+                            : profile.aiProvider === "mistral"
+                            ? "mistral_..."
+                            : "AIzaSy..."
+                        }
+                        value={quickApiKey}
+                        onChange={(e) => setQuickApiKey(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleSaveQuickKey())}
+                        className="flex-1 text-xs font-mono px-3 py-2 rounded-xl bg-white border border-stone-200 focus:outline-none focus:border-stone-800"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSaveQuickKey}
+                        className="px-4 py-2 rounded-xl text-xs font-semibold bg-stone-900 text-white hover:bg-stone-800 cursor-pointer"
+                      >
+                        Save Key
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Input Mode Selector */}
+            <div className="flex p-1 bg-stone-100 rounded-2xl border border-stone-200/80 gap-1 text-xs">
               <button
                 type="button"
                 onClick={() => setInputMode("photo")}
-                className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all ${
+                className={`flex-1 py-2 px-3 rounded-xl font-medium flex items-center justify-center space-x-1.5 transition-all cursor-pointer ${
                   inputMode === "photo"
-                    ? "bg-sage-50 text-sage-700 border border-sage-200 shadow-2xs"
-                    : "text-gray-500 hover:text-gray-700 hover:bg-canvas"
+                    ? "bg-white text-stone-900 shadow-2xs font-semibold"
+                    : "text-stone-600 hover:text-stone-900"
                 }`}
               >
                 <Camera className="w-3.5 h-3.5" />
-                <span>Textbook Photo (JPEG)</span>
+                <span>Textbook Photo (JPEG / PNG)</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setInputMode("directText")}
-                className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all ${
+                className={`flex-1 py-2 px-3 rounded-xl font-medium flex items-center justify-center space-x-1.5 transition-all cursor-pointer ${
                   inputMode === "directText"
-                    ? "bg-sage-50 text-sage-700 border border-sage-200 shadow-2xs"
-                    : "text-gray-500 hover:text-gray-700 hover:bg-canvas"
+                    ? "bg-white text-stone-900 shadow-2xs font-semibold"
+                    : "text-stone-600 hover:text-stone-900"
                 }`}
               >
                 <FileText className="w-3.5 h-3.5" />
-                <span>Paste / Type Lesson Text</span>
+                <span>Paste Lesson Notes</span>
               </button>
             </div>
 
-            {/* Method A: Photo Uploader */}
+            {/* Photo Uploader */}
             {inputMode === "photo" && (
               <ImageUploader
                 images={images}
@@ -583,47 +736,28 @@ export default function HomePage() {
               />
             )}
 
-            {/* Method B: Direct Text Paste Input */}
+            {/* Direct Text Input */}
             {inputMode === "directText" && (
-              <div className="bg-surface rounded-2xl border border-borderMuted p-5 shadow-xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Lesson Content / Notes
-                  </h2>
-                  <span className="text-[11px] text-sage-600 bg-sage-50 px-2 py-0.5 rounded-full border border-sage-200">
-                    Instant Analysis
-                  </span>
-                </div>
+              <div className="space-y-3">
                 <textarea
                   rows={6}
                   value={directText}
                   onChange={(e) => setDirectText(e.target.value)}
                   placeholder="Paste or type your lesson title, story, or exercises here (e.g. Aralin 5: Ang Munting Gamu-gamo... Pahina 42... Gabay na Tanong...)"
-                  className="w-full text-xs p-3.5 rounded-xl bg-canvas border border-borderMuted focus:outline-none focus:border-sage-500 font-sans leading-relaxed text-gray-800"
+                  className="w-full text-xs p-4 rounded-2xl bg-stone-50 border border-stone-200 focus:outline-none focus:border-stone-800 font-sans leading-relaxed text-stone-900"
                 />
                 <button
                   type="button"
                   onClick={handleAnalyzeDirectText}
-                  className="w-full py-2.5 px-3 rounded-xl text-xs font-semibold text-sage-700 bg-sage-50 border border-sage-200 hover:bg-sage-100 transition-colors flex items-center justify-center space-x-1.5"
+                  className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-stone-800 bg-stone-100 hover:bg-stone-200 border border-stone-200 transition-colors flex items-center justify-center space-x-1.5 cursor-pointer"
                 >
-                  <Brain className="w-3.5 h-3.5" />
-                  <span>Analyze Pasted Text</span>
+                  <Brain className="w-3.5 h-3.5 text-stone-700" />
+                  <span>Parse Lesson Text</span>
                 </button>
               </div>
             )}
 
-            {/* Scan Warning Notice */}
-            {scanWarning && (
-              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start space-x-2.5 animate-in fade-in">
-                <HelpCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
-                <div className="flex-1">
-                  <p className="font-semibold text-[11px]">Notice on Scan Quality</p>
-                  <p className="mt-0.5 text-[11px] leading-relaxed">{scanWarning}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Built-in Mode Inspection Card (if learned locally) */}
+            {/* Offline Learned Insights Inspection */}
             {learnedContent && (
               <LearnedInsightsCard
                 learned={learnedContent}
@@ -644,75 +778,148 @@ export default function HomePage() {
                   (inputMode === "photo" && images.length === 0) ||
                   (inputMode === "directText" && !directText.trim())
                 }
-                className="w-full py-3.5 px-6 rounded-2xl text-sm font-semibold text-white bg-sage-500 hover:bg-sage-600 active:scale-[0.99] transition-all shadow-md shadow-sage-500/20 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full py-4 px-6 rounded-2xl text-sm font-semibold text-white bg-emerald-800 hover:bg-emerald-900 active:scale-[0.99] transition-all shadow-sm hover:shadow-md flex items-center justify-center space-x-2 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isAnalyzing || isGenerating ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>{progressStatus || "Analyzing Textbook JPEG..."}</span>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>{progressStatus || "Analyzing Textbook Content..."}</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4 text-pastel-butter-border" />
+                    <Sparkles className="w-4 h-4 text-emerald-200" />
                     <span>
                       {engineMode === "gemini" && inputMode === "photo"
-                        ? "Analyze JPEG with Gemini AI & Generate Plan ✨"
-                        : "Read Book & Generate Official Lesson Plan ⚡"}
+                        ? `Analyze JPEG with ${getProviderDisplayName(profile.aiProvider)}`
+                        : "Generate Official DepEd / LCCP Lesson Plan"}
                     </span>
                   </>
                 )}
               </button>
             )}
 
-            {/* Error Message */}
+            {/* Error and Guidance Banner */}
             {errorMessage && (
-              <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start space-x-2.5 animate-in fade-in">
+              <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start space-x-3">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
-                <div className="flex-1">
-                  <p className="font-semibold">Notice</p>
-                  <p className="mt-0.5 text-[11px] leading-relaxed">{errorMessage}</p>
-                  {engineMode === "gemini" && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEngineMode("builtIn");
-                        setErrorMessage(null);
-                      }}
-                      className="mt-2 text-xs font-semibold text-sage-700 underline"
-                    >
-                      Switch to Free Built-in Mode (No API Key)
-                    </button>
-                  )}
+                <div className="flex-1 space-y-1">
+                  <p className="font-semibold text-rose-900">Scan Notice</p>
+                  <p className="text-[11px] leading-relaxed text-rose-800">{errorMessage}</p>
                 </div>
               </div>
             )}
 
+            {/* Warning Banner */}
+            {scanWarning && (
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start space-x-3">
+                <HelpCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-700" />
+                <div className="flex-1">
+                  <p className="font-semibold text-amber-950">Lighting Notice</p>
+                  <p className="text-[11px] leading-relaxed text-amber-800 mt-0.5">{scanWarning}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Bento Card 2: Curriculum Architecture (Col 4) */}
+          <div className="gsap-bento-card lg:col-span-4 bg-white rounded-3xl border border-stone-200/90 p-6 sm:p-7 shadow-xs hover:shadow-md transition-shadow duration-300 space-y-5">
+            <div className="border-b border-stone-100 pb-4">
+              <div className="flex items-center space-x-2">
+                <BookOpen className="w-4 h-4 text-stone-800" />
+                <h2 className="text-base font-semibold tracking-tight text-stone-900">
+                  Curriculum Parameters
+                </h2>
+              </div>
+              <p className="text-xs text-stone-500 mt-0.5">
+                Target grade level, subject domain, and term week
+              </p>
+            </div>
+
+            <SelectorBar
+              gradeLevel={gradeLevel}
+              subject={subject}
+              weekNumber={weekNumber}
+              term={term}
+              dateCoverage={dateCoverage}
+              bookReference={bookReference}
+              onChangeGrade={setGradeLevel}
+              onChangeSubject={setSubject}
+              onChangeWeekNumber={setWeekNumber}
+              onChangeTerm={setTerm}
+              onChangeDateCoverage={setDateCoverage}
+              onChangeBookReference={setBookReference}
+            />
+
             {/* Quick Demo Previews */}
-            <div className="pt-2 text-center">
-              <span className="text-[11px] text-gray-400 block mb-2 font-medium">
-                Want to test Kat&apos;s official school templates right now?
+            <div className="pt-2 border-t border-stone-100 space-y-2">
+              <span className="text-[11px] font-medium text-stone-500 block">
+                Instant Template Demonstrations:
               </span>
-              <div className="flex items-center justify-center space-x-2">
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => handleLoadSample("matatag")}
-                  className="text-xs px-3 py-1.5 rounded-lg bg-surface hover:bg-sage-50 border border-borderMuted text-gray-600 font-medium transition-colors"
+                  className="text-xs py-2 px-2.5 rounded-xl bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 font-medium transition-colors cursor-pointer text-center"
                 >
-                  Load Grade 1 Filipino Sample
+                  Grade 1 Filipino
                 </button>
                 <button
                   type="button"
                   onClick={() => handleLoadSample("lccp")}
-                  className="text-xs px-3 py-1.5 rounded-lg bg-surface hover:bg-sage-50 border border-borderMuted text-gray-600 font-medium transition-colors"
+                  className="text-xs py-2 px-2.5 rounded-xl bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 font-medium transition-colors cursor-pointer text-center"
                 >
-                  Load K2 Language Sample
+                  Kinder 2 Language
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Live Document Preview & Actions (7 cols) */}
-          <div className="lg:col-span-7">
+          {/* Bento Card 3: Institutional Mandates & Compliance (Col 4) */}
+          <div className="gsap-bento-card lg:col-span-4 bg-white rounded-3xl border border-stone-200/90 p-6 sm:p-7 shadow-xs hover:shadow-md transition-shadow duration-300 space-y-4">
+            <div className="flex items-center space-x-2 border-b border-stone-100 pb-4">
+              <ShieldCheck className="w-4 h-4 text-emerald-800" />
+              <h2 className="text-base font-semibold tracking-tight text-stone-900">
+                Institutional Mandates
+              </h2>
+            </div>
+
+            <div className="space-y-3 text-xs text-stone-600 leading-relaxed">
+              <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-1">
+                <span className="font-semibold text-stone-900 block">DepEd DO 3 s. 2026 Annex</span>
+                <p className="text-[11px] text-stone-600">
+                  Includes mandatory AI declaration ensuring curriculum alignment with DepEd MATATAG K-12 standards.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-1">
+                <span className="font-semibold text-stone-900 block">Augustinian Core Values</span>
+                <p className="text-[11px] text-stone-600">
+                  Preserves Laudato Si stewardship, Justice and Peace, Gender and Development, and LCCP Care.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-1">
+                <span className="font-semibold text-stone-900 block">Document Signatories</span>
+                <p className="text-[11px] text-stone-600">
+                  Configured with prepared, checked, and observed signatories in accordance with institutional policy.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bento Card 4: Official Document Workspace (Col 8) */}
+          <div className="gsap-bento-card lg:col-span-8 bg-white rounded-3xl border border-stone-200/90 p-6 sm:p-8 shadow-xs hover:shadow-md transition-shadow duration-300 space-y-6">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-4">
+              <div>
+                <h2 className="text-base sm:text-lg font-semibold tracking-tight text-stone-900">
+                  Official Lesson Plan Document
+                </h2>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Interactive in-place table editor with official Microsoft Word and PDF export
+                </p>
+              </div>
+            </div>
+
             {currentPlan ? (
               <LessonPlanPreview
                 plan={currentPlan}
@@ -720,23 +927,33 @@ export default function HomePage() {
                 onUpdatePlan={handleUpdateCurrentPlan}
               />
             ) : (
-              <div className="bg-surface rounded-2xl border border-dashed border-borderMuted p-12 text-center flex flex-col items-center justify-center text-gray-400 space-y-3 min-h-[460px]">
-                <div className="w-14 h-14 rounded-2xl bg-canvas border border-borderMuted flex items-center justify-center text-gray-400">
+              <div className="rounded-2xl border-2 border-dashed border-stone-200 p-12 text-center flex flex-col items-center justify-center text-stone-400 space-y-3 min-h-[380px]">
+                <div className="w-14 h-14 rounded-2xl bg-stone-50 border border-stone-200 flex items-center justify-center text-stone-400">
                   <FileCheck className="w-7 h-7 stroke-1" />
                 </div>
-                <div className="max-w-xs">
-                  <h3 className="text-sm font-semibold text-gray-700">
-                    Your Official School Lesson Plan
+                <div className="max-w-sm space-y-1">
+                  <h3 className="text-sm font-semibold text-stone-800">
+                    Awaiting Lesson Plan Generation
                   </h3>
-                  <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                    Attach a photo of the lesson page or paste your lesson notes. The system extracts the topic, questions, and exercises into Kat&apos;s exact DepEd MATATAG or LCCP document format.
+                  <p className="text-xs text-stone-500 leading-relaxed">
+                    Attach textbook lesson photos or click a demonstration sample to render Kat&apos;s verified DepEd MATATAG or LCCP institutional table.
                   </p>
                 </div>
               </div>
             )}
           </div>
         </div>
-      </main>
+      </section>
+
+      {/* Footer (AIDA: Action) */}
+      <footer className="w-full border-t border-stone-200/80 bg-white py-10 px-4 sm:px-8 text-center text-xs text-stone-500 space-y-2">
+        <p className="font-medium text-stone-700">
+          La Consolacion College Pasig &bull; Basic Education Department
+        </p>
+        <p className="text-[11px] text-stone-400">
+          Compliant with DepEd Order No. 3 s. 2026 Annex &bull; Augustinian Community of Learning
+        </p>
+      </footer>
 
       {/* Settings Modal */}
       <SettingsModal
@@ -755,6 +972,6 @@ export default function HomePage() {
         onDeleteItem={handleDeleteHistoryItem}
         onClearAll={handleClearHistory}
       />
-    </div>
+    </main>
   );
 }

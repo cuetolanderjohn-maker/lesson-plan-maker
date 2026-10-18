@@ -25,10 +25,14 @@ function isCleanVisionModel(name: string): boolean {
 }
 
 const CANDIDATE_MODELS = [
+  "gemini-3.8-flash",
+  "gemini-3.1-pro-preview",
   "gemini-2.5-flash",
   "gemini-2.0-flash",
-  "gemini-2.5-pro",
+  "gemini-2.0-flash-exp",
+  "gemini-1.5-flash-8b",
   "gemini-1.5-flash",
+  "gemini-2.5-pro",
   "gemini-1.5-pro",
 ];
 
@@ -117,19 +121,20 @@ export async function generateLessonPlanWithGemini(
     const activeRemoteModels = await discoverAvailableModels(apiKey);
     const modelsToTry: string[] = [];
 
-    // If user specified a preferred model, try that first
+    // 1. If user specified a preferred model, try that first
     if (profile?.geminiModel && profile.geminiModel !== "auto") {
       modelsToTry.push(profile.geminiModel);
     }
 
-    // Next, try discovered remote models that match our candidate models in priority order
-    for (const candidate of CANDIDATE_MODELS) {
-      if (activeRemoteModels.includes(candidate) && !modelsToTry.includes(candidate)) {
-        modelsToTry.push(candidate);
+    // 2. Add ALL active models discovered from Google for this specific key
+    console.log(`[Gemini AI] Discovered ${activeRemoteModels.length} active models from Google API:`, activeRemoteModels);
+    for (const remote of activeRemoteModels) {
+      if (!modelsToTry.includes(remote)) {
+        modelsToTry.push(remote);
       }
     }
 
-    // Always append our candidate models as static fallback
+    // 3. Append candidate models as static fallback
     for (const candidate of CANDIDATE_MODELS) {
       if (!modelsToTry.includes(candidate)) {
         modelsToTry.push(candidate);

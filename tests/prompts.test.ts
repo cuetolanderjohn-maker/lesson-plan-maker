@@ -56,3 +56,16 @@ test("parseLessonPlanResponse throws friendly error when model returns conversat
     /could not be parsed/
   );
 });
+
+test("parseLessonPlanResponse cleanly handles conversational prefix, suffix, and trailing commas", () => {
+  const conversationalResponse =
+    "Sure! Here is the completed official DepEd MATATAG lesson plan for your textbook:\n\n" +
+    "```json\n" +
+    JSON.stringify(sampleMatatagPlan).replace(/}$/, ',"customNote": "test",}') + // introduce trailing comma
+    "\n```\n\nHope this helps with your class tomorrow!";
+
+  const parsed = parseLessonPlanResponse(conversationalResponse, "matatag");
+  assert.strictEqual(parsed.templateType, "matatag");
+  assert.strictEqual(parsed.subject, "FILIPINO");
+  assert.strictEqual(parsed.subjectMatter.paksa, sampleMatatagPlan.subjectMatter.paksa);
+});
