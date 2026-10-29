@@ -1,6 +1,6 @@
 # Lesson Plan Maker (LCCP Edition)
 
-> *"i made this website to lesson the heavy responsibilities of my love"* ❤️
+> *"i made this website to lesson the heavy responsibilities of my love"*
 
 An automated curriculum architecture studio designed specifically for **Ms. Kathrynn Ross L. Acola (Kat)** at **La Consolacion College - Pasig**.
 
@@ -23,16 +23,6 @@ This project was built with love to support teacher Kat in preparing daily lesso
 
 ---
 
-## How to Enable GitHub Pages (Takes 2 Clicks)
-
-1. Open your repository on GitHub: **[cuetolanderjohn-maker/lesson-plan-maker/settings/pages](https://github.com/cuetolanderjohn-maker/lesson-plan-maker/settings/pages)**.
-2. Under **Build and deployment** &rarr; **Branch**:
-   - Select **`gh-pages`** and folder **`/(root)`**.
-3. Click **Save**.
-4. GitHub Pages will immediately activate your live domain:
-   - **[https://cuetolanderjohn-maker.github.io/lesson-plan-maker/](https://cuetolanderjohn-maker.github.io/lesson-plan-maker/)**
-
----
 
 ## Features
 
@@ -54,23 +44,3 @@ This project was built with love to support teacher Kat in preparing daily lesso
 - **Print & PDF Stylesheet:** Formatted for standard paper printing with background cleanup.
 
 ---
-
-## Quick Start on Windows
-
-1. Run the local development server:
-   ```bash
-   npm run dev
-   ```
-   *(Or double-click `start.bat`)*
-2. Open **`http://localhost:3000`** in your browser.
-3. Attach textbook photos or select a demonstration sample, then click **Generate DepEd / LCCP Lesson Plan**.
-
----
-
-## Test Suite
-
-Run the automated test suite:
-```bash
-npm test
-```
-All 19 unit tests verify schema compliance, vision parsing, and DOCX table generation.
