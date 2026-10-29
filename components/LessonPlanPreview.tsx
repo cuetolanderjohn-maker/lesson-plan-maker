@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Download, Printer, Copy, Check, Edit3 } from "lucide-react";
 import type { LessonPlan, MatatagLessonPlan, LccpLearningPlan, TeacherProfile } from "@/lib/types";
 import { generateMatatagDocx, generateLccpDocx } from "@/lib/docxGenerator";
+import { LCCP_BANNER_BASE64, LCCP_CREST_BASE64 } from "@/lib/schoolLogos";
 import { saveAs } from "file-saver";
 
 interface LessonPlanPreviewProps {
@@ -182,7 +183,7 @@ const MatatagRenderer: React.FC<{
       {/* Title Header with Official School Banner */}
       <div className="bg-gray-100 p-3 text-center border-b border-black">
         <img
-          src="/assets/k2_week1_image1.jpeg"
+          src={`data:image/jpeg;base64,${LCCP_BANNER_BASE64}`}
           alt="La Consolacion College - Pasig Header Banner"
           className="h-14 sm:h-16 w-auto max-w-full mx-auto mb-2 object-contain"
         />
@@ -648,7 +649,7 @@ const LccpRenderer: React.FC<{
       {/* School Header with Official LCCP Crest */}
       <div className="bg-gray-100 p-3 text-center border-b border-black">
         <img
-          src="/assets/k2_image1.png"
+          src={`data:image/png;base64,${LCCP_CREST_BASE64}`}
           alt="La Consolacion College - Pasig Crest"
           className="h-16 w-auto mx-auto mb-2 object-contain"
         />

@@ -4,24 +4,23 @@ An automated curriculum architecture studio designed specifically for **Ms. Kath
 
 It transforms textbook photos into officially formatted lesson plans for **Kindergarten 2** and **Grade 1** matching the school's exact Microsoft Word documents and DepEd MATATAG guidelines.
 
-[![DepEd MATATAG](https://img.shields.io/badge/DepEd-MATATAG%20K--12%20DO%203%20s.%202026-blue?style=for-the-badge)](https://github.com/cuetolanderjohn-maker/lesson-plan-maker)
-[![Tests Passing](https://img.shields.io/badge/Tests-19%2F19%20Passing-emerald?style=for-the-badge)](https://github.com/cuetolanderjohn-maker/lesson-plan-maker)
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/cuetolanderjohn-maker/lesson-plan-maker)
+[![Live on GitHub Pages](https://img.shields.io/badge/Live%20Website-GitHub%20Pages-1b4332?style=for-the-badge&logo=github)](https://cuetolanderjohn-maker.github.io/lesson-plan-maker/)
+[![DepEd MATATAG](https://img.shields.io/badge/DepEd-MATATAG%20K--12%20DO%203%20s.%202026-blue?style=for-the-badge)](https://cuetolanderjohn-maker.github.io/lesson-plan-maker/)
+[![Tests Passing](https://img.shields.io/badge/Tests-19%2F19%20Passing-emerald?style=for-the-badge)](https://cuetolanderjohn-maker.github.io/lesson-plan-maker/)
+
+> **Official Live Production URL (GitHub Pages):**
+> **[https://cuetolanderjohn-maker.github.io/lesson-plan-maker/](https://cuetolanderjohn-maker.github.io/lesson-plan-maker/)**
 
 ---
 
-## Deploy to a Free Domain (Render)
+## How to Enable GitHub Pages (Takes 2 Clicks)
 
-This repository includes a pre-configured `render.yaml` blueprint for 1-click free deployment to Render.
-
-### 1-Click Setup:
-1. Click the **[Deploy to Render](https://render.com/deploy?repo=https://github.com/cuetolanderjohn-maker/lesson-plan-maker)** button above (or open [dashboard.render.com](https://dashboard.render.com/)).
-2. Sign in with your GitHub account (`cuetolanderjohn-maker`).
-3. Select this repository: `cuetolanderjohn-maker/lesson-plan-maker`.
-4. Click **Create Web Service**.
-5. Render immediately provisions your app on a free live domain:
-   - **`https://kat-lesson-plan.onrender.com`** (or your chosen name)
-   - Real Node.js container (zero serverless timeout limits, automatic continuous deployment on every git push).
+1. Open your repository on GitHub: **[cuetolanderjohn-maker/lesson-plan-maker](https://github.com/cuetolanderjohn-maker/lesson-plan-maker)**.
+2. Click **Settings** (top navigation tab) &rarr; in the left sidebar, click **Pages** (under *Code and automation*).
+3. Under **Build and deployment** &rarr; **Source**:
+   - Change dropdown from *Deploy from a branch* to **GitHub Actions**.
+4. That's it! GitHub will automatically run the `.github/workflows/deploy.yml` workflow and publish your site at:
+   - **[https://cuetolanderjohn-maker.github.io/lesson-plan-maker/](https://cuetolanderjohn-maker.github.io/lesson-plan-maker/)**
 
 ---
 
