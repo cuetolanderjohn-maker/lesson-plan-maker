@@ -25,6 +25,7 @@ import {
 import { generatePlanFromExtractedText } from "@/lib/freeLessonPlanner";
 import { generateLessonPlanWithGemini } from "@/lib/gemini";
 import { generateLessonPlanUniversal } from "@/lib/universalAiScanner";
+import { reportTelemetry } from "@/lib/clientTelemetry";
 import { analyzeTextbookText, LearnedTextbookContent } from "@/lib/nlpAnalyzer";
 import { preprocessTextbookImage } from "@/lib/imagePreprocessor";
 import Tesseract from "tesseract.js";
@@ -451,6 +452,15 @@ export default function HomePage() {
       setProgressStatus("Assembling official DepEd MATATAG / LCCP lesson plan table...");
     }, 14000);
 
+    const callStartTime = Date.now();
+    const traceId = `req-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    reportTelemetry("info", "Textbook AI analysis started", {
+      provider: activeProfile.aiProvider,
+      imageCount: images.length,
+      gradeLevel,
+      subject,
+    }, traceId);
+
     try {
       setProgressStatus(`Analyzing textbook photo with ${providerName}...`);
 
@@ -501,6 +511,12 @@ export default function HomePage() {
       clearTimeout(timer2);
       clearTimeout(timer3);
 
+      reportTelemetry("info", "Textbook AI analysis succeeded", {
+        provider: activeProfile.aiProvider,
+        durationMs: Date.now() - callStartTime,
+        templateType: plan.templateType,
+      }, traceId);
+
       setCurrentPlan(plan);
       handleSavePlanToHistory(plan);
     } catch (err: unknown) {
@@ -509,6 +525,13 @@ export default function HomePage() {
       clearTimeout(timer3);
       console.error("Cloud AI generation failed:", err);
       const msg = err instanceof Error ? err.message : `Failed to generate plan with ${providerName}.`;
+
+      reportTelemetry("error", "Textbook AI analysis failed", {
+        provider: activeProfile.aiProvider,
+        durationMs: Date.now() - callStartTime,
+        error: msg,
+      }, traceId);
+
       setErrorMessage(
         `${msg} — We never substitute preset dummy data. Please verify your internet connection, ensure the textbook photo is clear and well-lit, or switch to Zero-Key Cloud above.`
       );
