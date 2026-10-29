@@ -1,6 +1,7 @@
 {
   "name": "lesson-plan-maker",
   "version": "1.0.0",
+  "homepage": "https://cuetolanderjohn-maker.github.io/lesson-plan-maker",
   "private": true,
   "scripts": {
     "dev": "next dev",

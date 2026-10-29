@@ -1,5 +1,7 @@
 # Lesson Plan Maker (LCCP Edition)
 
+> *"i made this website to lesson the heavy responsibilities of my love"* ❤️
+
 An automated curriculum architecture studio designed specifically for **Ms. Kathrynn Ross L. Acola (Kat)** at **La Consolacion College - Pasig**.
 
 It transforms textbook photos into officially formatted lesson plans for **Kindergarten 2** and **Grade 1** matching the school's exact Microsoft Word documents and DepEd MATATAG guidelines.
@@ -8,8 +10,16 @@ It transforms textbook photos into officially formatted lesson plans for **Kinde
 [![DepEd MATATAG](https://img.shields.io/badge/DepEd-MATATAG%20K--12%20DO%203%20s.%202026-blue?style=for-the-badge)](https://cuetolanderjohn-maker.github.io/lesson-plan-maker/)
 [![Tests Passing](https://img.shields.io/badge/Tests-19%2F19%20Passing-emerald?style=for-the-badge)](https://cuetolanderjohn-maker.github.io/lesson-plan-maker/)
 
-> **Official Live Production URL (GitHub Pages):**
+> **Official Live Production URL (GitHub Pages):**  
 > **[https://cuetolanderjohn-maker.github.io/lesson-plan-maker/](https://cuetolanderjohn-maker.github.io/lesson-plan-maker/)**
+
+---
+
+## Dedication
+
+> *"i made this website to lesson the heavy responsibilities of my love"*
+
+This project was built with love to support teacher Kat in preparing daily lesson plans, automating time-consuming document formatting, and ensuring seamless compliance with DepEd MATATAG and LCCP institutional standards.
 
 ---
 
