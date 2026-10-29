@@ -34,16 +34,6 @@ This project was built with love to support teacher Kat in preparing daily lesso
 
 ---
 
-## How to Disable the Netlify Domain
-
-To permanently disable the old `katlessonplan.netlify.app` deployment:
-1. Go to your **[Netlify Dashboard](https://app.netlify.com/)**.
-2. Click your site **`katlessonplan`**.
-3. Go to **Site configuration** &rarr; scroll to the bottom &rarr; **Manage site** &rarr; click **Delete site**.
-4. Type `katlessonplan` to confirm. The Netlify domain is immediately deleted and stops serving traffic.
-
----
-
 ## Features
 
 - **Groq AI Vision (`qwen/qwen3.8-27b`) — Ultra Fast (2.5s):**

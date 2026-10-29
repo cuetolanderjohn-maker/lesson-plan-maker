@@ -229,7 +229,7 @@ export async function generateLessonPlanUniversal(req: ScanRequest): Promise<Les
           images,
           systemInstruction,
           extraHeaders: {
-            "HTTP-Referer": "https://katlessonplan.netlify.app",
+            "HTTP-Referer": "https://cuetolanderjohn-maker.github.io/lesson-plan-maker/",
             "X-Title": "Lesson Plan Maker (LCCP Edition)",
           },
         });
