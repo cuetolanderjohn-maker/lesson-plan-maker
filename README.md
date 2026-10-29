@@ -15,11 +15,11 @@ It transforms textbook photos into officially formatted lesson plans for **Kinde
 
 ## How to Enable GitHub Pages (Takes 2 Clicks)
 
-1. Open your repository on GitHub: **[cuetolanderjohn-maker/lesson-plan-maker](https://github.com/cuetolanderjohn-maker/lesson-plan-maker)**.
-2. Click **Settings** (top navigation tab) &rarr; in the left sidebar, click **Pages** (under *Code and automation*).
-3. Under **Build and deployment** &rarr; **Source**:
-   - Change dropdown from *Deploy from a branch* to **GitHub Actions**.
-4. That's it! GitHub will automatically run the `.github/workflows/deploy.yml` workflow and publish your site at:
+1. Open your repository on GitHub: **[cuetolanderjohn-maker/lesson-plan-maker/settings/pages](https://github.com/cuetolanderjohn-maker/lesson-plan-maker/settings/pages)**.
+2. Under **Build and deployment** &rarr; **Branch**:
+   - Select **`gh-pages`** and folder **`/(root)`**.
+3. Click **Save**.
+4. GitHub Pages will immediately activate your live domain:
    - **[https://cuetolanderjohn-maker.github.io/lesson-plan-maker/](https://cuetolanderjohn-maker.github.io/lesson-plan-maker/)**
 
 ---
