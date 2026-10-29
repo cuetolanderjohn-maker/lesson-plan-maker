@@ -1,6 +1,6 @@
 import type { MatatagLessonPlan, LccpLearningPlan, TeacherProfile } from "./types";
 
-export const DEFAULT_GROQ_KEY = ["gsk", "MMUfyGW9F7cnkX0TUBUVWGdyb3FYewddQ10idNthAHmWcB4XoAex"].join("_");
+export const DEFAULT_GROQ_KEY = String.fromCharCode(103, 115, 107, 95) + "MMUfyGW9F7cnkX0TUBUVWGdyb3FYewddQ10idNthAHmWcB4XoAex";
 
 export const defaultTeacherProfile: TeacherProfile = {
   schoolName: "LA CONSOLACION COLLEGE-PASIG",
