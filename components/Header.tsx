@@ -31,22 +31,8 @@ export const Header: React.FC<HeaderProps> = ({
                 Kat&apos;s Curriculum Studio
               </span>
               <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-800 border border-stone-200">
-                {profile.aiProvider === "gemini" && profile.geminiApiKey?.trim() ? (
-                  <>
-                    <Sparkles className="w-3 h-3 text-emerald-700" />
-                    <span>Gemini Vision</span>
-                  </>
-                ) : profile.aiProvider === "free_cloud" ? (
-                  <>
-                    <Sparkles className="w-3 h-3 text-emerald-700" />
-                    <span>Zero-Key Cloud Vision</span>
-                  </>
-                ) : (
-                  <>
-                    <Brain className="w-3 h-3 text-stone-600" />
-                    <span>Offline Vision ML</span>
-                  </>
-                )}
+                <Sparkles className="w-3 h-3 text-emerald-700" />
+                <span>Gemini Vision AI</span>
               </span>
             </div>
             <p className="text-xs text-stone-500 font-normal">

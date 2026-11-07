@@ -1,6 +1,6 @@
 import { buildMatatagSystemPrompt, buildLccpSystemPrompt, parseLessonPlanResponse } from "./prompts";
 import { generateLessonPlanWithGemini } from "./gemini";
-import { DEFAULT_GROQ_KEY } from "./sampleData";
+import { getInternalGroqKey } from "./sampleData";
 import type { GenerateRequestMeta, TeacherProfile, LessonPlan, TemplateType, ImageInput, AIProvider } from "./types";
 
 export interface ScanRequest {
@@ -164,7 +164,7 @@ export async function generateLessonPlanUniversal(req: ScanRequest): Promise<Les
     const key =
       profile?.groqApiKey?.trim() ||
       envKey ||
-      DEFAULT_GROQ_KEY;
+      getInternalGroqKey();
     const model = profile?.groqModel?.trim() || "qwen/qwen3.8-27b";
 
     try {
@@ -178,14 +178,11 @@ export async function generateLessonPlanUniversal(req: ScanRequest): Promise<Les
       });
       return parseLessonPlanResponse(rawText, templateType);
     } catch (err: unknown) {
-      console.warn(`[Universal AI] Groq Vision failed:`, err);
-      // Failover to Gemini if configured, or Free Cloud
-      if (profile?.geminiApiKey?.trim()) {
-        try {
-          return await generateLessonPlanWithGemini(images, meta, profile);
-        } catch {
-          // fall through
-        }
+      console.warn(`[Universal AI] Groq Vision failed, failing over to Google Gemini:`, err);
+      try {
+        return await generateLessonPlanWithGemini(images, meta, profile);
+      } catch {
+        // fall through
       }
       return await generateWithFreeCloud(images, meta, profile, templateType, systemInstruction);
     }
@@ -196,8 +193,19 @@ export async function generateLessonPlanUniversal(req: ScanRequest): Promise<Les
     try {
       return await generateLessonPlanWithGemini(images, meta, profile);
     } catch (err) {
-      console.warn("[Universal AI] Gemini failed, attempting automatic Free Cloud Vision failover:", err);
-      // Seamless failover to Free Cloud Vision Gateway so the scan succeeds!
+      console.warn("[Universal AI] Gemini failed, attempting automatic Groq / Cloud Vision failover:", err);
+      try {
+        const rawText = await callOpenAiCompatibleVision({
+          endpointUrl: "https://api.groq.com/openai/v1/chat/completions",
+          apiKey: getInternalGroqKey(),
+          model: "qwen/qwen3.8-27b",
+          images,
+          systemInstruction,
+        });
+        return parseLessonPlanResponse(rawText, templateType);
+      } catch {
+        // fall through
+      }
       return await generateWithFreeCloud(images, meta, profile, templateType, systemInstruction);
     }
   }

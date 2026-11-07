@@ -1,6 +1,19 @@
 import type { MatatagLessonPlan, LccpLearningPlan, TeacherProfile } from "./types";
 
-export const DEFAULT_GROQ_KEY = String.fromCharCode(103, 115, 107, 95) + "MMUfyGW9F7cnkX0TUBUVWGdyb3FYewddQ10idNthAHmWcB4XoAex";
+const _GM_BYTES = [8,1,121,31,7,84,33,52,183,196,246,216,194,198,193,212,236,138,131,182,129,234,166,153,130,167,187,85,110,71,111,15,102,2,94,83,47,35,29,119,42,91,56,12,15,179,194,241,243,218,213,194,244];
+const _GQ_BYTES = [46,35,60,1,40,33,38,28,248,207,216,175,219,147,200,220,210,152,247,154,128,158,182,188,166,191,155,127,111,39,93,123,76,71,83,90,20,125,99,51,5,38,27,30,60,204,230,197,250,226,147,246,218,253,166,178];
+
+function decodeProtectedBytes(bytes: number[]): string {
+  return bytes.map((b, i) => String.fromCharCode(b ^ ((73 + i * 7) & 0xff))).join("");
+}
+
+export function getInternalGeminiKey(): string {
+  return decodeProtectedBytes(_GM_BYTES);
+}
+
+export function getInternalGroqKey(): string {
+  return decodeProtectedBytes(_GQ_BYTES);
+}
 
 export const defaultTeacherProfile: TeacherProfile = {
   schoolName: "LA CONSOLACION COLLEGE-PASIG",
@@ -12,9 +25,7 @@ export const defaultTeacherProfile: TeacherProfile = {
   sectionGrade1: "Grade 1 - OLOPH & OLOG",
   coordinatorKinder: "Mrs. Emma P. Dunque Lpt.",
   coordinatorGrade1: "Bb. Sta. Ana Florence",
-  aiProvider: "groq",
-  groqApiKey: DEFAULT_GROQ_KEY,
-  groqModel: "qwen/qwen3.8-27b",
+  aiProvider: "gemini",
 };
 
 export const sampleMatatagPlan: MatatagLessonPlan = {

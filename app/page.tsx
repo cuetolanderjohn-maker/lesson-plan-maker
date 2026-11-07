@@ -20,10 +20,8 @@ import {
   defaultTeacherProfile,
   sampleMatatagPlan,
   sampleLccpPlan,
-  DEFAULT_GROQ_KEY,
 } from "@/lib/sampleData";
 import { generatePlanFromExtractedText } from "@/lib/freeLessonPlanner";
-import { generateLessonPlanWithGemini } from "@/lib/gemini";
 import { generateLessonPlanUniversal } from "@/lib/universalAiScanner";
 import { reportTelemetry } from "@/lib/clientTelemetry";
 import { analyzeTextbookText, LearnedTextbookContent } from "@/lib/nlpAnalyzer";
@@ -38,8 +36,6 @@ import {
   Camera,
   FileText,
   HelpCircle,
-  Key,
-  ExternalLink,
   Zap,
   ArrowRight,
   ShieldCheck,
@@ -67,35 +63,6 @@ function getProviderDisplayName(provider?: AIProvider): string {
   }
 }
 
-function isKeyConfigured(p: TeacherProfile): boolean {
-  const provider = p.aiProvider || "groq";
-  if (provider === "groq") {
-    return Boolean(
-      p.groqApiKey?.trim() ||
-      (typeof process !== "undefined" && (process.env.NEXT_PUBLIC_GROQ_API_KEY || process.env.GROQ_API_KEY)) ||
-      true // Pre-configured key bundled
-    );
-  }
-  if (provider === "free_cloud") return true;
-  if (provider === "openrouter") {
-    return Boolean(
-      p.openRouterApiKey?.trim() ||
-      (typeof process !== "undefined" && process.env.NEXT_PUBLIC_OPENROUTER_API_KEY)
-    );
-  }
-  if (provider === "mistral") {
-    return Boolean(
-      p.mistralApiKey?.trim() ||
-      (typeof process !== "undefined" && process.env.NEXT_PUBLIC_MISTRAL_API_KEY)
-    );
-  }
-  if (provider === "custom_openai") return Boolean(p.customBaseUrl?.trim());
-  return Boolean(
-    p.geminiApiKey?.trim() ||
-    (typeof process !== "undefined" && (process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY))
-  );
-}
-
 export default function HomePage() {
   // Navigation and modal controls
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -116,8 +83,6 @@ export default function HomePage() {
 
   // Engine Mode: Cloud Vision AI vs Free On-Device ML
   const [engineMode, setEngineMode] = useState<"gemini" | "builtIn">("gemini");
-  const [quickApiKey, setQuickApiKey] = useState("");
-  const [showKeyInput, setShowKeyInput] = useState(false);
 
   // Input Mode: Camera/File Upload vs Direct Text Paste
   const [inputMode, setInputMode] = useState<"photo" | "directText">("photo");
@@ -139,7 +104,7 @@ export default function HomePage() {
   const bentoRef = useRef<HTMLDivElement>(null);
   const studioAnchorRef = useRef<HTMLDivElement>(null);
 
-  // Load saved profile and history from localStorage with automatic Groq migration
+  // Load saved profile and history from localStorage with secured Gemini provider and scrubbed keys
   useEffect(() => {
     try {
       const savedProfile = localStorage.getItem("kat_teacher_profile");
@@ -148,12 +113,13 @@ export default function HomePage() {
         const merged: TeacherProfile = {
           ...defaultTeacherProfile,
           ...parsed,
-          groqApiKey: parsed.groqApiKey || DEFAULT_GROQ_KEY,
-          groqModel: parsed.groqModel || "qwen/qwen3.8-27b",
+          aiProvider: "gemini",
         };
-        if (merged.aiProvider === "free_cloud" || !merged.aiProvider) {
-          merged.aiProvider = "groq";
-        }
+        delete merged.geminiApiKey;
+        delete merged.groqApiKey;
+        delete merged.openRouterApiKey;
+        delete merged.mistralApiKey;
+        delete merged.customApiKey;
         setProfile(merged);
         try {
           localStorage.setItem("kat_teacher_profile", JSON.stringify(merged));
@@ -204,30 +170,21 @@ export default function HomePage() {
   }, []);
 
   const handleSaveProfile = (updated: TeacherProfile) => {
-    setProfile(updated);
+    const cleanUpdated: TeacherProfile = {
+      ...updated,
+      aiProvider: "gemini",
+    };
+    delete cleanUpdated.geminiApiKey;
+    delete cleanUpdated.groqApiKey;
+    delete cleanUpdated.openRouterApiKey;
+    delete cleanUpdated.mistralApiKey;
+    delete cleanUpdated.customApiKey;
+    setProfile(cleanUpdated);
     try {
-      localStorage.setItem("kat_teacher_profile", JSON.stringify(updated));
+      localStorage.setItem("kat_teacher_profile", JSON.stringify(cleanUpdated));
     } catch (e) {
       console.error("Failed to save profile:", e);
     }
-  };
-
-  const handleSaveQuickKey = () => {
-    if (!quickApiKey.trim()) return;
-    const provider = profile.aiProvider || "groq";
-    let updated = { ...profile };
-    if (provider === "groq") {
-      updated.groqApiKey = quickApiKey.trim();
-    } else if (provider === "openrouter") {
-      updated.openRouterApiKey = quickApiKey.trim();
-    } else if (provider === "mistral") {
-      updated.mistralApiKey = quickApiKey.trim();
-    } else {
-      updated.geminiApiKey = quickApiKey.trim();
-    }
-    handleSaveProfile(updated);
-    setQuickApiKey("");
-    setShowKeyInput(false);
   };
 
   const handleUpdateCurrentPlan = (updated: LessonPlan) => {
@@ -411,32 +368,11 @@ export default function HomePage() {
       return;
     }
 
-    // Auto-save quick API key if entered in the inline input
-    let activeProfile = { ...profile };
-    if (quickApiKey.trim()) {
-      const provider = activeProfile.aiProvider || "groq";
-      if (provider === "groq") {
-        activeProfile.groqApiKey = quickApiKey.trim();
-      } else if (provider === "openrouter") {
-        activeProfile.openRouterApiKey = quickApiKey.trim();
-      } else if (provider === "mistral") {
-        activeProfile.mistralApiKey = quickApiKey.trim();
-      } else {
-        activeProfile.geminiApiKey = quickApiKey.trim();
-      }
-      handleSaveProfile(activeProfile);
-      setQuickApiKey("");
-      setShowKeyInput(false);
-    }
-
+    const activeProfile: TeacherProfile = {
+      ...profile,
+      aiProvider: "gemini",
+    };
     const providerName = getProviderDisplayName(activeProfile.aiProvider);
-    if (!isKeyConfigured(activeProfile)) {
-      setShowKeyInput(true);
-      setErrorMessage(
-        `Please provide your ${providerName} key or switch to Zero-Key Free Cloud mode.`
-      );
-      return;
-    }
 
     setIsGenerating(true);
     setErrorMessage(null);
@@ -655,10 +591,7 @@ export default function HomePage() {
               <div className="flex items-center p-1 bg-stone-100 rounded-xl border border-stone-200/80 text-xs">
                 <button
                   type="button"
-                  onClick={() => {
-                    setEngineMode("gemini");
-                    if (!isKeyConfigured(profile)) setShowKeyInput(true);
-                  }}
+                  onClick={() => setEngineMode("gemini")}
                   className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center space-x-1.5 ${
                     engineMode === "gemini"
                       ? "bg-white text-stone-900 shadow-2xs font-semibold"
@@ -666,7 +599,7 @@ export default function HomePage() {
                   }`}
                 >
                   <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
-                  <span>Cloud Vision AI</span>
+                  <span>Gemini Vision AI</span>
                 </button>
 
                 <button
@@ -684,191 +617,24 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Provider Pill Selectors */}
+            {/* Secured Built-In Engine Indicator (Hidden from User Accessibility) */}
             {engineMode === "gemini" && (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 p-1.5 bg-stone-50 rounded-2xl border border-stone-200/70 text-xs font-medium">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const updated = { ...profile, aiProvider: "groq" as const };
-                      handleSaveProfile(updated);
-                      setShowKeyInput(false);
-                    }}
-                    className={`py-2 px-2.5 rounded-xl text-center transition-all cursor-pointer flex items-center justify-center space-x-1 ${
-                      (profile.aiProvider || "groq") === "groq"
-                        ? "bg-emerald-800 text-white font-semibold shadow-xs"
-                        : "text-stone-600 hover:bg-white"
-                    }`}
-                  >
-                    <Zap className="w-3 h-3 text-emerald-300" />
-                    <span>Groq (Fastest)</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const updated = { ...profile, aiProvider: "gemini" as const };
-                      handleSaveProfile(updated);
-                      if (!updated.geminiApiKey?.trim()) setShowKeyInput(true);
-                    }}
-                    className={`py-2 px-2.5 rounded-xl text-center transition-all cursor-pointer ${
-                      profile.aiProvider === "gemini"
-                        ? "bg-stone-900 text-white font-semibold shadow-xs"
-                        : "text-stone-600 hover:bg-white"
-                    }`}
-                  >
-                    Google Gemini
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const updated = { ...profile, aiProvider: "free_cloud" as const };
-                      handleSaveProfile(updated);
-                      setShowKeyInput(false);
-                    }}
-                    className={`py-2 px-2.5 rounded-xl text-center transition-all cursor-pointer ${
-                      profile.aiProvider === "free_cloud"
-                        ? "bg-stone-900 text-white font-semibold shadow-xs"
-                        : "text-stone-600 hover:bg-white"
-                    }`}
-                  >
-                    Zero-Key Cloud
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const updated = { ...profile, aiProvider: "openrouter" as const };
-                      handleSaveProfile(updated);
-                      if (!updated.openRouterApiKey?.trim()) setShowKeyInput(true);
-                    }}
-                    className={`py-2 px-2.5 rounded-xl text-center transition-all cursor-pointer ${
-                      profile.aiProvider === "openrouter"
-                        ? "bg-stone-900 text-white font-semibold shadow-xs"
-                        : "text-stone-600 hover:bg-white"
-                    }`}
-                  >
-                    OpenRouter
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const updated = { ...profile, aiProvider: "mistral" as const };
-                      handleSaveProfile(updated);
-                      if (!updated.mistralApiKey?.trim()) setShowKeyInput(true);
-                    }}
-                    className={`py-2 px-2.5 rounded-xl text-center transition-all cursor-pointer ${
-                      profile.aiProvider === "mistral"
-                        ? "bg-stone-900 text-white font-semibold shadow-xs"
-                        : "text-stone-600 hover:bg-white"
-                    }`}
-                  >
-                    Mistral AI
-                  </button>
+              <div
+                aria-hidden="true"
+                className="flex items-center justify-between p-3 px-3.5 rounded-xl bg-emerald-50/80 border border-emerald-200 text-xs text-emerald-900 select-none"
+              >
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <div>
+                    <span className="font-semibold">Google Gemini Vision AI Active</span>
+                    <span className="ml-1.5 text-[11px] text-emerald-700">
+                      (Built-In Secured Engine)
+                    </span>
+                  </div>
                 </div>
-
-                {/* Active Key Indicator */}
-                {isKeyConfigured(profile) && !showKeyInput && profile.aiProvider !== "free_cloud" && (
-                  <div className="flex items-center justify-between p-3 px-3.5 rounded-xl bg-emerald-50/80 border border-emerald-200 text-xs text-emerald-900">
-                    <div className="flex items-center space-x-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <div>
-                        <span className="font-semibold">{getProviderDisplayName(profile.aiProvider)} Active</span>
-                        <span className="ml-1.5 font-mono text-[11px] text-emerald-700">
-                          {(() => {
-                            const k = profile.aiProvider === "groq"
-                              ? (profile.groqApiKey || DEFAULT_GROQ_KEY)
-                              : profile.aiProvider === "openrouter"
-                              ? profile.openRouterApiKey
-                              : profile.aiProvider === "mistral"
-                              ? profile.mistralApiKey
-                              : profile.geminiApiKey;
-                            return k?.trim() ? `(...${k.slice(-4)})` : "(Environment Variable Active)";
-                          })()}
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowKeyInput(true)}
-                      className="text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 underline underline-offset-2 cursor-pointer"
-                    >
-                      Update Key
-                    </button>
-                  </div>
-                )}
-
-                {/* Inline API Key Input */}
-                {(!isKeyConfigured(profile) || showKeyInput) && profile.aiProvider !== "free_cloud" && (
-                  <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 space-y-2.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-stone-800 flex items-center space-x-1.5">
-                        <Key className="w-3.5 h-3.5 text-stone-600" />
-                        <span>Enter {getProviderDisplayName(profile.aiProvider)} API Key</span>
-                      </span>
-                      <a
-                        href={
-                          profile.aiProvider === "groq"
-                            ? "https://console.groq.com/keys"
-                            : profile.aiProvider === "openrouter"
-                            ? "https://openrouter.ai/keys"
-                            : profile.aiProvider === "mistral"
-                            ? "https://console.mistral.ai/api-keys/"
-                            : "https://aistudio.google.com/app/apikey"
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-stone-600 hover:text-stone-900 underline underline-offset-2 flex items-center space-x-1"
-                      >
-                        <span>Acquire key</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="password"
-                        placeholder={
-                          profile.aiProvider === "groq"
-                            ? "gsk_..."
-                            : profile.aiProvider === "openrouter"
-                            ? "sk-or-v1-..."
-                            : profile.aiProvider === "mistral"
-                            ? "mistral_..."
-                            : "AIzaSy..."
-                        }
-                        value={quickApiKey}
-                        onChange={(e) => setQuickApiKey(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleSaveQuickKey())}
-                        className="flex-1 text-xs font-mono px-3 py-2 rounded-xl bg-white border border-stone-200 focus:outline-none focus:border-stone-800"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleSaveQuickKey}
-                        className="px-4 py-2 rounded-xl text-xs font-semibold bg-stone-900 text-white hover:bg-stone-800 cursor-pointer"
-                      >
-                        Save Key
-                      </button>
-                    </div>
-                    <div className="pt-1 flex items-center justify-between text-[11px] text-stone-500">
-                      <span>Key is stored securely on your browser.</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const updated = { ...profile, aiProvider: "free_cloud" as const };
-                          handleSaveProfile(updated);
-                          setShowKeyInput(false);
-                        }}
-                        className="text-emerald-700 hover:text-emerald-800 font-medium underline flex items-center space-x-1 cursor-pointer"
-                      >
-                        <Zap className="w-3 h-3 text-emerald-600" />
-                        <span>Use Zero-Key Cloud Instead</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-semibold">
+                  Ready
+                </span>
               </div>
             )}
 

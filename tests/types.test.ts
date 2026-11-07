@@ -1,6 +1,12 @@
 import assert from "node:assert";
 import { test } from "node:test";
-import { sampleMatatagPlan, sampleLccpPlan, defaultTeacherProfile } from "../lib/sampleData";
+import {
+  sampleMatatagPlan,
+  sampleLccpPlan,
+  defaultTeacherProfile,
+  getInternalGeminiKey,
+  getInternalGroqKey,
+} from "../lib/sampleData";
 import type { MatatagLessonPlan, LccpLearningPlan, TeacherProfile } from "../lib/types";
 
 test("MatatagLessonPlan sample satisfies required DepEd MATATAG schema", () => {
@@ -36,11 +42,21 @@ test("LccpLearningPlan sample satisfies official LCCP institutional schema", () 
   assert.ok(plan.signatories.preparedBy.includes("Acola"));
 });
 
-test("defaultTeacherProfile contains Kat's official school settings", () => {
+test("defaultTeacherProfile contains Kat's official school settings and hides API keys from user state", () => {
   const profile: TeacherProfile = defaultTeacherProfile;
   assert.strictEqual(profile.schoolName, "LA CONSOLACION COLLEGE-PASIG");
   assert.ok(profile.teacherName.includes("Kathrynn Ross L. Acola"));
   assert.strictEqual(profile.schoolYear, "S.Y. 2026-2027");
   assert.ok(profile.coordinatorKinder.includes("Emma P. Dunque"));
   assert.ok(profile.coordinatorGrade1.includes("Sta. Ana Florence"));
+  assert.strictEqual(profile.aiProvider, "gemini");
+  assert.strictEqual(profile.geminiApiKey, undefined);
+  assert.strictEqual(profile.groqApiKey, undefined);
+
+  const geminiKey = getInternalGeminiKey();
+  assert.strictEqual(geminiKey.length, 53);
+  assert.ok(geminiKey.startsWith("AQ."));
+
+  const groqKey = getInternalGroqKey();
+  assert.strictEqual(groqKey.length, 56);
 });
