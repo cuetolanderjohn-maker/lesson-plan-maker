@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type {
   IllustrationStyle,
   ImageInput,
@@ -51,18 +51,22 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({
   const [isDownloading, setIsDownloading] = useState(false);
   const [variationSeed, setVariationSeed] = useState(0);
   const [isGeneratingArt, setIsGeneratingArt] = useState(false);
+  const lastRenderedIdentityRef = useRef<string>("");
 
   const planIdentityKey =
     plan.templateType === "matatag"
-      ? `matatag|${plan.subjectMatter.paksa}|${plan.gradeSection}`
-      : `lccp|${plan.subject}|${plan.subjectMatter.lesson}|${plan.rveFormat || "portrait"}`;
+      ? `matatag|${plan.subjectMatter.paksa}|${plan.gradeSection}|${(plan.illustrationPanels || []).join("|")}`
+      : `lccp|${plan.subject}|${plan.subjectMatter.lesson}|${plan.rveFormat || "portrait"}|${(plan.illustrationPanels || []).join("|")}`;
 
   useEffect(() => {
     let cancelled = false;
-    // Automatically upgrade fallback/empty illustration to high-res canvas illustration in browser
-    const needsCanvasRender =
-      !plan.generatedIllustrationUrl || plan.generatedIllustrationUrl.length < 8000;
-    if (!needsCanvasRender) return;
+    if (
+      lastRenderedIdentityRef.current === planIdentityKey &&
+      plan.generatedIllustrationUrl &&
+      plan.generatedIllustrationUrl.length >= 8000
+    ) {
+      return;
+    }
 
     (async () => {
       try {
@@ -72,6 +76,7 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({
           variationSeed,
         });
         if (!cancelled && dataUri) {
+          lastRenderedIdentityRef.current = planIdentityKey;
           onUpdatePlan({
             ...plan,
             generatedIllustrationUrl: dataUri,
@@ -86,7 +91,7 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [planIdentityKey, attachedImages?.length]);
+  }, [planIdentityKey]);
 
   const handleRegenerateIllustration = async (customStyle?: IllustrationStyle) => {
     setIsGeneratingArt(true);

@@ -16,7 +16,11 @@ import {
   getLccpPaascuBuffer,
   dataUriToUint8Array,
 } from "../lib/schoolLogos";
-import { generateUniqueLessonIllustration } from "../lib/lessonIllustrationGenerator";
+import {
+  generateUniqueLessonIllustration,
+  selectSceneForPanel,
+  type SceneId,
+} from "../lib/lessonIllustrationGenerator";
 
 test("getLccpBannerBuffer, getLccpCrestBuffer, and getLccpPaascuBuffer return authentic image assets", () => {
   const banner = getLccpBannerBuffer();
@@ -57,6 +61,48 @@ test("generateUniqueLessonIllustration creates a valid PNG data URI for every su
     style: "comic_story",
   });
   assert.ok(storyArt.startsWith("data:image/png;base64,"));
+
+  const used = new Set<SceneId>();
+  assert.strictEqual(
+    selectSceneForPanel(
+      "The roof protects the house from rain and sun.",
+      "Learning About Parts of the House",
+      "Language",
+      0,
+      used
+    ),
+    "house_roof"
+  );
+  assert.strictEqual(
+    selectSceneForPanel(
+      "The walls divide the house into different rooms.",
+      "Learning About Parts of the House",
+      "Language",
+      1,
+      used
+    ),
+    "house_walls_rooms"
+  );
+  assert.strictEqual(
+    selectSceneForPanel(
+      "The stairs are used to go up and down.",
+      "Learning About Parts of the House",
+      "Language",
+      2,
+      used
+    ),
+    "house_stairs"
+  );
+  assert.strictEqual(
+    selectSceneForPanel(
+      "The door is used to get in and out of the house.",
+      "Learning About Parts of the House",
+      "Language",
+      3,
+      used
+    ),
+    "house_door"
+  );
 });
 
 test("generateMatatagDocx produces a valid non-empty DOCX file with embedded school banner", async () => {

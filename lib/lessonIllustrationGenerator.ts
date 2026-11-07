@@ -6,13 +6,35 @@ export interface IllustrationGeneratorOptions {
   customCaption?: string;
 }
 
-export type CreativeThemeCategory =
-  | "nature_animals"
-  | "senses_science"
-  | "family_politeness"
-  | "faith_rve"
-  | "math_numbers"
-  | "language_story";
+export type SceneId =
+  | "house_roof"
+  | "house_walls_rooms"
+  | "house_stairs"
+  | "house_door"
+  | "house_windows"
+  | "house_bedroom"
+  | "house_kitchen"
+  | "house_living_room"
+  | "house_bathroom"
+  | "house_exterior_family"
+  | "moth_oil_lamp"
+  | "moth_flame_warning"
+  | "moth_garden_lesson"
+  | "nature_trees_flowers"
+  | "nature_animals_pets"
+  | "nature_weather_sky"
+  | "nature_care_planting"
+  | "sense_sight_observe"
+  | "sense_hearing_sounds"
+  | "sense_smell_taste"
+  | "sense_touch_hygiene"
+  | "polite_mano_po"
+  | "polite_greeting_school"
+  | "polite_sharing_friends"
+  | "polite_helping_home"
+  | "faith_creation"
+  | "faith_prayer_chapel"
+  | "storybook_reading_desk";
 
 /**
  * Determines the default illustration style that matches Kat's "sample lesson plan" folder
@@ -51,10 +73,6 @@ export function inferIllustrationStyle(plan: {
   return "comic_story";
 }
 
-/**
- * Detects whether the lesson plan is for Grade 1 or Kinder 2 so character proportions,
- * badges, uniforms, and visual complexity are tailored to the exact grade level.
- */
 export function detectGradeTier(plan: LessonPlan): "kinder2" | "grade1" {
   if (plan.templateType === "matatag") {
     return /grade\s*1|baitang\s*1|oloph|olog/i.test(plan.gradeSection || "")
@@ -65,73 +83,180 @@ export function detectGradeTier(plan: LessonPlan): "kinder2" | "grade1" {
 }
 
 /**
- * Detects the creative visual theme from the lesson's subject and text so the illustration
- * draws topic-matched props, characters, and settings (without ever pasting the textbook photo).
+ * Maps a single panel caption + overall lesson context to the most specific visual SceneId
+ * so every panel directly illustrates the exact sentence in that panel without generic filler.
  */
-export function detectCreativeTheme(
-  plan: LessonPlan,
-  title: string,
-  subtitle: string,
-  panels: string[]
-): CreativeThemeCategory {
-  const combined = `${plan.subject || ""} ${title} ${subtitle} ${panels.join(" ")}`.toLowerCase();
+export function selectSceneForPanel(
+  panelText: string,
+  lessonTitle: string,
+  subject: string,
+  panelIndex: number,
+  usedScenes: Set<SceneId>
+): SceneId {
+  const p = panelText.toLowerCase();
+  const t = `${lessonTitle} ${subject}`.toLowerCase();
+  const combined = `${p} ${t}`;
 
-  if (plan.templateType === "lccp" && (plan.subject || "").toLowerCase().includes("math")) {
-    return "math_numbers";
+  // 1. Specific Part-of-House / Home matches in the panel text itself
+  if (/\b(roof|bubong|shingle|chimney|attic)\b/i.test(p)) return "house_roof";
+  if (/\b(stair|stairs|hagdan|up and down|upstairs|downstairs|step)\b/i.test(p))
+    return "house_stairs";
+  if (/\b(door|doors|pinto|pintuan|get in and out|entrance|knock)\b/i.test(p))
+    return "house_door";
+  if (/\b(window|windows|bintana|curtain|breeze)\b/i.test(p)) return "house_windows";
+  if (/\b(bedroom|tulugan|bed|sleep|pillow)\b/i.test(p)) return "house_bedroom";
+  if (/\b(kitchen|kusina|cook|stove|fridge|food|dining)\b/i.test(p)) return "house_kitchen";
+  if (/\b(bathroom|palikuran|banyo|bath|shower|tub)\b/i.test(p)) return "house_bathroom";
+  if (/\b(living room|sala|sofa|couch)\b/i.test(p)) return "house_living_room";
+  if (/\b(wall|walls|dingding|divide|different rooms|rooms of the house)\b/i.test(p))
+    return "house_walls_rooms";
+
+  // If the overall lesson is about House / Parts of the House / Home
+  if (/\b(house|home|bahay|tahanan|rooms|parts of the house)\b/i.test(combined)) {
+    const houseSequence: SceneId[] = [
+      "house_roof",
+      "house_walls_rooms",
+      "house_stairs",
+      "house_door",
+      "house_windows",
+      "house_bedroom",
+      "house_kitchen",
+      "house_living_room",
+      "house_exterior_family",
+    ];
+    for (const candidate of houseSequence) {
+      if (!usedScenes.has(candidate)) return candidate;
+    }
+    return houseSequence[panelIndex % houseSequence.length];
   }
-  if (
-    plan.templateType === "lccp" &&
-    ((plan.subject || "").toLowerCase().includes("rve") ||
-      plan.rveFormat === "landscape_adidse")
-  ) {
-    return "faith_rve";
+
+  // 2. Moth / Gamu-gamo / Flame Story matches
+  if (/\b(gamu-gamo|moth|lampara|kandila|apoy|ningas|flame|lamp|candle)\b/i.test(combined)) {
+    const mothSequence: SceneId[] = [
+      "moth_oil_lamp",
+      "moth_flame_warning",
+      "moth_garden_lesson",
+      "polite_helping_home",
+    ];
+    for (const candidate of mothSequence) {
+      if (!usedScenes.has(candidate)) return candidate;
+    }
+    return mothSequence[panelIndex % mothSequence.length];
   }
+
+  // 3. Science / Senses / Sounds / Body / Hygiene matches
   if (
-    /gamu-gamo|paruparo|hayop|aso|pusa|ibon|halaman|puno|bulaklak|kalikasan|ulan|araw|animal|plant|tree|garden|insect|butterfly|nature|weather|water/i.test(
+    /\b(sound|sounds|tunog|huni|loud|soft|malakas|mahina|ear|ears|tainga|hear|hearing|listen|bell|music)\b/i.test(
+      p
+    )
+  )
+    return "sense_hearing_sounds";
+  if (/\b(eye|eyes|mata|see|sight|look|observe|color|rainbow|paningin)\b/i.test(p))
+    return "sense_sight_observe";
+  if (
+    /\b(nose|ilong|smell|amoy|tongue|dila|taste|panlasa|pang-amoy|sweet|sour|fruit)\b/i.test(p)
+  )
+    return "sense_smell_taste";
+  if (/\b(skin|balat|hand|hands|kamay|touch|pansalat|wash|clean|soap|hygiene)\b/i.test(p))
+    return "sense_touch_hygiene";
+
+  if (/\b(sense|senses|pandama|science|body|katawan|sound|tunog)\b/i.test(combined)) {
+    const scienceSequence: SceneId[] = [
+      "sense_sight_observe",
+      "sense_hearing_sounds",
+      "sense_smell_taste",
+      "sense_touch_hygiene",
+    ];
+    for (const candidate of scienceSequence) {
+      if (!usedScenes.has(candidate)) return candidate;
+    }
+    return scienceSequence[panelIndex % scienceSequence.length];
+  }
+
+  // 4. Nature / Animals / Plants / Weather / Environment
+  if (/\b(plant|halaman|tree|puno|flower|bulaklak|seed|garden|leaf|leaves)\b/i.test(p)) {
+    return !usedScenes.has("nature_trees_flowers")
+      ? "nature_trees_flowers"
+      : "nature_care_planting";
+  }
+  if (/\b(animal|hayop|dog|aso|cat|pusa|bird|ibon|pet|fish|isda|butterfly|paruparo)\b/i.test(p))
+    return "nature_animals_pets";
+  if (/\b(weather|panahon|rain|ulan|sun|araw|cloud|ulap|wind|hangin)\b/i.test(p))
+    return "nature_weather_sky";
+
+  if (
+    /\b(nature|kalikasan|animal|hayop|plant|halaman|environment|earth|laudato)\b/i.test(
       combined
     )
   ) {
-    return "nature_animals";
+    const natureSequence: SceneId[] = [
+      "nature_trees_flowers",
+      "nature_animals_pets",
+      "nature_weather_sky",
+      "nature_care_planting",
+    ];
+    for (const candidate of natureSequence) {
+      if (!usedScenes.has(candidate)) return candidate;
+    }
+    return natureSequence[panelIndex % natureSequence.length];
   }
+
+  // 5. Religion / RVE / Faith / God / Prayer
   if (
-    /pandama|mata|tainga|ilong|dila|balat|katawan|tunog|malakas|mahina|sense|sight|hearing|smell|taste|touch|sound|loud|soft|science|body|healthy/i.test(
-      combined
+    /\b(pray|prayer|panalangin|dasal|church|simbahan|chapel|bible|bibliya|oratio|lectio)\b/i.test(
+      p
     )
-  ) {
-    return "senses_science";
+  )
+    return "faith_prayer_chapel";
+  if (/\b(god|jesus|lord|panginoon|diyos|creation|blessing|faith|rve)\b/i.test(combined)) {
+    const faithSequence: SceneId[] = [
+      "faith_creation",
+      "polite_sharing_friends",
+      "faith_prayer_chapel",
+      "house_exterior_family",
+    ];
+    for (const candidate of faithSequence) {
+      if (!usedScenes.has(candidate)) return candidate;
+    }
+    return faithSequence[panelIndex % faithSequence.length];
   }
-  if (
-    /magalang|po at opo|pagbati|pamilya|nanay|tatay|kuya|ate|tahanan|kapwa|pagtulong|pagmamahal|polite|family|home|respect|friend|sharing/i.test(
-      combined
-    )
-  ) {
-    return "family_politeness";
+
+  // 6. Politeness / Family / Friends / School / Reading Story fallback (Zero random letters!)
+  if (/\b(mano|lolo|lola|elder|matanda|po at opo|magalang|respect)\b/i.test(p))
+    return "polite_mano_po";
+  if (/\b(share|sharing|bahagi|kaibigan|friend|classmate|help|tulong)\b/i.test(p))
+    return "polite_sharing_friends";
+  if (/\b(school|paaralan|klase|classroom|teacher|guro|read|basa|book|aklat)\b/i.test(p))
+    return !usedScenes.has("polite_greeting_school")
+      ? "polite_greeting_school"
+      : "storybook_reading_desk";
+
+  const generalSequence: SceneId[] = [
+    "polite_mano_po",
+    "polite_greeting_school",
+    "polite_sharing_friends",
+    "storybook_reading_desk",
+    "polite_helping_home",
+    "house_exterior_family",
+  ];
+  for (const candidate of generalSequence) {
+    if (!usedScenes.has(candidate)) return candidate;
   }
-  if (/diyos|panginoon|panalangin|simbahan|bibliya|god|jesus|bible|prayer|faith|creation|blessing/i.test(combined)) {
-    return "faith_rve";
-  }
-  if (/bilang|numero|hugis|set|more|less|equal|count|number|add|subtract|shape|math/i.test(combined)) {
-    return "math_numbers";
-  }
-  return "language_story";
+  return generalSequence[panelIndex % generalSequence.length];
 }
 
 /**
- * Extracts 4 meaningful story/concept panel captions, grade tier, and theme from any LessonPlan.
+ * Extracts 4 meaningful story/concept panel captions and metadata from any LessonPlan.
  */
 export function extractIllustrationContent(plan: LessonPlan): {
   title: string;
   subtitle: string;
+  subject: string;
   questionPrompt: string;
   panels: [string, string, string, string];
-  keywords: string[];
   gradeTier: "kinder2" | "grade1";
-  gradeLabel: string;
-  theme: CreativeThemeCategory;
 } {
   const gradeTier = detectGradeTier(plan);
-  const gradeLabel =
-    gradeTier === "grade1" ? "GRADE 1 • OLOPH & OLOG" : "KINDER 2 • CREATIVE STORYBOOK";
 
   if (plan.templateType === "matatag") {
     const title = (plan.subjectMatter.paksa || "Banghay-Aralin sa Filipino")
@@ -168,23 +293,13 @@ export function extractIllustrationContent(plan: LessonPlan): {
       ),
     ];
 
-    const keywords = [
-      title.slice(0, 28),
-      subtitle.slice(0, 28),
-      "Magalang na Pananalita",
-      "Pagmamahal at Malasakit",
-    ];
-
-    const theme = detectCreativeTheme(plan, title, subtitle, panels);
     return {
       title,
       subtitle,
+      subject: plan.subject || "Filipino",
       questionPrompt: truncateText(questionPrompt, 110),
       panels,
-      keywords,
       gradeTier,
-      gradeLabel,
-      theme,
     };
   }
 
@@ -218,19 +333,16 @@ export function extractIllustrationContent(plan: LessonPlan): {
       ),
     ];
 
-    const theme = detectCreativeTheme(plan, title, subtitle, panels);
     return {
       title,
       subtitle,
+      subject: plan.subject || "RVE",
       questionPrompt: truncateText(
         plan.adidse.meditatio?.[0] || "How do we show love and gratitude to God?",
         110
       ),
       panels,
-      keywords: [title.slice(0, 26), subtitle.slice(0, 26), "Lectio Divina", "LCCP Core Values"],
       gradeTier,
-      gradeLabel,
-      theme,
     };
   }
 
@@ -264,31 +376,13 @@ export function extractIllustrationContent(plan: LessonPlan): {
     ),
   ];
 
-  const isMath = (plan.subject || "").toLowerCase().includes("math");
-  const keywords = isMath
-    ? [
-        "Set A: More Objects",
-        "Set B: Fewer Objects",
-        title.slice(0, 28),
-        "Count & Compare Sets",
-      ]
-    : [
-        title.slice(0, 28),
-        subtitle,
-        plan.procedures.learningStrategies?.[0]?.title || "Discovery",
-        "Values Integration",
-      ];
-
-  const theme = detectCreativeTheme(plan, title, subtitle, panels);
   return {
     title,
     subtitle,
+    subject: plan.subject || "Language",
     questionPrompt: truncateText(questionPrompt, 110),
     panels,
-    keywords,
     gradeTier,
-    gradeLabel,
-    theme,
   };
 }
 
@@ -323,12 +417,12 @@ export function generateFallbackPngDataUri(seedInput: number | string = 1): stri
   const bBase = 150 + ((seedNumber * 29) % 100);
 
   for (let y = 0; y < height; y++) {
-    rawRows.push(0); // filter type 0
+    rawRows.push(0);
     for (let x = 0; x < width; x++) {
       const isBorder =
         x < 2 || x >= width - 2 || y < 2 || y >= height - 2 || x === 24 || y === 16;
       if (isBorder) {
-        rawRows.push(30, 58, 138);
+        rawRows.push(44, 24, 16);
       } else {
         rawRows.push((rBase + x * 2) % 255, (gBase + y * 3) % 255, bBase);
       }
@@ -361,7 +455,6 @@ export function generateFallbackPngDataUri(seedInput: number | string = 1): stri
   zlib[7 + len + 3] = adler & 0xff;
 
   const ihdr = new Uint8Array([0, 0, 0, width, 0, 0, 0, height, 8, 2, 0, 0, 0]);
-
   const chunks = [
     makePngChunk("IHDR", ihdr),
     makePngChunk("IDAT", zlib),
@@ -418,77 +511,10 @@ function crc32(buf: Uint8Array): number {
   return (c ^ 0xffffffff) >>> 0;
 }
 
-function selectCreativePalette(seed: number, gradeTier: "kinder2" | "grade1") {
-  const kinderPalettes = [
-    {
-      skyTop: "#DBEAFE",
-      skyBottom: "#FEF3C7",
-      accentPrimary: "#2563EB",
-      accentSecondary: "#F59E0B",
-      groundColor: "#86EFAC",
-      badgeBg: "#EC4899",
-    },
-    {
-      skyTop: "#FCE7F3",
-      skyBottom: "#FEF9C3",
-      accentPrimary: "#7C3AED",
-      accentSecondary: "#10B981",
-      groundColor: "#A7F3D0",
-      badgeBg: "#F97316",
-    },
-    {
-      skyTop: "#CCFBF1",
-      skyBottom: "#E0F2FE",
-      accentPrimary: "#0D9488",
-      accentSecondary: "#F43F5E",
-      groundColor: "#BEF264",
-      badgeBg: "#2563EB",
-    },
-    {
-      skyTop: "#FEF3C7",
-      skyBottom: "#FFEDD5",
-      accentPrimary: "#D97706",
-      accentSecondary: "#3B82F6",
-      groundColor: "#86EFAC",
-      badgeBg: "#059669",
-    },
-  ];
-
-  const grade1Palettes = [
-    {
-      skyTop: "#DBEAFE",
-      skyBottom: "#E0E7FF",
-      accentPrimary: "#1D4ED8",
-      accentSecondary: "#D97706",
-      groundColor: "#86EFAC",
-      badgeBg: "#1E40AF",
-    },
-    {
-      skyTop: "#E0F2FE",
-      skyBottom: "#FEF3C7",
-      accentPrimary: "#0369A1",
-      accentSecondary: "#E11D48",
-      groundColor: "#A7F3D0",
-      badgeBg: "#0F766E",
-    },
-    {
-      skyTop: "#EDE9FE",
-      skyBottom: "#FCE7F3",
-      accentPrimary: "#4338CA",
-      accentSecondary: "#059669",
-      groundColor: "#BEF264",
-      badgeBg: "#6D28D9",
-    },
-  ];
-
-  const list = gradeTier === "grade1" ? grade1Palettes : kinderPalettes;
-  return list[seed % list.length];
-}
-
 /**
- * Generates a unique, 100% original creative educational illustration (`data:image/png;base64,...`)
- * tailored to the lesson's topic, subject, and grade level (Kinder 2 vs Grade 1).
- * NEVER embeds or pastes the raw textbook photo into the illustration.
+ * Generates a cohesive, high-craft storybook illustration (`data:image/png;base64,...`)
+ * where every panel/element directly depicts the exact subject matter of the lesson
+ * with zero random letters, zero generic speech bubbles, and zero textbook photo crops.
  */
 export async function generateUniqueLessonIllustration(
   plan: LessonPlan,
@@ -498,7 +524,7 @@ export async function generateUniqueLessonIllustration(
   const style = options?.style || getDefaultIllustrationStyle(plan);
   const content = extractIllustrationContent(plan);
   const seed = hashString(
-    `${content.title}|${content.subtitle}|${content.gradeTier}|${style}|${options?.variationSeed ?? 0}`,
+    `${content.title}|${content.panels.join("|")}|${style}|${options?.variationSeed ?? 0}`,
     options?.variationSeed ?? 0
   );
 
@@ -514,1132 +540,1633 @@ export async function generateUniqueLessonIllustration(
     return generateFallbackPngDataUri(seed);
   }
 
-  const palette = selectCreativePalette(seed, content.gradeTier);
-
   if (style === "pag_uugnay_speech") {
-    drawPagUugnaySpeechScene(ctx, canvas.width, canvas.height, content, palette, seed);
+    drawPagUugnaySpeechScene(ctx, canvas.width, canvas.height, content, seed);
   } else if (style === "math_concept_sets") {
-    drawMathConceptSetsScene(ctx, canvas.width, canvas.height, content, palette, seed);
+    drawMathConceptSetsScene(ctx, canvas.width, canvas.height, content, seed);
   } else {
-    drawFourPanelComicScene(ctx, canvas.width, canvas.height, content, palette, seed);
+    drawFourPanelStorybookScene(ctx, canvas.width, canvas.height, content, seed);
   }
 
   return canvas.toDataURL("image/png");
 }
 
 /**
- * Style 1: Creative 4-Panel Storybook Comic Scene tailored to Kinder 2 or Grade 1
- * (Matches K2 - Week 4 Filipino.docx, K2-SCIENCE-W6.docx, and RVE LESSON 4.docx without any textbook photo crop)
+ * Style 1: Clean 4-Panel Children's Storybook Illustration
+ * Each panel renders a distinct, detailed architectural or storybook scene matching
+ * that exact panel's caption (e.g., Roof, Walls/Rooms, Stairs, Door for Parts of the House).
+ * No noisy header bar, no random floating letters, no generic speech bubbles.
  */
-function drawFourPanelComicScene(
+function drawFourPanelStorybookScene(
   ctx: CanvasRenderingContext2D,
   w: number,
   h: number,
   content: ReturnType<typeof extractIllustrationContent>,
-  palette: ReturnType<typeof selectCreativePalette>,
   seed: number
 ) {
-  const isKinder = content.gradeTier === "kinder2";
-
-  // Warm Storybook Canvas Background
-  ctx.fillStyle = isKinder ? "#FFFBEB" : "#F8FAFC";
+  ctx.fillStyle = "#FFFDF9";
   ctx.fillRect(0, 0, w, h);
 
-  // Decorative Header Banner with Grade-Level Pill
-  const headerGrad = ctx.createLinearGradient(0, 0, w, 0);
-  headerGrad.addColorStop(0, palette.accentPrimary);
-  headerGrad.addColorStop(1, palette.badgeBg);
-  ctx.fillStyle = headerGrad;
-  drawRoundedRect(ctx, 14, 12, w - 28, 54, 14);
-  ctx.fill();
+  const gap = 14;
+  const pad = 14;
+  const panelW = (w - pad * 2 - gap) / 2;
+  const panelH = (h - pad * 2 - gap) / 2;
 
-  // Grade-Level Badge on Right of Header
-  ctx.fillStyle = "#FEF08A";
-  drawRoundedRect(ctx, w - 252, 21, 224, 34, 17);
-  ctx.fill();
-  ctx.fillStyle = "#1E293B";
-  ctx.font = "bold 12px 'Segoe UI', sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(content.gradeLabel, w - 140, 42);
-
-  // Lesson Title & Subtitle on Left of Header
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = "bold 19px 'Comic Sans MS', 'Segoe UI', sans-serif";
-  ctx.textAlign = "left";
-  ctx.fillText(
-    `${isKinder ? "🎨" : "📘"} ${truncateText(content.title, 48)}`,
-    28,
-    37
-  );
-  ctx.font = "bold 12px 'Segoe UI', sans-serif";
-  ctx.fillStyle = "#FDE68A";
-  ctx.fillText(truncateText(content.subtitle, 65), 30, 55);
-
-  const panelW = (w - 42) / 2;
-  const panelH = (h - 94) / 2;
   const positions = [
-    { x: 14, y: 76 },
-    { x: 28 + panelW, y: 76 },
-    { x: 14, y: 88 + panelH },
-    { x: 28 + panelW, y: 88 + panelH },
+    { x: pad, y: pad },
+    { x: pad + panelW + gap, y: pad },
+    { x: pad, y: pad + panelH + gap },
+    { x: pad + panelW + gap, y: pad + panelH + gap },
   ];
 
-  const panelSkies = [
-    ["#DBEAFE", "#EFF6FF"],
-    ["#FEF3C7", "#FFFBEB"],
-    ["#E0F2FE", "#F0F9FF"],
-    ["#FCE7F3", "#FDF2F8"],
-  ];
-  const panelGrounds = ["#86EFAC", "#BEF264", "#6EE7B7", "#FDE68A"];
-  const poses: Array<"wave" | "book" | "heart" | "magnify" | "pray"> = [
-    "wave",
-    "book",
-    "magnify",
-    "heart",
-  ];
-  if (content.theme === "faith_rve") {
-    poses[2] = "pray";
-    poses[3] = "heart";
-  }
+  const usedScenes = new Set<SceneId>();
 
   positions.forEach((pos, idx) => {
+    const caption = content.panels[idx];
+    const sceneId = selectSceneForPanel(
+      caption,
+      content.title,
+      content.subject,
+      idx + (seed % 2),
+      usedScenes
+    );
+    usedScenes.add(sceneId);
+
     ctx.save();
     drawRoundedRect(ctx, pos.x, pos.y, panelW, panelH, 16);
     ctx.clip();
 
-    // Sky Gradient
-    const skyPair = panelSkies[(idx + seed) % panelSkies.length];
-    const skyGrad = ctx.createLinearGradient(pos.x, pos.y, pos.x, pos.y + panelH);
-    skyGrad.addColorStop(0, skyPair[0]);
-    skyGrad.addColorStop(1, skyPair[1]);
-    ctx.fillStyle = skyGrad;
-    ctx.fillRect(pos.x, pos.y, panelW, panelH);
+    // Render the dedicated storybook scene filling this panel
+    renderSceneInRect(ctx, pos.x, pos.y, panelW, panelH - 54, sceneId, seed + idx);
 
-    // Kinder 2 Rainbow Arc in Panel 1 or 4
-    if (isKinder && (idx === 0 || idx === 3)) {
-      drawRainbowArc(ctx, pos.x + panelW - 95, pos.y + 115, 75);
-    }
+    // Clean Cream Storybook Caption Strip at the bottom of the panel
+    const capH = 58;
+    const capY = pos.y + panelH - capH;
+    ctx.fillStyle = "#FFFDF7";
+    ctx.fillRect(pos.x, capY, panelW, capH);
 
-    // Smiling Sun & Fluffy Clouds
-    drawSmilingSun(ctx, pos.x + panelW - 48, pos.y + 38, isKinder ? 20 : 16);
-    drawCloud(ctx, pos.x + 68 + ((idx * 31) % 60), pos.y + 30, 0.85);
-    drawCloud(ctx, pos.x + 215, pos.y + 26, 0.72);
-
-    // Rolling Meadow / Classroom Floor
-    const groundCol = panelGrounds[(idx + seed) % panelGrounds.length];
-    ctx.fillStyle = groundCol;
+    // Subtle top border on caption strip
+    ctx.strokeStyle = "#D6C7B2";
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(pos.x, pos.y + panelH - 80);
-    ctx.quadraticCurveTo(
-      pos.x + panelW * 0.5,
-      pos.y + panelH - 108,
-      pos.x + panelW,
-      pos.y + panelH - 76
-    );
-    ctx.lineTo(pos.x + panelW, pos.y + panelH);
-    ctx.lineTo(pos.x, pos.y + panelH);
-    ctx.closePath();
-    ctx.fill();
-
-    // Draw Creative Topic-Specific Scenery & Props on the Right Side of the Panel (NO textbook photo!)
-    drawThemePropsInPanel(
-      ctx,
-      pos.x + panelW - 120,
-      pos.y + 98,
-      content.theme,
-      idx,
-      seed,
-      isKinder
-    );
-
-    // Draw Expressive Grade-Appropriate Students on the Left/Center
-    const charColors = ["#2563EB", "#DC2626", "#059669", "#7C3AED", "#EA580C"];
-    const studentScale = isKinder ? 0.94 : 1.02;
-    drawCartoonStudent(
-      ctx,
-      pos.x + 92 + (idx % 2) * 14,
-      pos.y + 116,
-      charColors[(idx + seed) % charColors.length],
-      poses[idx % poses.length],
-      studentScale,
-      isKinder,
-      idx % 2 === 0 ? "girl" : "boy"
-    );
-    drawCartoonStudent(
-      ctx,
-      pos.x + 188 + (idx % 2) * 10,
-      pos.y + 120,
-      charColors[(idx + seed + 2) % charColors.length],
-      poses[(idx + 1) % poses.length],
-      studentScale * 0.96,
-      isKinder,
-      idx % 2 === 0 ? "boy" : "girl"
-    );
-
-    // Mini Dialogue Bubble above characters
-    const miniDialogues = getMiniDialogues(content.theme, content.gradeTier);
-    drawMiniSpeechBubble(
-      ctx,
-      pos.x + 140,
-      pos.y + 52,
-      miniDialogues[(idx + seed) % miniDialogues.length]
-    );
-
-    // Panel Number Badge
-    ctx.fillStyle = palette.accentPrimary;
-    ctx.beginPath();
-    ctx.arc(pos.x + 26, pos.y + 26, 16, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "#FFFFFF";
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-    ctx.fillStyle = "#FFFFFF";
-    ctx.font = "bold 15px 'Segoe UI', sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(String(idx + 1), pos.x + 26, pos.y + 31);
-
-    // Rounded White Story Caption Box at bottom
-    const capX = pos.x + 10;
-    const capY = pos.y + panelH - 60;
-    const capW = panelW - 20;
-    const capH = 50;
-    ctx.fillStyle = "rgba(255, 255, 255, 0.96)";
-    drawRoundedRect(ctx, capX, capY, capW, capH, 10);
-    ctx.fill();
-    ctx.strokeStyle = palette.accentPrimary;
-    ctx.lineWidth = 1.8;
+    ctx.moveTo(pos.x, capY);
+    ctx.lineTo(pos.x + panelW, capY);
     ctx.stroke();
 
-    ctx.fillStyle = "#0F172A";
-    ctx.font = "bold 12.5px 'Segoe UI', sans-serif";
+    ctx.fillStyle = "#2C1810";
+    ctx.font = "bold 13.5px 'Georgia', 'Segoe UI', serif";
     ctx.textAlign = "center";
-    drawWrappedText(ctx, content.panels[idx], capX + capW / 2, capY + 20, capW - 18, 16, 2);
+    drawWrappedText(ctx, caption, pos.x + panelW / 2, capY + 23, panelW - 28, 18, 2);
 
     ctx.restore();
 
-    // Crisp Panel Frame
-    ctx.strokeStyle = "#1E293B";
-    ctx.lineWidth = 2.5;
+    // Warm dark-brown storybook ink frame around each panel
+    ctx.strokeStyle = "#3E2723";
+    ctx.lineWidth = 3;
     drawRoundedRect(ctx, pos.x, pos.y, panelW, panelH, 16);
     ctx.stroke();
   });
 }
 
 /**
- * Style 2: Grade 1 / Kinder 2 "PAG-UUGNAY" Student Speech Bubble & Interactive Chalkboard Scene
- * (Matches G1-Filipino-LP-Week 11.docx with creative hand-drawn chalkboard art — NO textbook photo)
+ * Style 2: Grade 1 / Kinder 2 "PAG-UUGNAY" Scene
+ * Combines the PAG-UUGNAY question bubble on the left with a large, richly illustrated
+ * storybook scene window on the right depicting the exact lesson topic.
  */
 function drawPagUugnaySpeechScene(
   ctx: CanvasRenderingContext2D,
   w: number,
   h: number,
   content: ReturnType<typeof extractIllustrationContent>,
-  palette: ReturnType<typeof selectCreativePalette>,
   seed: number
 ) {
-  const isKinder = content.gradeTier === "kinder2";
-
-  // Cheerful Classroom / Storybook Gradient Background
-  const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
-  bgGrad.addColorStop(0, "#FEF3C7");
-  bgGrad.addColorStop(0.62, "#DBEAFE");
-  bgGrad.addColorStop(1, "#86EFAC");
-  ctx.fillStyle = bgGrad;
+  const bg = ctx.createLinearGradient(0, 0, 0, h);
+  bg.addColorStop(0, "#FFFBEB");
+  bg.addColorStop(1, "#FEF3C7");
+  ctx.fillStyle = bg;
   ctx.fillRect(0, 0, w, h);
 
-  // Decorative bunting flags across top right
-  drawClassroomBunting(ctx, 355, 18, w - 380);
-
-  // Creative Classroom Chalkboard on Right (with hand-drawn chalk illustrations, NEVER textbook photo)
-  const boardX = w - 365;
-  const boardY = 78;
-  const boardW = 335;
-  const boardH = 290;
-  ctx.fillStyle = "#14532D";
-  drawRoundedRect(ctx, boardX, boardY, boardW, boardH, 16);
-  ctx.fill();
-  ctx.strokeStyle = "#B45309";
-  ctx.lineWidth = 8;
-  ctx.stroke();
-
-  // Chalkboard Header & Grade Badge
-  ctx.fillStyle = "#FDE68A";
-  ctx.font = "bold 13px 'Comic Sans MS', 'Segoe UI', sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(`✨ ${content.gradeLabel} ✨`, boardX + boardW / 2, boardY + 28);
-
-  // Chalk-drawn divider line
-  ctx.strokeStyle = "rgba(255,255,255,0.45)";
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(boardX + 24, boardY + 38);
-  ctx.lineTo(boardX + boardW - 24, boardY + 38);
-  ctx.stroke();
-
-  // Chalk-written Lesson Title
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = "bold 16px 'Comic Sans MS', 'Segoe UI', sans-serif";
-  drawWrappedText(
-    ctx,
-    content.title,
-    boardX + boardW / 2,
-    boardY + 62,
-    boardW - 36,
-    21,
-    2
-  );
-
-  // Creative Chalkboard Illustration Centerpiece (butterflies, lamp, family, senses, or storybook)
-  drawThemePropsInPanel(
-    ctx,
-    boardX + boardW / 2,
-    boardY + 158,
-    content.theme,
-    seed % 4,
-    seed,
-    isKinder
-  );
-
-  // Chalkboard Bottom Key Concept Note
-  ctx.fillStyle = "#A7F3D0";
-  ctx.font = "bold 13px 'Segoe UI', sans-serif";
-  drawWrappedText(
-    ctx,
-    content.panels[1],
-    boardX + boardW / 2,
-    boardY + 236,
-    boardW - 36,
-    18,
-    2
-  );
-
-  // Top Pill Banner ("PAG-UUGNAY")
-  ctx.fillStyle = palette.accentPrimary;
-  drawRoundedRect(ctx, 28, 20, 310, 52, 26);
+  // Left: "PAG-UUGNAY" Header Pill (Matches G1-Filipino-LP-Week 11.docx)
+  ctx.fillStyle = "#1E40AF";
+  drawRoundedRect(ctx, 26, 22, 260, 48, 24);
   ctx.fill();
   ctx.strokeStyle = "#FFFFFF";
   ctx.lineWidth = 3;
   ctx.stroke();
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = "bold 25px 'Comic Sans MS', 'Segoe UI', sans-serif";
+  ctx.font = "bold 23px 'Segoe UI', sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("PAG-UUGNAY", 183, 54);
+  ctx.fillText("PAG-UUGNAY", 156, 53);
 
-  // Large Expressive Speech Bubble with the Motivation / Guide Question
-  const bubX = 30;
-  const bubY = 88;
-  const bubW = 495;
-  const bubH = 165;
+  // Left: Clean Storybook Speech Bubble with the Lesson's Guide Question
+  const bubX = 26;
+  const bubY = 86;
+  const bubW = 420;
+  const bubH = 175;
   ctx.fillStyle = "#FFFFFF";
-  drawRoundedRect(ctx, bubX, bubY, bubW, bubH, 24);
+  drawRoundedRect(ctx, bubX, bubY, bubW, bubH, 22);
   ctx.fill();
-  ctx.strokeStyle = "#1E3A8A";
-  ctx.lineWidth = 3.5;
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 3;
   ctx.stroke();
 
-  // Speech bubble pointer towards student
+  // Speech pointer
   ctx.fillStyle = "#FFFFFF";
   ctx.beginPath();
-  ctx.moveTo(bubX + 195, bubY + bubH);
-  ctx.lineTo(bubX + 235, bubY + bubH + 36);
-  ctx.lineTo(bubX + 265, bubY + bubH);
+  ctx.moveTo(bubX + 145, bubY + bubH);
+  ctx.lineTo(bubX + 175, bubY + bubH + 30);
+  ctx.lineTo(bubX + 205, bubY + bubH);
   ctx.closePath();
   ctx.fill();
-  ctx.strokeStyle = "#1E3A8A";
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 3;
   ctx.stroke();
 
-  ctx.fillStyle = "#0F172A";
-  ctx.font = "bold 19px 'Comic Sans MS', 'Segoe UI', sans-serif";
+  ctx.fillStyle = "#1E293B";
+  ctx.font = "bold 18px 'Georgia', 'Segoe UI', serif";
   ctx.textAlign = "center";
-  drawWrappedText(ctx, content.questionPrompt, bubX + bubW / 2, bubY + 50, bubW - 44, 27, 4);
+  drawWrappedText(ctx, content.questionPrompt, bubX + bubW / 2, bubY + 52, bubW - 44, 26, 4);
 
-  // Cheerful Filipino students in LCCP blue/white uniform + animated props
-  const scaleMain = isKinder ? 1.22 : 1.32;
-  drawCartoonStudent(ctx, 215, 378, "#1D4ED8", "book", scaleMain, isKinder, "girl");
-  drawCartoonStudent(ctx, 395, 386, "#0284C7", "wave", scaleMain * 0.94, isKinder, "boy");
+  // Left Bottom: Warm Storybook Illustrated Filipino Student Reading the Lesson Book
+  drawStorybookChild(ctx, 195, 420, "#1E40AF", "#3E2723", 1.25);
 
-  // Mini response bubble from second student
-  const miniDialogues = getMiniDialogues(content.theme, content.gradeTier);
-  drawMiniSpeechBubble(ctx, 430, 292, miniDialogues[0]);
+  // Right: Large Dedicated Lesson Scene Window (illustrating the exact lesson topic!)
+  const winX = 468;
+  const winY = 24;
+  const winW = w - winX - 24;
+  const winH = h - 48;
 
-  // Bottom Callout Cards with Lesson Steps / Values
-  const pillColors = ["#EF4444", "#059669", "#7C3AED"];
-  [content.panels[0], content.panels[2], content.panels[3]].forEach((txt, i) => {
-    const px = 28 + i * 292;
-    const py = h - 78;
-    ctx.fillStyle = "#FFFFFF";
-    drawRoundedRect(ctx, px, py, 276, 58, 14);
-    ctx.fill();
-    ctx.strokeStyle = pillColors[(i + seed) % pillColors.length];
-    ctx.lineWidth = 3;
-    ctx.stroke();
+  const primaryScene = selectSceneForPanel(
+    `${content.title} ${content.panels[0]}`,
+    content.title,
+    content.subject,
+    0,
+    new Set()
+  );
 
-    ctx.fillStyle = "#1E293B";
-    ctx.font = "bold 12px 'Segoe UI', sans-serif";
-    ctx.textAlign = "center";
-    drawWrappedText(ctx, txt, px + 138, py + 24, 254, 16, 2);
-  });
+  ctx.save();
+  drawRoundedRect(ctx, winX, winY, winW, winH, 20);
+  ctx.clip();
+  renderSceneInRect(ctx, winX, winY, winW, winH - 76, primaryScene, seed);
+
+  // Bottom Title & Lesson Summary inside Scene Window
+  ctx.fillStyle = "#FFFDF7";
+  ctx.fillRect(winX, winY + winH - 76, winW, 76);
+  ctx.strokeStyle = "#D6C7B2";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(winX, winY + winH - 76);
+  ctx.lineTo(winX + winW, winY + winH - 76);
+  ctx.stroke();
+
+  ctx.fillStyle = "#2C1810";
+  ctx.font = "bold 15px 'Georgia', 'Segoe UI', serif";
+  ctx.textAlign = "center";
+  drawWrappedText(ctx, content.title, winX + winW / 2, winY + winH - 48, winW - 32, 20, 1);
+  ctx.fillStyle = "#57534E";
+  ctx.font = "13px 'Segoe UI', sans-serif";
+  drawWrappedText(ctx, content.panels[0], winX + winW / 2, winY + winH - 24, winW - 32, 17, 1);
+  ctx.restore();
+
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 3.5;
+  drawRoundedRect(ctx, winX, winY, winW, winH, 20);
+  ctx.stroke();
 
   // Outer Frame
-  ctx.strokeStyle = "#1E3A8A";
-  ctx.lineWidth = 4;
-  drawRoundedRect(ctx, 6, 6, w - 12, h - 12, 16);
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 3;
+  drawRoundedRect(ctx, 8, 8, w - 16, h - 16, 18);
   ctx.stroke();
 }
 
 /**
- * Style 3: Kinder 2 / Grade 1 Mathematics Playful Visual Set Cards
- * (Matches K2 -WEEK 6 - MATHEMATICS.docx with creative countable illustrations — NO textbook photo)
+ * Style 3: Clean Kinder 2 / Grade 1 Mathematics Set Cards
+ * Matches K2 -WEEK 6 - MATHEMATICS.docx: Two clean, side-by-side rounded Set A & Set B
+ * cards on a pure white background with crisp vector objects matching the lesson.
  */
 function drawMathConceptSetsScene(
   ctx: CanvasRenderingContext2D,
   w: number,
   h: number,
   content: ReturnType<typeof extractIllustrationContent>,
-  _palette: ReturnType<typeof selectCreativePalette>,
   seed: number
 ) {
-  const isKinder = content.gradeTier === "kinder2";
-  ctx.fillStyle = "#FFFBEB";
+  ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(0, 0, w, h);
 
-  // Top Title Bar with Grade Badge
-  ctx.fillStyle = "#1E3A8A";
-  drawRoundedRect(ctx, 18, 14, w - 36, 54, 14);
-  ctx.fill();
+  const cardW = (w - 64) / 2;
+  const cardH = h - 96;
+  const leftX = 22;
+  const rightX = 42 + cardW;
+  const cardY = 22;
 
-  ctx.fillStyle = "#FDE047";
-  drawRoundedRect(ctx, w - 246, 23, 214, 36, 18);
-  ctx.fill();
-  ctx.fillStyle = "#0F172A";
-  ctx.font = "bold 12px 'Segoe UI', sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(
-    isKinder ? "🧸 KINDER 2 MATH PLAY" : "📐 GRADE 1 MATH LAB",
-    w - 139,
-    45
-  );
+  const combinedText = `${content.title} ${content.panels.join(" ")}`.toLowerCase();
+  type MathItemShape = "car" | "apple" | "star" | "butterfly" | "cupcake" | "house";
+  let shapeA: MathItemShape = "car";
+  let shapeB: MathItemShape = "star";
 
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = "bold 20px 'Comic Sans MS', 'Segoe UI', sans-serif";
-  ctx.textAlign = "left";
-  ctx.fillText(`🔢 ${truncateText(content.title, 46)}`, 34, 48);
+  if (/apple|fruit|mansanas|prutas/i.test(combinedText)) {
+    shapeA = "apple";
+    shapeB = "cupcake";
+  } else if (/butterfly|insect|flower|garden|paruparo/i.test(combinedText)) {
+    shapeA = "butterfly";
+    shapeB = "apple";
+  } else if (/house|home|bahay/i.test(combinedText)) {
+    shapeA = "house";
+    shapeB = "star";
+  } else {
+    const pool: MathItemShape[] = ["car", "apple", "star", "butterfly", "cupcake"];
+    shapeA = pool[seed % pool.length];
+    shapeB = pool[(seed + 2) % pool.length];
+  }
 
-  const cardW = (w - 56) / 2;
-  const cardH = 376;
-  const leftX = 18;
-  const rightX = 38 + cardW;
-  const cardY = 82;
+  const countA = 5 + (seed % 2); // 5 or 6
+  const countB = 3 + (seed % 2); // 3 or 4
 
-  const shapePool: Array<"car" | "star" | "apple" | "butterfly" | "cupcake"> = [
-    "car",
-    "star",
-    "apple",
-    "butterfly",
-    "cupcake",
-  ];
-  const shapeA = shapePool[seed % shapePool.length];
-  const shapeB = shapePool[(seed + 2) % shapePool.length];
-  const countA = 5 + (seed % 3); // 5 to 7 objects
-  const countB = 2 + (seed % 3); // 2 to 4 objects
-
-  const setConfigs = [
+  const sets = [
     {
       x: leftX,
-      borderColor: "#E11D48",
-      bgColor: "#FFF1F2",
-      label: `Set A (${countA} Objects)`,
+      border: "#E11D48",
+      fill: "#FFF5F5",
+      title: "Set A",
       count: countA,
       shape: shapeA,
       caption: content.panels[0],
     },
     {
       x: rightX,
-      borderColor: "#0284C7",
-      bgColor: "#F0F9FF",
-      label: `Set B (${countB} Objects)`,
+      border: "#2563EB",
+      fill: "#F0F7FF",
+      title: "Set B",
       count: countB,
       shape: shapeB,
       caption: content.panels[1],
     },
   ];
 
-  setConfigs.forEach((cfg) => {
-    ctx.fillStyle = cfg.bgColor;
-    drawRoundedRect(ctx, cfg.x, cardY, cardW, cardH, 24);
+  sets.forEach((s) => {
+    ctx.fillStyle = s.fill;
+    drawRoundedRect(ctx, s.x, cardY, cardW, cardH, 28);
     ctx.fill();
-    ctx.strokeStyle = cfg.borderColor;
+    ctx.strokeStyle = s.border;
     ctx.lineWidth = 4;
     ctx.stroke();
 
-    // Set Title Pill
-    ctx.fillStyle = cfg.borderColor;
-    drawRoundedRect(ctx, cfg.x + 24, cardY + 16, cardW - 48, 42, 21);
-    ctx.fill();
-    ctx.fillStyle = "#FFFFFF";
-    ctx.font = "bold 17px 'Comic Sans MS', 'Segoe UI', sans-serif";
+    // Clean Set Header
+    ctx.fillStyle = s.border;
+    ctx.font = "bold 24px 'Georgia', 'Segoe UI', serif";
     ctx.textAlign = "center";
-    ctx.fillText(cfg.label, cfg.x + cardW / 2, cardY + 43);
+    ctx.fillText(s.title, s.x + cardW / 2, cardY + 44);
 
-    // Draw countable illustrated objects in a neat grid with number tags
+    // Draw crisp countable objects in a balanced 3-column grid
     const cols = 3;
-    for (let i = 0; i < cfg.count; i++) {
+    for (let i = 0; i < s.count; i++) {
       const col = i % cols;
       const row = Math.floor(i / cols);
-      const ox = cfg.x + 86 + col * 126;
-      const oy = cardY + 115 + row * 92;
-      drawCountableObject(ctx, ox, oy, cfg.shape, i + seed);
-
-      // Tiny counting number badge next to each object for Kinder 2 / Grade 1 learners
-      ctx.fillStyle = "#FFFFFF";
-      ctx.beginPath();
-      ctx.arc(ox + 26, oy - 20, 11, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = cfg.borderColor;
-      ctx.lineWidth = 1.8;
-      ctx.stroke();
-      ctx.fillStyle = cfg.borderColor;
-      ctx.font = "bold 11px 'Segoe UI', sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(String(i + 1), ox + 26, oy - 16);
+      const ox = s.x + 88 + col * 124;
+      const oy = cardY + 135 + row * 125;
+      drawCrispMathObject(ctx, ox, oy, s.shape, i + seed);
     }
 
-    // Bottom caption inside set card
+    // Bottom description inside card
     ctx.fillStyle = "#FFFFFF";
-    drawRoundedRect(ctx, cfg.x + 16, cardY + cardH - 56, cardW - 32, 42, 10);
+    drawRoundedRect(ctx, s.x + 20, cardY + cardH - 68, cardW - 40, 48, 12);
     ctx.fill();
     ctx.strokeStyle = "#CBD5E1";
     ctx.lineWidth = 1.5;
     ctx.stroke();
-    ctx.fillStyle = "#0F172A";
-    ctx.font = "bold 12.5px 'Segoe UI', sans-serif";
+
+    ctx.fillStyle = "#1E293B";
+    ctx.font = "bold 13px 'Segoe UI', sans-serif";
     ctx.textAlign = "center";
-    drawWrappedText(
-      ctx,
-      cfg.caption,
-      cfg.x + cardW / 2,
-      cardY + cardH - 31,
-      cardW - 48,
-      15,
-      2
-    );
+    drawWrappedText(ctx, s.caption, s.x + cardW / 2, cardY + cardH - 40, cardW - 56, 17, 2);
   });
 
-  // Center Comparison Badge between Set A and Set B
-  ctx.fillStyle = "#F59E0B";
-  ctx.beginPath();
-  ctx.arc(w / 2, cardY + cardH / 2, 26, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = "#FFFFFF";
-  ctx.lineWidth = 3;
-  ctx.stroke();
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = "bold 16px 'Segoe UI', sans-serif";
+  // Clean Lesson Title Caption at bottom
+  ctx.fillStyle = "#2C1810";
+  ctx.font = "bold 16px 'Georgia', 'Segoe UI', serif";
   ctx.textAlign = "center";
-  ctx.fillText("VS", w / 2, cardY + cardH / 2 + 6);
-
-  // Footer Summary Prompt Bar with Cheerful Mascot
-  ctx.fillStyle = "#FEF3C7";
-  drawRoundedRect(ctx, 18, h - 104, w - 36, 86, 16);
-  ctx.fill();
-  ctx.strokeStyle = "#F59E0B";
-  ctx.lineWidth = 3;
-  ctx.stroke();
-
-  ctx.fillStyle = "#92400E";
-  ctx.font = "bold 15.5px 'Comic Sans MS', 'Segoe UI', sans-serif";
-  ctx.textAlign = "center";
-  drawWrappedText(
-    ctx,
-    `💡 Guided Discovery: ${content.questionPrompt}`,
+  ctx.fillText(
+    `${content.title} — Compare Set A (${countA}) and Set B (${countB})`,
     w / 2,
-    h - 68,
-    w - 80,
-    22,
-    2
+    h - 28
   );
 }
 
+/* ============================================================================
+ * DEDICATED ARCHITECTURAL & STORYBOOK SCENE RENDERERS
+ * Inspired by k2_image2.jpeg and k2_image3.jpeg — warm cel-shaded fills,
+ * crisp #3E2723 dark-brown outlines, glass reflections, furniture props,
+ * and direct depiction of the exact lesson topic.
+ * ========================================================================== */
+function renderSceneInRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  sceneId: SceneId,
+  seed: number
+) {
+  ctx.save();
+  ctx.translate(x, y);
+
+  switch (sceneId) {
+    case "house_roof":
+      drawSceneHouseRoof(ctx, w, h);
+      break;
+    case "house_walls_rooms":
+      drawSceneHouseCutawayRooms(ctx, w, h);
+      break;
+    case "house_stairs":
+      drawSceneHouseStairs(ctx, w, h);
+      break;
+    case "house_door":
+      drawSceneHouseDoor(ctx, w, h);
+      break;
+    case "house_windows":
+      drawSceneHouseWindows(ctx, w, h);
+      break;
+    case "house_bedroom":
+      drawSceneSingleRoom(ctx, w, h, "bedroom");
+      break;
+    case "house_kitchen":
+      drawSceneSingleRoom(ctx, w, h, "kitchen");
+      break;
+    case "house_living_room":
+      drawSceneSingleRoom(ctx, w, h, "living");
+      break;
+    case "house_bathroom":
+      drawSceneSingleRoom(ctx, w, h, "bathroom");
+      break;
+    case "house_exterior_family":
+      drawSceneHouseExteriorFamily(ctx, w, h);
+      break;
+    case "moth_oil_lamp":
+      drawSceneMothOilLamp(ctx, w, h, false);
+      break;
+    case "moth_flame_warning":
+      drawSceneMothOilLamp(ctx, w, h, true);
+      break;
+    case "moth_garden_lesson":
+    case "nature_trees_flowers":
+      drawSceneNatureGarden(ctx, w, h);
+      break;
+    case "nature_animals_pets":
+      drawSceneAnimalsMeadow(ctx, w, h);
+      break;
+    case "nature_weather_sky":
+      drawSceneWeatherSky(ctx, w, h);
+      break;
+    case "nature_care_planting":
+      drawScenePlantingCare(ctx, w, h);
+      break;
+    case "sense_sight_observe":
+      drawSceneSenseSight(ctx, w, h);
+      break;
+    case "sense_hearing_sounds":
+      drawSceneSenseHearing(ctx, w, h);
+      break;
+    case "sense_smell_taste":
+      drawSceneSenseSmellTaste(ctx, w, h);
+      break;
+    case "sense_touch_hygiene":
+      drawSceneSenseTouchHygiene(ctx, w, h);
+      break;
+    case "polite_mano_po":
+      drawScenePoliteManoPo(ctx, w, h);
+      break;
+    case "polite_greeting_school":
+      drawSceneClassroomLearning(ctx, w, h);
+      break;
+    case "polite_sharing_friends":
+      drawSceneSharingTable(ctx, w, h);
+      break;
+    case "polite_helping_home":
+      drawSceneSingleRoom(ctx, w, h, "living");
+      break;
+    case "faith_creation":
+      drawSceneFaithCreation(ctx, w, h);
+      break;
+    case "faith_prayer_chapel":
+      drawSceneFaithChapel(ctx, w, h);
+      break;
+    case "storybook_reading_desk":
+    default:
+      drawSceneStorybookDesk(ctx, w, h, seed);
+      break;
+  }
+
+  ctx.restore();
+}
+
 /**
- * Draws rich, topic-specific illustrated props and scenery (animals, butterflies, glowing lamp,
- * senses icons, family house, faith cross/dove, or alphabet blocks) — 100% original vector art.
+ * 1. THE ROOF: Detailed architectural roof with terracotta shingles, timber eaves,
+ * chimney, and attic study room (like k2_image3.jpeg) protecting from sun and rain.
  */
-function drawThemePropsInPanel(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  theme: CreativeThemeCategory,
-  panelIdx: number,
-  seed: number,
-  isKinder: boolean
-) {
-  ctx.save();
-  ctx.translate(cx, cy);
-  if (isKinder) {
-    ctx.scale(1.06, 1.06);
-  }
+function drawSceneHouseRoof(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  // Split sky: warm sunny sky on left, gentle raincloud sky on right
+  const sky = ctx.createLinearGradient(0, 0, w, 0);
+  sky.addColorStop(0, "#BAE6FD");
+  sky.addColorStop(0.55, "#E0F2FE");
+  sky.addColorStop(1, "#CBD5E1");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h);
 
-  if (theme === "nature_animals") {
-    // Draw a lush tree or garden flowers + fluttering butterflies / gamu-gamo
-    drawTreeAndFlowers(ctx, 18, 22);
-    drawButterfly(ctx, -32, -26, "#F59E0B", "#EC4899");
-    drawButterfly(ctx, 24, -36, "#3B82F6", "#A855F7");
-    if (panelIdx % 2 === 0) {
-      // Glowing warm candle/lamp for "Ang Munting Gamu-gamo" or story light
-      drawGlowingLamp(ctx, -28, 22);
-    }
-  } else if (theme === "senses_science") {
-    // Draw Science / Five Senses discovery badges (musical notes, magnifying glass, flower, rainbow star)
-    drawScienceDiscoveryCluster(ctx, panelIdx, seed);
-  } else if (theme === "family_politeness") {
-    // Draw cozy Filipino home, floating hearts, and "Po at Opo" respect stars
-    drawCozyHomeAndHearts(ctx, panelIdx);
-  } else if (theme === "faith_rve") {
-    // Draw glowing cross, peaceful dove, open Bible, and sharing heart
-    drawFaithAndPeaceCluster(ctx, panelIdx);
-  } else {
-    // Language / Reading Story: 3D Alphabet Blocks (A, B, K), magical open book, and stars
-    drawAlphabetAndStoryCluster(ctx, panelIdx, seed);
-  }
-
-  ctx.restore();
-}
-
-function drawTreeAndFlowers(ctx: CanvasRenderingContext2D, x: number, y: number) {
-  ctx.save();
-  ctx.translate(x, y);
-  // Trunk
-  ctx.fillStyle = "#92400E";
-  drawRoundedRect(ctx, -8, -10, 16, 48, 4);
-  ctx.fill();
-  // Canopy
-  ctx.fillStyle = "#16A34A";
+  // Soft white cloud on left
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
   ctx.beginPath();
-  ctx.arc(0, -24, 28, 0, Math.PI * 2);
-  ctx.arc(-18, -12, 20, 0, Math.PI * 2);
-  ctx.arc(18, -12, 20, 0, Math.PI * 2);
+  ctx.arc(135, 34, 14, 0, Math.PI * 2);
+  ctx.arc(152, 30, 18, 0, Math.PI * 2);
+  ctx.arc(170, 35, 13, 0, Math.PI * 2);
   ctx.fill();
-  // Flowers on ground
-  [-28, 24].forEach((fx, i) => {
-    ctx.fillStyle = i === 0 ? "#F43F5E" : "#A855F7";
-    for (let p = 0; p < 5; p++) {
-      const a = (p * Math.PI * 2) / 5;
-      ctx.beginPath();
-      ctx.arc(fx + Math.cos(a) * 6, 28 + Math.sin(a) * 6, 4.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.fillStyle = "#FACC15";
-    ctx.beginPath();
-    ctx.arc(fx, 28, 4, 0, Math.PI * 2);
-    ctx.fill();
-  });
-  ctx.restore();
-}
 
-function drawButterfly(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  wingOuter: string,
-  wingInner: string
-) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(-0.18);
-  ctx.fillStyle = wingOuter;
+  // Warm Golden Sun on left
+  ctx.fillStyle = "#FACC15";
   ctx.beginPath();
-  ctx.ellipse(-10, -6, 11, 8, -0.4, 0, Math.PI * 2);
-  ctx.ellipse(10, -6, 11, 8, 0.4, 0, Math.PI * 2);
-  ctx.ellipse(-8, 6, 8, 6, 0.3, 0, Math.PI * 2);
-  ctx.ellipse(8, 6, 8, 6, -0.3, 0, Math.PI * 2);
+  ctx.arc(54, 42, 22, 0, Math.PI * 2);
   ctx.fill();
-
-  ctx.fillStyle = wingInner;
-  ctx.beginPath();
-  ctx.arc(-10, -6, 4, 0, Math.PI * 2);
-  ctx.arc(10, -6, 4, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = "#1E293B";
-  drawRoundedRect(ctx, -2, -10, 4, 20, 2);
-  ctx.fill();
-  ctx.restore();
-}
-
-function drawGlowingLamp(ctx: CanvasRenderingContext2D, x: number, y: number) {
-  ctx.save();
-  ctx.translate(x, y);
-  // Warm glow
-  const glow = ctx.createRadialGradient(0, -14, 2, 0, -14, 28);
-  glow.addColorStop(0, "rgba(253, 224, 71, 0.9)");
-  glow.addColorStop(1, "rgba(253, 224, 71, 0)");
-  ctx.fillStyle = glow;
-  ctx.beginPath();
-  ctx.arc(0, -14, 28, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Flame
-  ctx.fillStyle = "#F97316";
-  ctx.beginPath();
-  ctx.moveTo(0, -28);
-  ctx.quadraticCurveTo(10, -14, 0, -6);
-  ctx.quadraticCurveTo(-10, -14, 0, -28);
-  ctx.fill();
-
-  // Candle/Lamp base
-  ctx.fillStyle = "#FDE047";
-  drawRoundedRect(ctx, -7, -6, 14, 22, 3);
-  ctx.fill();
-  ctx.fillStyle = "#B45309";
-  drawRoundedRect(ctx, -14, 14, 28, 6, 3);
-  ctx.fill();
-  ctx.restore();
-}
-
-function drawScienceDiscoveryCluster(
-  ctx: CanvasRenderingContext2D,
-  panelIdx: number,
-  seed: number
-) {
-  // Glowing circular science badge
-  ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-  ctx.beginPath();
-  ctx.arc(0, 0, 42, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = "#0284C7";
-  ctx.lineWidth = 3;
-  ctx.stroke();
-
-  // Musical notes / sound waves + magnifying glass + fruit
-  ctx.fillStyle = "#E11D48";
-  ctx.font = "bold 26px 'Segoe UI', sans-serif";
-  ctx.textAlign = "center";
-  const icons = ["🔍 🎵", "👀 🌸", "👂 🔔", "🍎 ✋"];
-  ctx.fillText(icons[(panelIdx + seed) % icons.length], 0, 8);
-}
-
-function drawCozyHomeAndHearts(ctx: CanvasRenderingContext2D, panelIdx: number) {
-  // Cozy Filipino house
-  ctx.fillStyle = "#FEF3C7";
-  drawRoundedRect(ctx, -34, -4, 68, 46, 6);
-  ctx.fill();
-  ctx.strokeStyle = "#D97706";
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  // Roof
-  ctx.fillStyle = "#DC2626";
-  ctx.beginPath();
-  ctx.moveTo(-44, -2);
-  ctx.lineTo(0, -36);
-  ctx.lineTo(44, -2);
-  ctx.closePath();
-  ctx.fill();
-
-  // Door & Window
-  ctx.fillStyle = "#92400E";
-  drawRoundedRect(ctx, -8, 14, 16, 28, 3);
-  ctx.fill();
-
-  // Floating Heart Badge above roof
-  ctx.fillStyle = panelIdx % 2 === 0 ? "#EC4899" : "#EF4444";
-  ctx.font = "bold 22px 'Segoe UI', sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText("💖", 0, -40);
-}
-
-function drawFaithAndPeaceCluster(ctx: CanvasRenderingContext2D, panelIdx: number) {
-  // Radiant halo
-  const halo = ctx.createRadialGradient(0, -6, 4, 0, -6, 46);
-  halo.addColorStop(0, "rgba(254, 240, 138, 0.95)");
-  halo.addColorStop(1, "rgba(254, 240, 138, 0)");
-  ctx.fillStyle = halo;
-  ctx.beginPath();
-  ctx.arc(0, -6, 46, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Cross
-  ctx.fillStyle = "#D97706";
-  drawRoundedRect(ctx, -5, -34, 10, 52, 3);
-  ctx.fill();
-  drawRoundedRect(ctx, -20, -20, 40, 10, 3);
-  ctx.fill();
-
-  // Dove / Heart symbol
-  ctx.font = "bold 22px 'Segoe UI', sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(panelIdx % 2 === 0 ? "🕊️" : "🙏", 28, -22);
-}
-
-function drawAlphabetAndStoryCluster(
-  ctx: CanvasRenderingContext2D,
-  panelIdx: number,
-  seed: number
-) {
-  const letters = [
-    ["A", "E", "I"],
-    ["B", "K", "M"],
-    ["O", "U", "S"],
-    ["P", "T", "L"],
-  ][(panelIdx + seed) % 4];
-  const blockColors = ["#EF4444", "#3B82F6", "#10B981"];
-
-  letters.forEach((ltr, i) => {
-    const bx = (i - 1) * 32;
-    const by = i === 1 ? -22 : 6;
-    ctx.fillStyle = blockColors[i % blockColors.length];
-    drawRoundedRect(ctx, bx - 14, by - 14, 28, 28, 6);
-    ctx.fill();
-    ctx.strokeStyle = "#FFFFFF";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.fillStyle = "#FFFFFF";
-    ctx.font = "bold 16px 'Comic Sans MS', 'Segoe UI', sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(ltr, bx, by + 6);
-  });
-}
-
-function getMiniDialogues(
-  theme: CreativeThemeCategory,
-  gradeTier: "kinder2" | "grade1"
-): string[] {
-  if (theme === "family_politeness") {
-    return ["Po at Opo!", "Salamat po!", "Magandang araw po!", "Tulungan po kita!"];
-  }
-  if (theme === "nature_animals") {
-    return ["Ang ganda!", "Ingatan natin!", "Tingnan mo!", "Salamat Panginoon!"];
-  }
-  if (theme === "senses_science") {
-    return ["I can observe!", "Listen closely!", "Five Senses!", "Let's discover!"];
-  }
-  if (theme === "faith_rve") {
-    return ["Thank You, God!", "Share with love!", "God loves us!", "Amen! 🙏"];
-  }
-  if (theme === "math_numbers") {
-    return ["Let's count!", "More or Less!", "1, 2, 3, 4, 5!", "Set A & Set B!"];
-  }
-  return gradeTier === "grade1"
-    ? ["Basahin natin!", "Po at Opo!", "Mag-aral tayo!", "Mahusay!"]
-    : ["Let's learn!", "Good job!", "Story time!", "Hooray! 🌟"];
-}
-
-function drawMiniSpeechBubble(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  text: string
-) {
-  ctx.save();
-  ctx.font = "bold 11.5px 'Comic Sans MS', 'Segoe UI', sans-serif";
-  const textW = Math.min(130, Math.max(68, ctx.measureText(text).width + 20));
-  const bx = x - textW / 2;
-  const by = y - 14;
-  ctx.fillStyle = "#FFFFFF";
-  drawRoundedRect(ctx, bx, by, textW, 26, 13);
-  ctx.fill();
-  ctx.strokeStyle = "#2563EB";
-  ctx.lineWidth = 1.8;
-  ctx.stroke();
-
-  ctx.fillStyle = "#1E293B";
-  ctx.textAlign = "center";
-  ctx.fillText(text, x, by + 17);
-  ctx.restore();
-}
-
-function drawSmilingSun(ctx: CanvasRenderingContext2D, x: number, y: number, r: number) {
-  ctx.save();
-  ctx.translate(x, y);
   ctx.strokeStyle = "#F59E0B";
   ctx.lineWidth = 2.5;
   for (let i = 0; i < 8; i++) {
     const a = (i * Math.PI) / 4;
     ctx.beginPath();
-    ctx.moveTo(Math.cos(a) * (r + 3), Math.sin(a) * (r + 3));
-    ctx.lineTo(Math.cos(a) * (r + 9), Math.sin(a) * (r + 9));
+    ctx.moveTo(54 + Math.cos(a) * 27, 42 + Math.sin(a) * 27);
+    ctx.lineTo(54 + Math.cos(a) * 36, 42 + Math.sin(a) * 36);
     ctx.stroke();
   }
-  ctx.fillStyle = "#FBBF24";
-  ctx.beginPath();
-  ctx.arc(0, 0, r, 0, Math.PI * 2);
-  ctx.fill();
-  // Cute smile on sun
-  ctx.fillStyle = "#92400E";
-  ctx.beginPath();
-  ctx.arc(-r * 0.3, -r * 0.15, 2, 0, Math.PI * 2);
-  ctx.arc(r * 0.3, -r * 0.15, 2, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = "#92400E";
-  ctx.lineWidth = 1.6;
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 0.45, 0.15 * Math.PI, 0.85 * Math.PI);
-  ctx.stroke();
-  ctx.restore();
-}
 
-function drawRainbowArc(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number) {
-  const colors = [
-    "rgba(239, 68, 68, 0.35)",
-    "rgba(245, 158, 11, 0.35)",
-    "rgba(16, 185, 129, 0.35)",
-    "rgba(59, 130, 246, 0.35)",
-  ];
-  ctx.save();
-  ctx.lineWidth = 5;
-  colors.forEach((c, i) => {
-    ctx.strokeStyle = c;
+  // Raincloud & raindrops on right deflected by the roof
+  ctx.fillStyle = "#94A3B8";
+  ctx.beginPath();
+  ctx.arc(w - 96, 34, 18, 0, Math.PI * 2);
+  ctx.arc(w - 72, 28, 22, 0, Math.PI * 2);
+  ctx.arc(w - 48, 36, 16, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#0284C7";
+  ctx.lineWidth = 2.2;
+  for (let i = 0; i < 6; i++) {
+    const rx = w - 106 + i * 13;
+    const ry = 60 + (i % 2) * 11;
     ctx.beginPath();
-    ctx.arc(x, y, radius - i * 5, Math.PI, 0);
+    ctx.moveTo(rx, ry);
+    ctx.lineTo(rx - 5, ry + 11);
     ctx.stroke();
-  });
-  ctx.restore();
+  }
+
+  // Brick Chimney with Mortar Lines
+  const houseW = w * 0.78;
+  const houseX = (w - houseW) / 2;
+  ctx.fillStyle = "#B45309";
+  ctx.fillRect(houseX + houseW - 78, h * 0.16, 36, 68);
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(houseX + houseW - 78, h * 0.16, 36, 68);
+  ctx.fillStyle = "#92400E";
+  ctx.fillRect(houseX + houseW - 82, h * 0.14, 44, 8);
+  ctx.strokeRect(houseX + houseW - 82, h * 0.14, 44, 8);
+
+  // Lower House Wall Trim
+  ctx.fillStyle = "#FEF3C7";
+  ctx.fillRect(houseX + 14, h * 0.72, houseW - 28, h * 0.28);
+  ctx.strokeRect(houseX + 14, h * 0.72, houseW - 28, h * 0.28);
+
+  // Outer Red Roof Beam (k2_image3.jpeg style)
+  ctx.fillStyle = "#DC2626";
+  ctx.beginPath();
+  ctx.moveTo(houseX - 18, h * 0.74);
+  ctx.lineTo(w / 2, h * 0.08);
+  ctx.lineTo(houseX + houseW + 18, h * 0.74);
+  ctx.lineTo(houseX + houseW + 4, h * 0.8);
+  ctx.lineTo(w / 2, h * 0.17);
+  ctx.lineTo(houseX - 4, h * 0.8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Inner Timber Gable Triangle (Lavender Attic Study Room like k2_image3.jpeg!)
+  ctx.fillStyle = "#EDE9FE";
+  ctx.beginPath();
+  ctx.moveTo(houseX + 22, h * 0.72);
+  ctx.lineTo(w / 2, h * 0.2);
+  ctx.lineTo(houseX + houseW - 22, h * 0.72);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "#B45309";
+  ctx.lineWidth = 5;
+  ctx.stroke();
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Attic Study Desk, Laptop, Lamp & Bookshelf inside the Roof Gable
+  const deskY = h * 0.56;
+  ctx.fillStyle = "#D97706";
+  ctx.fillRect(w / 2 - 54, deskY, 96, 8);
+  ctx.strokeRect(w / 2 - 54, deskY, 96, 8);
+  ctx.fillRect(w / 2 - 48, deskY + 8, 10, 24);
+  ctx.strokeRect(w / 2 - 48, deskY + 8, 10, 24);
+  ctx.fillRect(w / 2 + 26, deskY + 8, 10, 24);
+  ctx.strokeRect(w / 2 + 26, deskY + 8, 10, 24);
+
+  // Laptop on attic desk
+  ctx.fillStyle = "#64748B";
+  ctx.fillRect(w / 2 - 18, deskY - 20, 32, 20);
+  ctx.strokeRect(w / 2 - 18, deskY - 20, 32, 20);
+  ctx.fillStyle = "#94A3B8";
+  ctx.fillRect(w / 2 - 14, deskY - 17, 24, 14);
+
+  // Purple Study Chair on right of desk
+  ctx.fillStyle = "#8B5CF6";
+  drawRoundedRect(ctx, w / 2 + 52, deskY - 12, 20, 24, 4);
+  ctx.fill();
+  ctx.stroke();
 }
 
-function drawClassroomBunting(
-  ctx: CanvasRenderingContext2D,
-  startX: number,
-  y: number,
-  totalWidth: number
-) {
-  const colors = ["#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#8B5CF6", "#EC4899"];
-  const count = 9;
-  const step = totalWidth / count;
-  ctx.save();
-  for (let i = 0; i < count; i++) {
-    const fx = startX + i * step;
-    ctx.fillStyle = colors[i % colors.length];
+/**
+ * 2. THE WALLS & ROOMS: Cutaway Dollhouse Cross-Section (Modeled after k2_image3.jpeg!)
+ * Shows interior walls dividing Bathroom, Bedroom, Kitchen, and Living Room with rich furniture.
+ */
+function drawSceneHouseCutawayRooms(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  ctx.fillStyle = "#F8FAFC";
+  ctx.fillRect(0, 0, w, h);
+
+  const marginX = 28;
+  const topY = 10;
+  const houseW = w - marginX * 2;
+  const houseH = h - 16;
+  const midX = marginX + houseW / 2;
+  const midY = topY + houseH * 0.48;
+  const rw = houseW / 2;
+  const rhTop = houseH * 0.48;
+  const rhBot = houseH * 0.52;
+
+  // 1. Top-Left: Bathroom (Sky Blue Tile Grid)
+  ctx.fillStyle = "#E0F2FE";
+  ctx.fillRect(marginX, topY, rw, rhTop);
+  ctx.strokeStyle = "rgba(14, 165, 233, 0.15)";
+  ctx.lineWidth = 1;
+  for (let gx = marginX + 18; gx < midX; gx += 18) {
     ctx.beginPath();
-    ctx.moveTo(fx, y);
-    ctx.lineTo(fx + step * 0.85, y);
-    ctx.lineTo(fx + step * 0.42, y + 22);
-    ctx.closePath();
+    ctx.moveTo(gx, topY);
+    ctx.lineTo(gx, midY);
+    ctx.stroke();
+  }
+  // Clawfoot Tub + Blue Towel + Mirror + Vanity Sink + Toilet
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 1.8;
+  ctx.fillStyle = "#FFFFFF";
+  drawRoundedRect(ctx, marginX + 12, midY - 30, 72, 24, 8);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#38BDF8";
+  ctx.fillRect(marginX + 52, midY - 30, 14, 16);
+  ctx.strokeRect(marginX + 52, midY - 30, 14, 16);
+  // Mirror & Sink
+  ctx.fillStyle = "#BAE6FD";
+  ctx.fillRect(marginX + 96, topY + 14, 32, 34);
+  ctx.strokeRect(marginX + 96, topY + 14, 32, 34);
+  ctx.fillStyle = "#FDE68A";
+  ctx.fillRect(marginX + 94, midY - 30, 36, 24);
+  ctx.strokeRect(marginX + 94, midY - 30, 36, 24);
+  // Toilet
+  ctx.fillStyle = "#FFFFFF";
+  drawRoundedRect(ctx, marginX + 142, midY - 40, 24, 18, 3);
+  ctx.fill();
+  ctx.stroke();
+  drawRoundedRect(ctx, marginX + 144, midY - 22, 20, 16, 6);
+  ctx.fill();
+  ctx.stroke();
+
+  // 2. Top-Right: Bedroom (Warm Buttercream + Landscape Painting + Tufted Bed + Lamps)
+  ctx.fillStyle = "#FEF9C3";
+  ctx.fillRect(midX, topY, rw, rhTop);
+  // Framed landscape painting above bed
+  ctx.fillStyle = "#B45309";
+  ctx.fillRect(midX + rw / 2 - 28, topY + 8, 56, 26);
+  ctx.strokeRect(midX + rw / 2 - 28, topY + 8, 56, 26);
+  ctx.fillStyle = "#BAE6FD";
+  ctx.fillRect(midX + rw / 2 - 24, topY + 11, 48, 20);
+  ctx.fillStyle = "#22C55E";
+  ctx.beginPath();
+  ctx.moveTo(midX + rw / 2 - 24, topY + 31);
+  ctx.quadraticCurveTo(midX + rw / 2, topY + 20, midX + rw / 2 + 24, topY + 31);
+  ctx.fill();
+  // Headboard & Bed
+  ctx.fillStyle = "#D97706";
+  drawRoundedRect(ctx, midX + 42, midY - 48, 102, 42, 4);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#FEF08A";
+  drawRoundedRect(ctx, midX + 52, midY - 38, 36, 13, 3);
+  ctx.fill();
+  ctx.stroke();
+  drawRoundedRect(ctx, midX + 98, midY - 38, 36, 13, 3);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#86EFAC";
+  ctx.fillRect(midX + 42, midY - 24, 102, 18);
+  ctx.strokeRect(midX + 42, midY - 24, 102, 18);
+  // Nightstands
+  ctx.fillStyle = "#B45309";
+  ctx.fillRect(midX + 14, midY - 26, 22, 20);
+  ctx.strokeRect(midX + 14, midY - 26, 22, 20);
+  ctx.fillRect(midX + 150, midY - 26, 22, 20);
+  ctx.strokeRect(midX + 150, midY - 26, 22, 20);
+
+  // 3. Bottom-Left: Kitchen (Pastel Pink + Blue Fridge + Range Hood + Stove + Pot)
+  ctx.fillStyle = "#FCE7F3";
+  ctx.fillRect(marginX, midY, rw, rhBot);
+  // Two-door Blue Fridge
+  ctx.fillStyle = "#BFDBFE";
+  drawRoundedRect(ctx, marginX + 14, midY + 18, 46, rhBot - 24, 4);
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(marginX + 14, midY + 52);
+  ctx.lineTo(marginX + 60, midY + 52);
+  ctx.stroke();
+  // Sticky note on fridge
+  ctx.fillStyle = "#FEF08A";
+  ctx.fillRect(marginX + 30, midY + 34, 10, 10);
+  // Kitchen Counter & Oven
+  ctx.fillStyle = "#FDE68A";
+  ctx.fillRect(marginX + 66, topY + houseH - 48, 108, 42);
+  ctx.strokeRect(marginX + 66, topY + houseH - 48, 108, 42);
+  ctx.fillStyle = "#475569";
+  ctx.fillRect(marginX + 92, topY + houseH - 36, 44, 26);
+  ctx.strokeRect(marginX + 92, topY + houseH - 36, 44, 26);
+  // Pink Cooking Pot & Range Hood
+  ctx.fillStyle = "#F43F5E";
+  ctx.fillRect(marginX + 96, topY + houseH - 58, 22, 10);
+  ctx.strokeRect(marginX + 96, topY + houseH - 58, 22, 10);
+  ctx.fillStyle = "#CBD5E1";
+  ctx.beginPath();
+  ctx.moveTo(marginX + 104, midY + 4);
+  ctx.lineTo(marginX + 124, midY + 4);
+  ctx.lineTo(marginX + 138, midY + 28);
+  ctx.lineTo(marginX + 90, midY + 28);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // 4. Bottom-Right: Living Room (Soft Sage + Bookcase + Green Sofa + Coffee Table + Rug)
+  ctx.fillStyle = "#D1FAE5";
+  ctx.fillRect(midX, midY, rw, rhBot);
+  // Bookcase with colorful books
+  ctx.fillStyle = "#92400E";
+  ctx.fillRect(midX + 14, midY + 20, 44, rhBot - 26);
+  ctx.strokeRect(midX + 14, midY + 20, 44, rhBot - 26);
+  const bookCols = ["#EF4444", "#F59E0B", "#3B82F6", "#10B981"];
+  for (let b = 0; b < 4; b++) {
+    ctx.fillStyle = bookCols[b];
+    ctx.fillRect(midX + 19 + b * 8, midY + 26, 6, 16);
+    ctx.fillRect(midX + 19 + b * 8, midY + 48, 6, 16);
+  }
+  // Plush Green Sofa & Yellow Pillow
+  ctx.fillStyle = "#10B981";
+  drawRoundedRect(ctx, midX + 70, topY + houseH - 52, 104, 44, 8);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#FACC15";
+  drawRoundedRect(ctx, midX + 148, topY + houseH - 44, 18, 18, 4);
+  ctx.fill();
+  ctx.stroke();
+  // Blue Rug & Coffee Table
+  ctx.fillStyle = "#38BDF8";
+  ctx.beginPath();
+  ctx.ellipse(midX + 116, topY + houseH - 6, 36, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Bold Timber Walls Dividing the Rooms
+  ctx.strokeStyle = "#D97706";
+  ctx.lineWidth = 8;
+  ctx.strokeRect(marginX, topY, houseW, houseH);
+  ctx.beginPath();
+  ctx.moveTo(midX, topY);
+  ctx.lineTo(midX, topY + houseH);
+  ctx.moveTo(marginX, midY);
+  ctx.lineTo(marginX + houseW, midY);
+  ctx.stroke();
+
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(marginX - 4, topY - 4, houseW + 8, houseH + 8);
+}
+
+/**
+ * 3. THE STAIRS: Interior wooden staircase with turned balusters, oak handrail,
+ * wainscot wall paneling, upstairs bedroom door, framed pictures, and floor runner rug.
+ */
+function drawSceneHouseStairs(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  // Warm cream hallway wall & wainscot trim
+  ctx.fillStyle = "#FEF9C3";
+  ctx.fillRect(0, 0, w, h * 0.78);
+  ctx.fillStyle = "#FDE68A";
+  ctx.fillRect(0, h * 0.56, w, h * 0.22);
+  ctx.fillStyle = "#B45309";
+  ctx.fillRect(0, h * 0.78, w, h * 0.22);
+
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 2;
+
+  // Ascending Framed Landscape Pictures along the Staircase Wall
+  [
+    { x: 52, y: 98, c: "#BAE6FD" },
+    { x: 112, y: 66, c: "#BBF7D0" },
+    { x: 172, y: 34, c: "#FBCFE8" },
+  ].forEach((fr) => {
+    ctx.fillStyle = "#78350F";
+    ctx.fillRect(fr.x - 4, fr.y - 4, 44, 34);
+    ctx.strokeRect(fr.x - 4, fr.y - 4, 44, 34);
+    ctx.fillStyle = fr.c;
+    ctx.fillRect(fr.x, fr.y, 36, 26);
+  });
+
+  // Upstairs Landing & Paneled Bedroom Door on Top Right
+  const steps = 6;
+  const startX = 86;
+  const startY = h * 0.82;
+  const stepW = 40;
+  const stepH = 21;
+  const topLandingX = startX + steps * stepW;
+  const topLandingY = startY - steps * stepH;
+
+  ctx.fillStyle = "#92400E";
+  ctx.fillRect(topLandingX - 4, topLandingY, w - topLandingX + 10, startY - topLandingY);
+  ctx.strokeRect(topLandingX - 4, topLandingY, w - topLandingX + 10, startY - topLandingY);
+
+  // Upstairs Door
+  ctx.fillStyle = "#D97706";
+  ctx.fillRect(topLandingX + 22, 16, 48, topLandingY - 16);
+  ctx.strokeRect(topLandingX + 22, 16, 48, topLandingY - 16);
+  ctx.fillStyle = "#FACC15";
+  ctx.beginPath();
+  ctx.arc(topLandingX + 60, 44, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Wooden Staircase Steps rising from bottom-left to top-right
+  for (let i = 0; i < steps; i++) {
+    const sx = startX + i * stepW;
+    const sy = startY - (i + 1) * stepH;
+    const sh = (i + 1) * stepH;
+    ctx.fillStyle = "#B45309";
+    ctx.fillRect(sx, sy, stepW + 2, sh);
+    ctx.strokeRect(sx, sy, stepW + 2, sh);
+
+    // Golden Oak Step Tread
+    ctx.fillStyle = "#F59E0B";
+    ctx.fillRect(sx - 3, sy, stepW + 6, 7);
+    ctx.strokeRect(sx - 3, sy, stepW + 6, 7);
+
+    // Turned White Baluster Post
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(sx + 16, sy - 40, 6, 40);
+    ctx.strokeRect(sx + 16, sy - 40, 6, 40);
+  }
+
+  // Newel Posts & Diagonal Handrail Banister
+  ctx.fillStyle = "#78350F";
+  ctx.fillRect(startX - 6, startY - stepH - 48, 14, 52);
+  ctx.strokeRect(startX - 6, startY - stepH - 48, 14, 52);
+
+  ctx.strokeStyle = "#78350F";
+  ctx.lineWidth = 8;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(startX, startY - stepH - 42);
+  ctx.lineTo(topLandingX + 8, topLandingY - 40);
+  ctx.stroke();
+
+  // Cozy Rug at foot of stairs
+  ctx.fillStyle = "#10B981";
+  ctx.beginPath();
+  ctx.ellipse(54, h * 0.88, 38, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+/**
+ * 4. THE DOOR: Inviting front porch entrance with 6-panel oak door, arched fanlight window,
+ * brass doorknob, white picket fence, lantern, welcome mat, and blooming flowerpots.
+ */
+function drawSceneHouseDoor(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  // Exterior Cream Clapboard Wall & Lush Green Lawn
+  ctx.fillStyle = "#FEF3C7";
+  ctx.fillRect(0, 0, w, h * 0.74);
+  ctx.strokeStyle = "rgba(217, 119, 6, 0.18)";
+  ctx.lineWidth = 1.5;
+  for (let sy = 18; sy < h * 0.74; sy += 16) {
+    ctx.beginPath();
+    ctx.moveTo(0, sy);
+    ctx.lineTo(w, sy);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "#4ADE80";
+  ctx.fillRect(0, h * 0.74, w, h * 0.26);
+
+  // White Picket Fence & Green Bushes on Left and Right
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 2;
+  for (const sideX of [16, w - 118]) {
+    for (let p = 0; p < 4; p++) {
+      const px = sideX + p * 24;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(px, h * 0.52, 16, h * 0.24);
+      ctx.strokeRect(px, h * 0.52, 16, h * 0.24);
+    }
+    ctx.fillStyle = "#22C55E";
+    ctx.beginPath();
+    ctx.arc(sideX + 24, h * 0.72, 24, 0, Math.PI * 2);
+    ctx.arc(sideX + 58, h * 0.73, 20, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  // Stone Pathway & Welcome Mat
+  ctx.fillStyle = "#E7E5E4";
+  ctx.beginPath();
+  ctx.moveTo(w / 2 - 46, h * 0.74);
+  ctx.lineTo(w / 2 + 46, h * 0.74);
+  ctx.lineTo(w / 2 + 74, h);
+  ctx.lineTo(w / 2 - 74, h);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Terracotta Welcome Doormat
+  ctx.fillStyle = "#D97706";
+  drawRoundedRect(ctx, w / 2 - 38, h * 0.77, 76, 18, 4);
+  ctx.fill();
+  ctx.stroke();
+
+  // Door Frame & Paneled Wooden Front Door
+  const doorW = 92;
+  const doorH = 142;
+  const doorX = (w - doorW) / 2;
+  const doorY = h * 0.74 - doorH;
+
+  ctx.fillStyle = "#78350F";
+  ctx.fillRect(doorX - 9, doorY - 9, doorW + 18, doorH + 9);
+  ctx.strokeRect(doorX - 9, doorY - 9, doorW + 18, doorH + 9);
+
+  ctx.fillStyle = "#B45309";
+  ctx.fillRect(doorX, doorY, doorW, doorH);
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(doorX, doorY, doorW, doorH);
+
+  // Arched Fanlight Glass Window with Sunburst Muntins
+  ctx.fillStyle = "#BAE6FD";
+  ctx.beginPath();
+  ctx.arc(w / 2, doorY + 34, 28, Math.PI, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(w / 2, doorY + 34);
+  ctx.lineTo(w / 2, doorY + 6);
+  ctx.moveTo(w / 2, doorY + 34);
+  ctx.lineTo(w / 2 - 20, doorY + 14);
+  ctx.moveTo(w / 2, doorY + 34);
+  ctx.lineTo(w / 2 + 20, doorY + 14);
+  ctx.stroke();
+
+  // Recessed Wooden Door Panels
+  ctx.fillStyle = "#92400E";
+  [
+    [doorX + 14, doorY + 46, 26, 36],
+    [doorX + 52, doorY + 46, 26, 36],
+    [doorX + 14, doorY + 92, 26, 36],
+    [doorX + 52, doorY + 92, 26, 36],
+  ].forEach(([rx, ry, rw, rh]) => {
+    ctx.fillRect(rx, ry, rw, rh);
+    ctx.strokeRect(rx, ry, rw, rh);
+  });
+
+  // Golden Doorknob & Keyhole Plate
+  ctx.fillStyle = "#FACC15";
+  ctx.beginPath();
+  ctx.arc(doorX + doorW - 13, doorY + 84, 6.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Potted Flowering Plants flanking the front door
+  [doorX - 38, doorX + doorW + 38].forEach((px) => {
+    ctx.fillStyle = "#EA580C";
+    ctx.fillRect(px - 15, h * 0.74 - 28, 30, 28);
+    ctx.strokeRect(px - 15, h * 0.74 - 28, 30, 28);
+    ctx.fillStyle = "#16A34A";
+    ctx.beginPath();
+    ctx.arc(px, h * 0.74 - 42, 18, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#F43F5E";
+    ctx.beginPath();
+    ctx.arc(px - 6, h * 0.74 - 46, 5, 0, Math.PI * 2);
+    ctx.arc(px + 7, h * 0.74 - 38, 5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+function drawSceneHouseWindows(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  ctx.fillStyle = "#FEF3C7";
+  ctx.fillRect(0, 0, w, h);
+
+  const winW = 150;
+  const winH = 118;
+  const winX = (w - winW) / 2;
+  const winY = 24;
+
+  // Sky & hills visible through open window
+  ctx.fillStyle = "#BAE6FD";
+  ctx.fillRect(winX, winY, winW, winH);
+  ctx.fillStyle = "#4ADE80";
+  ctx.fillRect(winX, winY + winH - 28, winW, 28);
+  ctx.fillStyle = "#FACC15";
+  ctx.beginPath();
+  ctx.arc(winX + 38, winY + 32, 16, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Window panes & curtains
+  ctx.strokeStyle = "#78350F";
+  ctx.lineWidth = 6;
+  ctx.strokeRect(winX, winY, winW, winH);
+  ctx.beginPath();
+  ctx.moveTo(winX + winW / 2, winY);
+  ctx.lineTo(winX + winW / 2, winY + winH);
+  ctx.moveTo(winX, winY + winH / 2);
+  ctx.lineTo(winX + winW, winY + winH / 2);
+  ctx.stroke();
+
+  // Window Flowerbox with pink & yellow blooms
+  ctx.fillStyle = "#B45309";
+  ctx.fillRect(winX - 12, winY + winH, winW + 24, 24);
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(winX - 12, winY + winH, winW + 24, 24);
+  for (let fx = winX + 12; fx < winX + winW - 8; fx += 28) {
+    ctx.fillStyle = "#22C55E";
+    ctx.beginPath();
+    ctx.arc(fx, winY + winH - 2, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#F43F5E";
+    ctx.beginPath();
+    ctx.arc(fx, winY + winH - 4, 5, 0, Math.PI * 2);
     ctx.fill();
   }
-  ctx.restore();
 }
 
-function drawCartoonStudent(
+function drawSceneSingleRoom(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  room: "bedroom" | "kitchen" | "living" | "bathroom"
+) {
+  const wallColors = {
+    bedroom: "#FEF3C7",
+    kitchen: "#FCE7F3",
+    living: "#D1FAE5",
+    bathroom: "#E0F2FE",
+  };
+  ctx.fillStyle = wallColors[room];
+  ctx.fillRect(0, 0, w, h * 0.78);
+  ctx.fillStyle = "#D97706";
+  ctx.fillRect(0, h * 0.78, w, h * 0.22);
+
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 2.5;
+
+  if (room === "bedroom") {
+    ctx.fillStyle = "#92400E";
+    drawRoundedRect(ctx, w / 2 - 90, h * 0.36, 180, 82, 8);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#FEF08A";
+    drawRoundedRect(ctx, w / 2 - 72, h * 0.44, 58, 22, 6);
+    ctx.fill();
+    ctx.stroke();
+    drawRoundedRect(ctx, w / 2 + 14, h * 0.44, 58, 22, 6);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#86EFAC";
+    ctx.fillRect(w / 2 - 90, h * 0.58, 180, 38);
+    ctx.strokeRect(w / 2 - 90, h * 0.58, 180, 38);
+  } else if (room === "kitchen") {
+    ctx.fillStyle = "#BFDBFE";
+    ctx.fillRect(72, h * 0.24, 68, h * 0.54);
+    ctx.strokeRect(72, h * 0.24, 68, h * 0.54);
+    ctx.fillStyle = "#FDE68A";
+    ctx.fillRect(156, h * 0.46, 180, h * 0.32);
+    ctx.strokeRect(156, h * 0.46, 180, h * 0.32);
+    ctx.fillStyle = "#334155";
+    ctx.fillRect(188, h * 0.54, 64, h * 0.2);
+  } else if (room === "bathroom") {
+    ctx.fillStyle = "#FFFFFF";
+    drawRoundedRect(ctx, 64, h * 0.5, 130, 48, 14);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#BAE6FD";
+    ctx.fillRect(236, h * 0.2, 62, 56);
+    ctx.strokeRect(236, h * 0.2, 62, 56);
+  } else {
+    ctx.fillStyle = "#92400E";
+    ctx.fillRect(58, h * 0.22, 64, h * 0.56);
+    ctx.strokeRect(58, h * 0.22, 64, h * 0.56);
+    ctx.fillStyle = "#10B981";
+    drawRoundedRect(ctx, 152, h * 0.44, 195, 64, 14);
+    ctx.fill();
+    ctx.stroke();
+  }
+}
+
+function drawSceneHouseExteriorFamily(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  ctx.fillStyle = "#BAE6FD";
+  ctx.fillRect(0, 0, w, h * 0.72);
+  ctx.fillStyle = "#86EFAC";
+  ctx.fillRect(0, h * 0.72, w, h * 0.28);
+
+  const hx = w / 2 - 110;
+  const hy = h * 0.34;
+  const hw = 220;
+  const hh = h * 0.42;
+
+  ctx.fillStyle = "#FEF3C7";
+  ctx.fillRect(hx, hy, hw, hh);
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(hx, hy, hw, hh);
+
+  ctx.fillStyle = "#DC2626";
+  ctx.beginPath();
+  ctx.moveTo(hx - 22, hy + 4);
+  ctx.lineTo(w / 2, hy - 58);
+  ctx.lineTo(hx + hw + 22, hy + 4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#92400E";
+  ctx.fillRect(w / 2 - 20, hy + hh - 54, 40, 54);
+  ctx.strokeRect(w / 2 - 20, hy + hh - 54, 40, 54);
+
+  ctx.fillStyle = "#BAE6FD";
+  ctx.fillRect(hx + 22, hy + 20, 44, 38);
+  ctx.strokeRect(hx + 22, hy + 20, 44, 38);
+  ctx.fillRect(hx + hw - 66, hy + 20, 44, 38);
+  ctx.strokeRect(hx + hw - 66, hy + 20, 44, 38);
+}
+
+/**
+ * 5. ANG MUNTING GAMU-GAMO: Glowing vintage oil lamp on table with Mother Moth & Little Moth.
+ */
+function drawSceneMothOilLamp(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  closeToFlame: boolean
+) {
+  const bg = ctx.createRadialGradient(w / 2, h * 0.42, 16, w / 2, h * 0.42, w * 0.65);
+  bg.addColorStop(0, "#FEF08A");
+  bg.addColorStop(0.5, "#FDBA74");
+  bg.addColorStop(1, "#7C2D12");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.fillStyle = "#78350F";
+  ctx.fillRect(0, h * 0.76, w, h * 0.24);
+
+  ctx.fillStyle = "#D97706";
+  drawRoundedRect(ctx, w / 2 - 36, h * 0.58, 72, 34, 12);
+  ctx.fill();
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  ctx.fillStyle = "#F97316";
+  ctx.beginPath();
+  ctx.moveTo(w / 2, h * 0.24);
+  ctx.quadraticCurveTo(w / 2 + 22, h * 0.44, w / 2, h * 0.56);
+  ctx.quadraticCurveTo(w / 2 - 22, h * 0.44, w / 2, h * 0.24);
+  ctx.fill();
+
+  ctx.fillStyle = "#FEF08A";
+  ctx.beginPath();
+  ctx.moveTo(w / 2, h * 0.32);
+  ctx.quadraticCurveTo(w / 2 + 10, h * 0.46, w / 2, h * 0.54);
+  ctx.quadraticCurveTo(w / 2 - 10, h * 0.46, w / 2, h * 0.32);
+  ctx.fill();
+
+  drawDetailedButterfly(ctx, w / 2 - 105, h * 0.38, "#F59E0B", "#92400E", 1.15);
+  drawDetailedButterfly(
+    ctx,
+    closeToFlame ? w / 2 + 44 : w / 2 + 95,
+    closeToFlame ? h * 0.32 : h * 0.44,
+    "#FDE047",
+    "#EA580C",
+    0.82
+  );
+}
+
+function drawSceneNatureGarden(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  ctx.fillStyle = "#DBEAFE";
+  ctx.fillRect(0, 0, w, h * 0.72);
+  ctx.fillStyle = "#86EFAC";
+  ctx.fillRect(0, h * 0.72, w, h * 0.28);
+
+  ctx.fillStyle = "#78350F";
+  ctx.fillRect(88, h * 0.42, 28, h * 0.34);
+  ctx.fillStyle = "#16A34A";
+  ctx.beginPath();
+  ctx.arc(102, h * 0.34, 48, 0, Math.PI * 2);
+  ctx.arc(68, h * 0.42, 34, 0, Math.PI * 2);
+  ctx.arc(136, h * 0.42, 34, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  [230, 290, 350].forEach((fx, i) => {
+    ctx.strokeStyle = "#15803D";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(fx, h * 0.76);
+    ctx.lineTo(fx, h * 0.54);
+    ctx.stroke();
+
+    ctx.fillStyle = i % 2 === 0 ? "#F43F5E" : "#A855F7";
+    for (let p = 0; p < 5; p++) {
+      const a = (p * Math.PI * 2) / 5;
+      ctx.beginPath();
+      ctx.arc(fx + Math.cos(a) * 10, h * 0.52 + Math.sin(a) * 10, 8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = "#FACC15";
+    ctx.beginPath();
+    ctx.arc(fx, h * 0.52, 7, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  drawDetailedButterfly(ctx, 275, h * 0.28, "#38BDF8", "#F43F5E", 1);
+}
+
+function drawSceneAnimalsMeadow(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  ctx.fillStyle = "#E0F2FE";
+  ctx.fillRect(0, 0, w, h * 0.7);
+  ctx.fillStyle = "#86EFAC";
+  ctx.fillRect(0, h * 0.7, w, h * 0.3);
+
+  ctx.fillStyle = "#FEF3C7";
+  ctx.fillRect(72, h * 0.44, 88, 56);
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(72, h * 0.44, 88, 56);
+  ctx.fillStyle = "#DC2626";
+  ctx.beginPath();
+  ctx.moveTo(60, h * 0.46);
+  ctx.lineTo(116, h * 0.24);
+  ctx.lineTo(172, h * 0.46);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#38BDF8";
+  ctx.beginPath();
+  ctx.ellipse(w - 125, h * 0.78, 78, 24, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#FACC15";
+  ctx.beginPath();
+  ctx.ellipse(w - 125, h * 0.72, 22, 14, 0, 0, Math.PI * 2);
+  ctx.arc(w - 108, h * 0.62, 12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+}
+
+function drawSceneWeatherSky(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  ctx.fillStyle = "#BAE6FD";
+  ctx.fillRect(0, 0, w, h * 0.76);
+  ctx.fillStyle = "#86EFAC";
+  ctx.fillRect(0, h * 0.76, w, h * 0.24);
+
+  const cols = ["#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#8B5CF6"];
+  cols.forEach((c, i) => {
+    ctx.strokeStyle = c;
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.arc(w / 2, h * 0.76, 110 - i * 7, Math.PI, 0);
+    ctx.stroke();
+  });
+}
+
+function drawScenePlantingCare(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  ctx.fillStyle = "#E0F2FE";
+  ctx.fillRect(0, 0, w, h * 0.7);
+  ctx.fillStyle = "#A3E635";
+  ctx.fillRect(0, h * 0.7, w, h * 0.3);
+
+  ctx.fillStyle = "#78350F";
+  ctx.beginPath();
+  ctx.arc(w / 2, h * 0.76, 46, Math.PI, 0);
+  ctx.fill();
+
+  ctx.strokeStyle = "#15803D";
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(w / 2, h * 0.72);
+  ctx.lineTo(w / 2, h * 0.38);
+  ctx.stroke();
+
+  ctx.fillStyle = "#22C55E";
+  ctx.beginPath();
+  ctx.ellipse(w / 2 - 22, h * 0.44, 22, 12, -0.4, 0, Math.PI * 2);
+  ctx.ellipse(w / 2 + 22, h * 0.4, 22, 12, 0.4, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawSceneSenseSight(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  drawSceneNatureGarden(ctx, w, h);
+  ctx.strokeStyle = "#1E40AF";
+  ctx.lineWidth = 6;
+  ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+  ctx.beginPath();
+  ctx.arc(230, h * 0.5, 36, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(256, h * 0.5 + 26);
+  ctx.lineTo(288, h * 0.5 + 58);
+  ctx.stroke();
+}
+
+function drawSceneSenseHearing(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  ctx.fillStyle = "#FEF3C7";
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.fillStyle = "#F59E0B";
+  ctx.beginPath();
+  ctx.arc(135, h * 0.48, 36, Math.PI, 0);
+  ctx.lineTo(178, h * 0.66);
+  ctx.lineTo(92, h * 0.66);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  ctx.strokeStyle = "#EA580C";
+  ctx.lineWidth = 3;
+  [48, 62].forEach((r) => {
+    ctx.beginPath();
+    ctx.arc(135, h * 0.48, r, -0.6, 0.6);
+    ctx.stroke();
+  });
+
+  ctx.strokeStyle = "#78350F";
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(w - 190, h * 0.62);
+  ctx.lineTo(w - 60, h * 0.56);
+  ctx.stroke();
+
+  ctx.fillStyle = "#38BDF8";
+  ctx.beginPath();
+  ctx.ellipse(w - 130, h * 0.5, 26, 18, -0.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+}
+
+function drawSceneSenseSmellTaste(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  ctx.fillStyle = "#FFFBEB";
+  ctx.fillRect(0, 0, w, h * 0.68);
+  ctx.fillStyle = "#D97706";
+  ctx.fillRect(0, h * 0.68, w, h * 0.32);
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.beginPath();
+  ctx.arc(w / 2 - 40, h * 0.64, 52, 0, Math.PI);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  drawCrispMathObject(ctx, w / 2 - 62, h * 0.54, "apple", 0);
+  drawCrispMathObject(ctx, w / 2 - 18, h * 0.56, "cupcake", 1);
+}
+
+function drawSceneSenseTouchHygiene(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  ctx.fillStyle = "#E0F2FE";
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.fillStyle = "#FFFFFF";
+  drawRoundedRect(ctx, w / 2 - 95, h * 0.54, 190, 56, 20);
+  ctx.fill();
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  ctx.strokeStyle = "#64748B";
+  ctx.lineWidth = 10;
+  ctx.beginPath();
+  ctx.moveTo(w / 2, h * 0.54);
+  ctx.lineTo(w / 2, h * 0.32);
+  ctx.lineTo(w / 2 + 28, h * 0.32);
+  ctx.stroke();
+
+  ctx.fillStyle = "#F472B6";
+  drawRoundedRect(ctx, w / 2 - 75, h * 0.44, 42, 22, 8);
+  ctx.fill();
+}
+
+function drawScenePoliteManoPo(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  drawSceneSingleRoom(ctx, w, h, "living");
+  drawStorybookChild(ctx, w / 2 - 48, h * 0.68, "#2563EB", "#92400E", 0.95);
+  drawStorybookChild(ctx, w / 2 + 48, h * 0.72, "#E11D48", "#1E293B", 0.82);
+}
+
+function drawSceneClassroomLearning(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  ctx.fillStyle = "#FEF3C7";
+  ctx.fillRect(0, 0, w, h * 0.75);
+  ctx.fillStyle = "#D97706";
+  ctx.fillRect(0, h * 0.75, w, h * 0.25);
+
+  ctx.fillStyle = "#14532D";
+  drawRoundedRect(ctx, w / 2 - 125, 22, 250, 105, 8);
+  ctx.fill();
+  ctx.strokeStyle = "#B45309";
+  ctx.lineWidth = 6;
+  ctx.stroke();
+
+  ctx.strokeStyle = "#FFFFFF";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(w / 2 - 30, 66, 60, 42);
+  ctx.beginPath();
+  ctx.moveTo(w / 2 - 38, 66);
+  ctx.lineTo(w / 2, 40);
+  ctx.lineTo(w / 2 + 38, 66);
+  ctx.closePath();
+  ctx.stroke();
+}
+
+function drawSceneSharingTable(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  ctx.fillStyle = "#FEF9C3";
+  ctx.fillRect(0, 0, w, h * 0.72);
+  ctx.fillStyle = "#B45309";
+  ctx.fillRect(48, h * 0.64, w - 96, h * 0.36);
+
+  drawStorybookChild(ctx, w / 2 - 75, h * 0.56, "#0284C7", "#1E293B", 0.88);
+  drawStorybookChild(ctx, w / 2 + 75, h * 0.56, "#E11D48", "#78350F", 0.88);
+  drawCrispMathObject(ctx, w / 2 - 22, h * 0.56, "apple", 0);
+  drawCrispMathObject(ctx, w / 2 + 22, h * 0.56, "cupcake", 1);
+}
+
+function drawSceneFaithCreation(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  drawSceneWeatherSky(ctx, w, h);
+  drawSceneNatureGarden(ctx, w, h);
+}
+
+function drawSceneFaithChapel(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  ctx.fillStyle = "#FEF3C7";
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.fillStyle = "#BAE6FD";
+  ctx.beginPath();
+  ctx.arc(w / 2, h * 0.45, 58, Math.PI, 0);
+  ctx.lineTo(w / 2 + 58, h * 0.78);
+  ctx.lineTo(w / 2 - 58, h * 0.78);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "#78350F";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  ctx.fillStyle = "#D97706";
+  drawRoundedRect(ctx, w / 2 - 7, h * 0.22, 14, 78, 4);
+  ctx.fill();
+  drawRoundedRect(ctx, w / 2 - 28, h * 0.38, 56, 14, 4);
+  ctx.fill();
+}
+
+function drawSceneStorybookDesk(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  seed: number
+) {
+  ctx.fillStyle = "#FEF3C7";
+  ctx.fillRect(0, 0, w, h * 0.68);
+  ctx.fillStyle = "#92400E";
+  ctx.fillRect(0, h * 0.68, w, h * 0.32);
+
+  ctx.fillStyle = "#FFFFFF";
+  drawRoundedRect(ctx, w / 2 - 110, h * 0.32, 220, 96, 8);
+  ctx.fill();
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(w / 2, h * 0.32);
+  ctx.lineTo(w / 2, h * 0.32 + 96);
+  ctx.stroke();
+
+  drawCrispMathObject(ctx, w / 2 - 55, h * 0.52, "house", seed);
+  drawCrispMathObject(ctx, w / 2 + 55, h * 0.52, "star", seed + 1);
+}
+
+/**
+ * Draws a warm, storybook-style Filipino child character (inspired by k2_image2.jpeg)
+ */
+function drawStorybookChild(
   ctx: CanvasRenderingContext2D,
   cx: number,
   cy: number,
   shirtColor: string,
-  pose: "wave" | "book" | "heart" | "magnify" | "pray",
-  scale = 1,
-  isKinder = false,
-  hairStyle: "girl" | "boy" = "girl"
+  hairColor: string,
+  scale = 1
 ) {
   ctx.save();
   ctx.translate(cx, cy);
   ctx.scale(scale, scale);
 
-  // Torso / Uniform Shirt
-  ctx.fillStyle = "#FFFFFF";
-  drawRoundedRect(ctx, -24, 18, 48, 52, 12);
+  ctx.fillStyle = shirtColor;
+  drawRoundedRect(ctx, -26, 14, 52, 54, 14);
   ctx.fill();
-  ctx.strokeStyle = "#1E293B";
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 2.5;
   ctx.stroke();
 
-  // LCCP Jumper / Vest Accent
-  ctx.fillStyle = shirtColor;
-  drawRoundedRect(ctx, -20, 26, 40, 44, 8);
-  ctx.fill();
-
-  // Necktie / Kinder Bowtie
-  ctx.fillStyle = isKinder ? "#F59E0B" : "#EF4444";
+  ctx.fillStyle = "#FFFFFF";
   ctx.beginPath();
-  ctx.moveTo(-6, 20);
-  ctx.lineTo(6, 20);
-  ctx.lineTo(0, 36);
+  ctx.moveTo(-14, 15);
+  ctx.lineTo(0, 28);
+  ctx.lineTo(14, 15);
   ctx.closePath();
   ctx.fill();
-
-  // Head (Slightly larger & rounder for Kinder 2)
-  const headRadius = isKinder ? 28 : 26;
-  ctx.fillStyle = "#FDE68A";
-  ctx.beginPath();
-  ctx.arc(0, -6, headRadius, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = "#1E293B";
-  ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Hair (Pigtails for girl, neat cap hair for boy)
-  ctx.fillStyle = "#1E293B";
+  ctx.fillStyle = "#FCD392";
   ctx.beginPath();
-  ctx.arc(0, -12, headRadius + 1, Math.PI, Math.PI * 2);
+  ctx.arc(0, -10, 26, 0, Math.PI * 2);
   ctx.fill();
-  if (hairStyle === "girl") {
-    ctx.beginPath();
-    ctx.arc(-headRadius - 2, -10, 9, 0, Math.PI * 2);
-    ctx.arc(headRadius + 2, -10, 9, 0, Math.PI * 2);
-    ctx.fill();
-    // Hair bows
-    ctx.fillStyle = "#EC4899";
-    ctx.beginPath();
-    ctx.arc(-headRadius + 2, -16, 4, 0, Math.PI * 2);
-    ctx.arc(headRadius - 2, -16, 4, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  ctx.stroke();
 
-  // Expressive Eyes & Cheerful Smile
-  ctx.fillStyle = "#0F172A";
+  ctx.fillStyle = hairColor;
   ctx.beginPath();
-  ctx.arc(-9, -6, isKinder ? 3.5 : 3, 0, Math.PI * 2);
-  ctx.arc(9, -6, isKinder ? 3.5 : 3, 0, Math.PI * 2);
+  ctx.arc(0, -16, 27, Math.PI * 0.92, Math.PI * 2.08);
   ctx.fill();
-  // Eye sparkle
+  ctx.stroke();
+
+  ctx.fillStyle = "#2C1810";
+  ctx.beginPath();
+  ctx.arc(-9, -8, 3.8, 0, Math.PI * 2);
+  ctx.arc(9, -8, 3.8, 0, Math.PI * 2);
+  ctx.fill();
+
   ctx.fillStyle = "#FFFFFF";
   ctx.beginPath();
-  ctx.arc(-10, -7.5, 1.2, 0, Math.PI * 2);
-  ctx.arc(8, -7.5, 1.2, 0, Math.PI * 2);
+  ctx.arc(-10, -9.5, 1.4, 0, Math.PI * 2);
+  ctx.arc(8, -9.5, 1.4, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.strokeStyle = "#0F172A";
-  ctx.lineWidth = 2.2;
+  ctx.fillStyle = "#E11D48";
   ctx.beginPath();
-  ctx.arc(0, -1, 10, 0.15 * Math.PI, 0.85 * Math.PI);
+  ctx.arc(0, -1, 7, 0, Math.PI);
+  ctx.closePath();
+  ctx.fill();
   ctx.stroke();
-
-  // Rosy cheeks
-  ctx.fillStyle = "rgba(244, 63, 94, 0.38)";
-  ctx.beginPath();
-  ctx.arc(-15, 0, 4.8, 0, Math.PI * 2);
-  ctx.arc(15, 0, 4.8, 0, Math.PI * 2);
-  ctx.fill();
-
-  if (pose === "book") {
-    ctx.fillStyle = "#F59E0B";
-    drawRoundedRect(ctx, -22, 34, 44, 28, 4);
-    ctx.fill();
-    ctx.strokeStyle = "#FFFFFF";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(-20, 36, 40, 24);
-  } else if (pose === "magnify") {
-    // Holding a magnifying glass for discovery
-    ctx.strokeStyle = "#0284C7";
-    ctx.lineWidth = 3.5;
-    ctx.beginPath();
-    ctx.arc(32, 4, 11, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(25, 12);
-    ctx.lineTo(18, 24);
-    ctx.stroke();
-  } else if (pose === "pray") {
-    // Praying / grateful hands in front
-    ctx.fillStyle = "#FDE68A";
-    drawRoundedRect(ctx, -7, 28, 14, 22, 6);
-    ctx.fill();
-    ctx.strokeStyle = "#1E293B";
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-  } else if (pose === "heart") {
-    ctx.fillStyle = "#EC4899";
-    ctx.font = "bold 20px 'Segoe UI', sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("❤️", 34, 2);
-  } else {
-    // Waving hand
-    ctx.strokeStyle = "#FDE68A";
-    ctx.lineWidth = 7;
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(22, 28);
-    ctx.lineTo(38, 6);
-    ctx.stroke();
-  }
 
   ctx.restore();
 }
 
-function drawCountableObject(
+function drawDetailedButterfly(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
-  shape: "car" | "star" | "apple" | "butterfly" | "cupcake",
+  wingOuter: string,
+  wingInner: string,
+  scale = 1
+) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  ctx.fillStyle = wingOuter;
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 2;
+
+  ctx.beginPath();
+  ctx.ellipse(-12, -7, 13, 9, -0.35, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(12, -7, 13, 9, 0.35, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = wingInner;
+  ctx.beginPath();
+  ctx.arc(-12, -7, 4.5, 0, Math.PI * 2);
+  ctx.arc(12, -7, 4.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#3E2723";
+  drawRoundedRect(ctx, -2.5, -12, 5, 22, 2.5);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCrispMathObject(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  shape: "car" | "apple" | "star" | "butterfly" | "cupcake" | "house",
   colorIndex: number
 ) {
   const colors = ["#EF4444", "#3B82F6", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899"];
   const col = colors[colorIndex % colors.length];
   ctx.save();
   ctx.translate(x, y);
+  ctx.strokeStyle = "#3E2723";
+  ctx.lineWidth = 2.2;
 
   if (shape === "car") {
     ctx.fillStyle = col;
-    drawRoundedRect(ctx, -32, -8, 64, 22, 8);
+    drawRoundedRect(ctx, -30, -6, 60, 20, 7);
     ctx.fill();
+    ctx.stroke();
     ctx.beginPath();
-    ctx.arc(0, -8, 18, Math.PI, 0);
+    ctx.arc(0, -6, 17, Math.PI, 0);
     ctx.fill();
-    ctx.fillStyle = "#E0F2FE";
-    ctx.beginPath();
-    ctx.arc(2, -8, 12, Math.PI, 0);
-    ctx.fill();
+    ctx.stroke();
     ctx.fillStyle = "#1E293B";
     ctx.beginPath();
-    ctx.arc(-16, 14, 8, 0, Math.PI * 2);
-    ctx.arc(16, 14, 8, 0, Math.PI * 2);
+    ctx.arc(-15, 14, 7.5, 0, Math.PI * 2);
+    ctx.arc(15, 14, 7.5, 0, Math.PI * 2);
     ctx.fill();
   } else if (shape === "apple") {
     ctx.fillStyle = "#EF4444";
     ctx.beginPath();
-    ctx.arc(-8, 2, 16, 0, Math.PI * 2);
-    ctx.arc(8, 2, 16, 0, Math.PI * 2);
+    ctx.arc(-7, 2, 15, 0, Math.PI * 2);
+    ctx.arc(7, 2, 15, 0, Math.PI * 2);
     ctx.fill();
+    ctx.stroke();
     ctx.fillStyle = "#16A34A";
     ctx.beginPath();
-    ctx.ellipse(6, -16, 9, 5, -0.5, 0, Math.PI * 2);
+    ctx.ellipse(6, -15, 8, 4.5, -0.5, 0, Math.PI * 2);
     ctx.fill();
   } else if (shape === "butterfly") {
-    drawButterfly(ctx, 0, 0, col, "#FDE047");
+    drawDetailedButterfly(ctx, 0, 0, col, "#FDE047", 1);
   } else if (shape === "cupcake") {
     ctx.fillStyle = "#F59E0B";
-    drawRoundedRect(ctx, -16, 2, 32, 18, 4);
+    drawRoundedRect(ctx, -14, 2, 28, 16, 4);
     ctx.fill();
-    ctx.fillStyle = "#EC4899";
+    ctx.stroke();
+    ctx.fillStyle = "#F472B6";
     ctx.beginPath();
-    ctx.arc(0, 0, 18, Math.PI, 0);
+    ctx.arc(0, 2, 16, Math.PI, 0);
     ctx.fill();
-    ctx.fillStyle = "#EF4444";
+    ctx.stroke();
+  } else if (shape === "house") {
+    ctx.fillStyle = "#FEF3C7";
+    ctx.fillRect(-18, -2, 36, 24);
+    ctx.strokeRect(-18, -2, 36, 24);
+    ctx.fillStyle = "#DC2626";
     ctx.beginPath();
-    ctx.arc(0, -20, 5, 0, Math.PI * 2);
+    ctx.moveTo(-22, -2);
+    ctx.lineTo(0, -20);
+    ctx.lineTo(22, -2);
+    ctx.closePath();
     ctx.fill();
+    ctx.stroke();
   } else {
     ctx.fillStyle = col;
     ctx.beginPath();
     for (let i = 0; i < 5; i++) {
       const outerAngle = ((i * 72 - 90) * Math.PI) / 180;
       const innerAngle = ((i * 72 + 36 - 90) * Math.PI) / 180;
-      const ox = Math.cos(outerAngle) * 26;
-      const oy = Math.sin(outerAngle) * 26;
-      const ix = Math.cos(innerAngle) * 12;
-      const iy = Math.sin(innerAngle) * 12;
+      const ox = Math.cos(outerAngle) * 24;
+      const oy = Math.sin(outerAngle) * 24;
+      const ix = Math.cos(innerAngle) * 11;
+      const iy = Math.sin(innerAngle) * 11;
       if (i === 0) ctx.moveTo(ox, oy);
       else ctx.lineTo(ox, oy);
       ctx.lineTo(ix, iy);
     }
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = "#1E293B";
-    ctx.lineWidth = 2;
     ctx.stroke();
   }
 
-  ctx.restore();
-}
-
-function drawCloud(ctx: CanvasRenderingContext2D, x: number, y: number, scale = 1) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.scale(scale, scale);
-  ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-  ctx.beginPath();
-  ctx.arc(0, 0, 16, 0, Math.PI * 2);
-  ctx.arc(18, -4, 20, 0, Math.PI * 2);
-  ctx.arc(38, 0, 15, 0, Math.PI * 2);
-  ctx.fill();
   ctx.restore();
 }
 
