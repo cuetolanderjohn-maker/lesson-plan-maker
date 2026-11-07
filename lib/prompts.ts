@@ -155,12 +155,12 @@ Return ONLY a valid JSON object matching this exact schema:
     "checkedBy": "${coordinator}",
     "observedBy": "${coordinator}"
   },
-  "illustrationCaption": "Short Filipino caption: If the textbook page includes a story, provide the story title (e.g. 'Kuwento: [Story Title]'); otherwise the topic",
+  "illustrationCaption": "Child-friendly Filipino title matching Kat's PPT slides (e.g. 'Ang Araw ni Liza - Isang Kwento Tungkol sa Salitang Kilos', 'Saan?', 'Ano?', 'Sino?', 'Kailan?')",
   "illustrationPanels": [
-    "Panel 1 story/concept caption in Filipino (Simula ng kuwento o konsepto)",
-    "Panel 2 story/concept caption in Filipino (Pangyayari/suliranin sa kuwento o konsepto)",
-    "Panel 3 story/concept caption in Filipino (Kasukdulan o mahalagang tagpo)",
-    "Panel 4 story/concept caption in Filipino (Katapusan, aral ng kuwento, o paglalapat)"
+    "Panel 1 caption in Filipino (Simula ng kuwento o unang tagpo na may salitang kilos/konsepto)",
+    "Panel 2 caption in Filipino (Ikalawang tagpo/pangyayari na may salitang kilos/konsepto)",
+    "Panel 3 caption in Filipino (Kasukdulan o ikatlong tagpo na may salitang kilos/konsepto)",
+    "Panel 4 caption in Filipino (Aral, paglalahat, o ikaapat na tagpo)"
   ]
 }`;
 }
@@ -322,12 +322,12 @@ Return ONLY a valid JSON object matching this exact schema:
     "synthesis": ["string", "string"],
     "evaluation": ["string", "string"]
   },
-  "illustrationCaption": "Short child-friendly caption: If the textbook page includes a story, provide the story title; otherwise the lesson concept",
+  "illustrationCaption": "Child-friendly title matching Kat's PPT slides (e.g. 'The Ant and the Grasshopper', 'Different Personnel in School', 'This is My House', 'Learning about Things Inside the House')",
   "illustrationPanels": [
-    "Panel 1 caption: Beginning of the story or concept introduction",
-    "Panel 2 caption: Story rising action or concept activity",
-    "Panel 3 caption: Story climax or concept application",
-    "Panel 4 caption: Story moral/resolution or concept synthesis"
+    "Panel 1 caption: Beginning of the story or first personnel/room/concept",
+    "Panel 2 caption: Story event/rising action or second personnel/room/concept",
+    "Panel 3 caption: Story climax/turning point or third personnel/room/concept",
+    "Panel 4 caption: Story moral/resolution or fourth personnel/room/concept"
   ]
 }`;
 }

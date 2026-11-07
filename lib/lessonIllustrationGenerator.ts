@@ -9,22 +9,20 @@ export interface IllustrationGeneratorOptions {
 }
 
 export type DesignLayoutId =
-  | "panoramic_grid_2x2"
-  | "cinematic_hero_triptych"
-  | "editorial_split_showcase"
-  | "comic_strip_4_columns"
-  | "story_chronological_sequence"
-  | "arched_gallery_quad";
+  | "kat_storybook_comic_grid"
+  | "kat_concept_question_cards"
+  | "kat_community_catalog_cards"
+  | "kat_split_home_story_stage"
+  | "kat_cutaway_dollhouse_diagram"
+  | "kat_action_safety_sequence";
 
 export type ArtStyleId =
-  | "pixar_3d_volumetric"
-  | "ghibli_watercolor_gouache"
-  | "encyclopedia_architectural_realism"
-  | "tropical_filipino_storybook"
-  | "vibrant_concept_illustration"
-  | "classic_golden_book_painting"
-  | "tactile_3d_clay_diorama"
-  | "cinematic_widescreen_animation";
+  | "kat_filipino_storybook_anime"
+  | "kat_warm_vibrant_classroom"
+  | "kat_cute_fable_anthropomorphic"
+  | "kat_dollhouse_cutaway_realism"
+  | "kat_concrete_montessori_sets"
+  | "kat_ghibli_pastoral_watercolor";
 
 export interface DesignBlueprint {
   id: DesignLayoutId;
@@ -47,102 +45,160 @@ export interface ArtStyleDirection {
   stylePrompt: string;
 }
 
+/**
+ * Design blueprints modeled directly after the pedagogical layouts Kat uses
+ * in her actual classroom PPT presentations (from "sample ppt"):
+ * 1. Storybook Comic Grid ("Ang Araw ni Liza" / "The Ant and the Grasshopper")
+ * 2. Concept Question Cards Grid ("Ano?", "Saan?", "Sino?", "Kailan?")
+ * 3. Community Personnel & Helpers Catalog ("Different Personnel in School")
+ * 4. Split Story Stage ("This is My House / My Family")
+ * 5. Cutaway Dollhouse Architectural Diagram ("Things Inside the House")
+ * 6. Action & Safety Sequence ("Stop, Look, and Listen" / Cleanliness)
+ */
 const DESIGN_BLUEPRINTS: DesignBlueprint[] = [
   {
-    id: "panoramic_grid_2x2",
-    name: "Panoramic 2x2 Storybook Grid",
-    layoutInstructions: `Use a 2x2 grid of 4 rounded panoramic panels on the 960x540 canvas:
-- Panel 1 (top-left): x="18" y="18" width="452" height="242" rx="16"
-- Panel 2 (top-right): x="490" y="18" width="452" height="242" rx="16"
-- Panel 3 (bottom-left): x="18" y="280" width="452" height="242" rx="16"
-- Panel 4 (bottom-right): x="490" y="280" width="452" height="242" rx="16"
-Inside each panel, reserve the bottom 44px for a clean caption bar displaying that panel's exact caption text, and fill the upper 198px with a rich, realistic 3D-shaded scene depicting the story or lesson.`,
+    id: "kat_storybook_comic_grid",
+    name: "Kat's 4-Panel Storybook Narrative Comic (Ang Araw ni Liza & Ant and Grasshopper Style)",
+    layoutInstructions: `Structure as a 4-panel chronological story comic on the 960x540 canvas (modeled on Kat's Grade 1 Filipino & RVE PPT story presentations):
+- Top Story Banner: x="18" y="10" width="924" height="46" rx="14" with a warm sunny pill container, bold centered story title, and a smiling cartoon mascot in the top corner.
+- 4 Chronological Story Panels (2 rows x 2 columns):
+  * Panel 1 (Story Beginning): x="18" y="64" width="452" height="216" rx="16" with character introduction in opening setting and bottom 42px white caption card.
+  * Panel 2 (Rising Action / Event): x="490" y="64" width="452" height="216" rx="16" with the character journey/challenge and bottom 42px white caption card.
+  * Panel 3 (Climax / Dramatic Moment): x="18" y="288" width="452" height="216" rx="16" with key action/conflict and bottom 42px white caption card.
+  * Panel 4 (Resolution & Moral): x="490" y="288" width="452" height="216" rx="16" with resolution, lesson learned, and bottom 42px white caption card.
+- Bottom Moral/Takeaway Strip: x="18" y="510" width="924" height="24" rx="8" with encouraging moral text.`,
   },
   {
-    id: "cinematic_hero_triptych",
-    name: "Cinematic Widescreen Hero + 3 Supporting Scenes",
-    layoutInstructions: `Use an asymmetric widescreen hero + triptych layout on the 960x540 canvas:
-- Panel 1 (Top Cinematic Hero Banner): x="18" y="16" width="924" height="252" rx="18" (wide panoramic scene illustrating the main story or lesson scene, with a bottom 42px caption strip)
-- Panel 2 (Bottom-Left Scene): x="18" y="284" width="296" height="240" rx="14" (illustrating Scene 2 with bottom 44px caption strip)
-- Panel 3 (Bottom-Center Scene): x="332" y="284" width="296" height="240" rx="14" (illustrating Scene 3 with bottom 44px caption strip)
-- Panel 4 (Bottom-Right Scene): x="646" y="284" width="296" height="240" rx="14" (illustrating Scene 4 with bottom 44px caption strip)`,
+    id: "kat_concept_question_cards",
+    name: "Kat's Concept Question Cards Grid (Ano?, Saan?, Sino?, Kailan? Style)",
+    layoutInstructions: `Structure as a concept question board on the 960x540 canvas (modeled on Kat's Filipino PPT question cards):
+- Top Header Section (y=10 to y=76):
+  * Center: Bubbly puffy cloud badge (x="240" y="10" width="280" height="62" rx="28") with the big friendly lesson/question title surrounded by radiant sunburst sparkles.
+  * Top-Left: Cute student mascot figure pointing excitedly toward the title.
+  * Top-Right: Soft lavender/blue cloud definition bubble (x="530" y="10" width="412" height="62" rx="18") explaining the lesson concept in child-friendly language.
+- 4 Color-Coded Concept Cards (2x2 grid from y=82 to y=528):
+  * Card 1 (Pastel Strawberry Pink): x="18" y="82" width="452" height="218" rx="16" with top colored pill title, rich centered illustration, and bottom white question strip.
+  * Card 2 (Soft Sky Blue): x="490" y="82" width="452" height="218" rx="16" with top colored pill title, rich centered illustration, and bottom white question strip.
+  * Card 3 (Sunny Butter Yellow): x="18" y="308" width="452" height="218" rx="16" with top colored pill title, rich centered illustration, and bottom white question strip.
+  * Card 4 (Soft Lavender Purple): x="490" y="308" width="452" height="218" rx="16" with top colored pill title, rich centered illustration, and bottom white question strip.`,
   },
   {
-    id: "editorial_split_showcase",
-    name: "Editorial Feature Stage + 3 Discovery Cards",
-    layoutInstructions: `Use an editorial magazine split layout on the 960x540 canvas:
-- Panel 1 (Left Tall Featured Story Stage): x="18" y="18" width="436" height="504" rx="18" (grand vertical scene illustrating Scene 1 with full-body story characters, rich environment, and a bottom 54px caption banner)
-- Panel 2 (Right-Top Card): x="472" y="18" width="470" height="156" rx="14" (illustrating Scene 2 with bottom 36px caption strip)
-- Panel 3 (Right-Middle Card): x="472" y="192" width="470" height="156" rx="14" (illustrating Scene 3 with bottom 36px caption strip)
-- Panel 4 (Right-Bottom Card): x="472" y="366" width="470" height="156" rx="14" (illustrating Scene 4 with bottom 36px caption strip)`,
+    id: "kat_community_catalog_cards",
+    name: "Kat's Community Helpers & Topic Catalog (Different Personnel in School Style)",
+    layoutInstructions: `Structure as a 4-card catalog on the 960x540 canvas (modeled on Kat's Language PPT 'Different Personnel in School'):
+- Top Title Pill: x="180" y="12" width="600" height="46" rx="23" with bright yellow/amber container, sparkle icons, and bold centered catalog title.
+- 4 Labeled Role/Tool Cards (2x2 grid):
+  * Card 1: x="18" y="66" width="452" height="226" rx="16" with rich character/tool in authentic setting and bottom colored pill badge.
+  * Card 2: x="490" y="66" width="452" height="226" rx="16" with rich character/tool in authentic setting and bottom colored pill badge.
+  * Card 3: x="18" y="300" width="452" height="226" rx="16" with rich character/tool in authentic setting and bottom colored pill badge.
+  * Card 4: x="490" y="300" width="452" height="226" rx="16" with rich character/tool in authentic setting and bottom colored pill badge.`,
   },
   {
-    id: "comic_strip_4_columns",
-    name: "4-Column Vertical Storyboard Strip",
-    layoutInstructions: `Use 4 tall vertical storyboard columns side-by-side on the 960x540 canvas:
-- Panel 1: x="16" y="18" width="220" height="504" rx="16"
-- Panel 2: x="252" y="18" width="220" height="504" rx="16"
-- Panel 3: x="488" y="18" width="220" height="504" rx="16"
-- Panel 4: x="724" y="18" width="220" height="504" rx="16"
-Each vertical panel has a numbered badge (1, 2, 3, 4) in its top-left corner, a rich multi-layered realistic vertical scene with full-body story characters and environment from y=18 to y=456, and a clean caption card in the bottom 66px.`,
+    id: "kat_split_home_story_stage",
+    name: "Kat's Split Showcase & Reading Stage (My House & My Family Style)",
+    layoutInstructions: `Structure as a split presentation stage on the 960x540 canvas (modeled on Kat's Language Lesson 3 'This is My House'):
+- Left Feature Stage (x="18" y="16" width="460" height="508" rx="18"):
+  * High-detail, warm illustration of the family, home, school, or story world with sunny blue sky, smiling sun mascot, blooming flowers, and expressive characters.
+- Right Reading & Reflection Card (x="492" y="16" width="450" height="508" rx="20"):
+  * Warm cream/ivory card with dashed/stitch border outline, pill header tag, 4 cleanly spaced reading sentences/questions with cute accompanying mini-icons (little house, heart, book, star), and bottom reflection text.`,
   },
   {
-    id: "story_chronological_sequence",
-    name: "Chronological 4-Scene Storyboard Narrative",
-    layoutInstructions: `Use 4 sequential story panels on the 960x540 canvas showing the full chronological story:
-- Panel 1 (Story Beginning): x="18" y="18" width="452" height="242" rx="16" (introducing main story characters and initial setting with bottom 44px caption bar)
-- Panel 2 (Story Rising Action): x="490" y="18" width="452" height="242" rx="16" (depicting the plot problem, conflict, or central journey with bottom 44px caption bar)
-- Panel 3 (Story Climax): x="18" y="280" width="452" height="242" rx="16" (depicting the dramatic turning point or character action with bottom 44px caption bar)
-- Panel 4 (Story Resolution & Moral): x="490" y="280" width="452" height="242" rx="16" (depicting the resolution, happy outcome, or moral lesson with bottom 44px caption bar)`,
+    id: "kat_cutaway_dollhouse_diagram",
+    name: "Kat's Cutaway Architectural Diagram (Things Inside the House Style)",
+    layoutInstructions: `Structure as an architectural cutaway diagram on the 960x540 canvas (modeled on Kat's 'Things Inside the House' PPT):
+- Top Cloud Title Banner: x="180" y="12" width="600" height="50" rx="25" with colorful puffy cloud shape and lesson title.
+- Flanking Student Figures: Smiling child on left (x="12" y="270") and right (x="872" y="270") pointing toward the cross-section rooms.
+- 4 Partitioned Rooms/Areas (from x="110" to x="850", y="70 to y="524"):
+  * Room 1 (top-left): x="110" y="70" width="360" height="222" with detailed furniture and props.
+  * Room 2 (top-right): x="480" y="70" width="360" height="222" with detailed furniture and props.
+  * Room 3 (bottom-left): x="110" y="300" width="360" height="222" with detailed furniture and props.
+  * Room 4 (bottom-right): x="480" y="300" width="360" height="222" with detailed furniture and props.`,
   },
   {
-    id: "arched_gallery_quad",
-    name: "Architectural Gallery Frames with Story Scenes",
-    layoutInstructions: `Use 4 architectural gallery frames on the 960x540 canvas:
-- Frame 1 (top-left): x="20" y="16" width="448" height="244" rx="22"
-- Frame 2 (top-right): x="492" y="16" width="448" height="244" rx="22"
-- Frame 3 (bottom-left): x="20" y="280" width="448" height="244" rx="22"
-- Frame 4 (bottom-right): x="492" y="280" width="448" height="244" rx="22"
-Each frame has a warm double border, a 3D perspective landscape or room filled with topic-accurate story objects and full-body characters, and a floating pill-shaped caption banner at the bottom.`,
+    id: "kat_action_safety_sequence",
+    name: "Kat's Action & Safety Steps Sequence (Stop, Look, and Listen Style)",
+    layoutInstructions: `Structure as an action-step sequence on the 960x540 canvas (modeled on Kat's Science Road Safety presentation):
+- Top Hero Situation Banner (x="18" y="14" width="924" height="236" rx="16"):
+  * Illustrates the main real-world situation (pedestrian crossing, hygiene washing, classroom activity) with complete characters and environment.
+- Bottom 4 Step Cards (x="18" to x="942", y="260" to y="524"):
+  * Step 1 (Red Card): x="18" y="260" width="220" height="258" rx="14" with bold step title (e.g. 'STOP') and demonstration character pose.
+  * Step 2 (Green Card): x="252" y="260" width="220" height="258" rx="14" with bold step title (e.g. 'LOOK LEFT') and demonstration character pose.
+  * Step 3 (Blue Card): x="488" y="260" width="220" height="258" rx="14" with bold step title (e.g. 'LOOK RIGHT') and demonstration character pose.
+  * Step 4 (Yellow Card): x="724" y="260" width="220" height="258" rx="14" with bold step title (e.g. 'LISTEN') and demonstration character pose.`,
   },
 ];
 
+/**
+ * Artistic visual styles directly extracted from Kat's actual teaching presentations
+ * (warm Filipino anime storybook, bright primary/pastel classroom, cute anthropomorphic fables,
+ * detailed architectural cutaways, and clear concrete object sets).
+ */
 const ART_STYLE_DIRECTIONS: ArtStyleDirection[] = [
   {
-    id: "pixar_3d_volumetric",
-    name: "Pixar-Inspired 3D Volumetric Storybook",
+    id: "kat_filipino_storybook_anime",
+    name: "Kat's Signature Filipino Storybook Anime",
     palette: {
-      canvasBg: "#F8F4EC",
-      primaryAccent: "#D97706",
-      secondaryAccent: "#0284C7",
-      panelBorder: "#334155",
+      canvasBg: "#FFFDF7",
+      primaryAccent: "#0284C7",
+      secondaryAccent: "#FB7185",
+      panelBorder: "#0F172A",
       captionBgTop: "#FFFFFF",
-      captionBgBottom: "#FEF3C7",
+      captionBgBottom: "#FEF08A",
       captionText: "#0F172A",
     },
     stylePrompt:
-      "Warm Pixar-inspired 3D volumetric digital painting using rich <linearGradient> and <radialGradient> shading, soft drop shadows, sunlit window/sky beams, sculpted 3D depth on furniture/props, and expressive full-body characters.",
+      "Warm, expressive Philippine children's book digital art directly modeled on Kat's teaching slides: Filipino schoolchildren with neat uniforms (crisp white collared blouse/polo, blue sailor necktie or vest, blue pleated skirt, pink headband, black hair with shine, rosy cheeks, joyful smiles), authentic Philippine school and community settings (Philippine flag on flagpole, palengke market stalls, lolo with walking cane, canteen, library), clean solid line art, and vibrant sunlit colors.",
   },
   {
-    id: "ghibli_watercolor_gouache",
-    name: "Studio Ghibli Lush Watercolor & Gouache",
+    id: "kat_warm_vibrant_classroom",
+    name: "Kat's Sunny Pastel & Primary Classroom Style",
     palette: {
-      canvasBg: "#F0F7F4",
-      primaryAccent: "#15803D",
-      secondaryAccent: "#0369A1",
+      canvasBg: "#FEF9C3",
+      primaryAccent: "#F59E0B",
+      secondaryAccent: "#0284C7",
+      panelBorder: "#334155",
+      captionBgTop: "#FFFFFF",
+      captionBgBottom: "#E0F2FE",
+      captionText: "#0F172A",
+    },
+    stylePrompt:
+      "Bright, cheerful primary classroom visual style directly inspired by Kat's Grade 1 Filipino question cards ('Ano?', 'Saan?', 'Sino?', 'Kailan?'): puffy yellow cloud headers with sunburst rays, pastel color-coded cards (pink, sky blue, butter yellow, lavender) with dashed inner frames, clear bold sans-serif text, and cute smiling student mascots.",
+  },
+  {
+    id: "kat_cute_fable_anthropomorphic",
+    name: "Kat's Cute Anthropomorphic Storybook Fable",
+    palette: {
+      canvasBg: "#F0FDF4",
+      primaryAccent: "#16A34A",
+      secondaryAccent: "#D97706",
       panelBorder: "#1E3A2F",
       captionBgTop: "#FFFFFF",
       captionBgBottom: "#DCFCE7",
       captionText: "#14532D",
     },
     stylePrompt:
-      "Lush Studio Ghibli-inspired gouache and watercolor realism with soft multi-stop sky and wall gradients, rich botanical foliage, warm honey-oak wood grain tones, cozy interior/exterior lighting, and natural full-body characters.",
+      "Rich, whimsical anthropomorphic fable illustration inspired by Kat's 'The Ant and the Grasshopper' slide: expressive animal story characters with big emotive eyes, tiny props (musical instruments, leaf umbrellas, harvest baskets, jam jars), cozy underground tree pantries, vibrant weather (sunny flower meadows vs stormy rain skies), and clear narrative storytelling.",
   },
   {
-    id: "encyclopedia_architectural_realism",
-    name: "Modern Children's Encyclopedia 3D Realism",
+    id: "kat_dollhouse_cutaway_realism",
+    name: "Kat's Detailed Architectural Cutaway & Interior Realism",
     palette: {
-      canvasBg: "#F1F5F9",
+      canvasBg: "#FDF8F6",
+      primaryAccent: "#EA580C",
+      secondaryAccent: "#0D9488",
+      panelBorder: "#431407",
+      captionBgTop: "#FFFFFF",
+      captionBgBottom: "#FFEDD5",
+      captionText: "#29150B",
+    },
+    stylePrompt:
+      "Detailed architectural cutaway and interior realism directly inspired by Kat's 'Things Inside the House' presentation: clear 3D perspective cross-section of home or school rooms (bathroom, bedroom, kitchen, living room, classroom), fully furnished with labeled household appliances, furniture, chalkboards, wall art, and friendly children pointing to the rooms.",
+  },
+  {
+    id: "kat_concrete_montessori_sets",
+    name: "Kat's High-Clarity Concrete Object Sets",
+    palette: {
+      canvasBg: "#F8FAFC",
       primaryAccent: "#2563EB",
       secondaryAccent: "#DC2626",
       panelBorder: "#1E293B",
@@ -151,82 +207,22 @@ const ART_STYLE_DIRECTIONS: ArtStyleDirection[] = [
       captionText: "#0F172A",
     },
     stylePrompt:
-      "High-detail children's visual encyclopedia realism with accurate 3D room perspective lines, baseboard molding, tiled/wooden floors, detailed educational props, and naturally proportioned full-body teachers and students.",
+      "High-clarity concrete visual sets inspired by Kat's K2 Mathematics slides: realistic, beautifully shaded 3D objects arranged in clear count groups (stacked colorful plates, bowls, glassware, sharpened colored pencils, school backpacks, balls, fresh fruits), crisp outlines, high visual contrast, and clean counting frames.",
   },
   {
-    id: "tropical_filipino_storybook",
-    name: "Sunlit Philippine Storybook Realism",
+    id: "kat_ghibli_pastoral_watercolor",
+    name: "Kat's Pastoral Nature & Scenic Watercolor",
     palette: {
-      canvasBg: "#FFFBEB",
-      primaryAccent: "#B45309",
-      secondaryAccent: "#0D9488",
-      panelBorder: "#451A03",
-      captionBgTop: "#FFFFFF",
-      captionBgBottom: "#FDE68A",
-      captionText: "#271202",
-    },
-    stylePrompt:
-      "Authentic sunlit Philippine children's book realism featuring warm tropical daylight, narra and mahogany woodwork, capiz-style window panes, lush garden greenery, and full-body Filipino children and teachers.",
-  },
-  {
-    id: "vibrant_concept_illustration",
-    name: "Vibrant Contemporary Digital Concept Art",
-    palette: {
-      canvasBg: "#F5F3FF",
-      primaryAccent: "#7C3AED",
-      secondaryAccent: "#EA580C",
-      panelBorder: "#2E1065",
-      captionBgTop: "#FFFFFF",
-      captionBgBottom: "#EDE9FE",
-      captionText: "#1E1B4B",
-    },
-    stylePrompt:
-      "Vibrant modern digital concept illustration with dramatic rim lighting, foreground/midground/background depth planes, rich jewel-toned gradients, and lively full-body characters.",
-  },
-  {
-    id: "classic_golden_book_painting",
-    name: "Classic Golden Book Warm Painting",
-    palette: {
-      canvasBg: "#FDF8F0",
-      primaryAccent: "#9A3412",
-      secondaryAccent: "#1D4ED8",
-      panelBorder: "#431407",
-      captionBgTop: "#FFFDF9",
-      captionBgBottom: "#FFEDD5",
-      captionText: "#2C1810",
-    },
-    stylePrompt:
-      "Classic Golden Book storybook painting with warm amber, sienna, sage, and cobalt gradients, detailed furniture and nature textures, and expressive full-body characters.",
-  },
-  {
-    id: "tactile_3d_clay_diorama",
-    name: "Tactile 3D Sculpted Clay & Paper Diorama",
-    palette: {
-      canvasBg: "#ECFEFF",
-      primaryAccent: "#0891B2",
-      secondaryAccent: "#E11D48",
-      panelBorder: "#164E63",
+      canvasBg: "#F0FDF4",
+      primaryAccent: "#059669",
+      secondaryAccent: "#0284C7",
+      panelBorder: "#064E3B",
       captionBgTop: "#FFFFFF",
       captionBgBottom: "#CFFAFE",
-      captionText: "#083344",
+      captionText: "#064E3B",
     },
     stylePrompt:
-      "Tactile 3D sculpted diorama aesthetic using soft radial specular highlights, layered drop shadows, rounded 3D architectural and environmental props, and full-body articulated figures.",
-  },
-  {
-    id: "cinematic_widescreen_animation",
-    name: "Cinematic Feature Animation Frame",
-    palette: {
-      canvasBg: "#FAF5FF",
-      primaryAccent: "#4F46E5",
-      secondaryAccent: "#059669",
-      panelBorder: "#1E1B4B",
-      captionBgTop: "#FFFFFF",
-      captionBgBottom: "#E0E7FF",
-      captionText: "#1E1B4B",
-    },
-    stylePrompt:
-      "Cinematic feature animation frame with three-point lighting gradients, atmospheric depth, detailed environmental storytelling props, and expressive full-body characters in motion.",
+      "Gentle pastoral nature watercolor and gouache inspired by Kat's Science slides (fruit trees, pine forests, garden flowers, blue skies, sunny mornings): lush foliage gradients, soft organic textures, sunny atmospheric lighting, and peaceful outdoor learning scenes.",
   },
 ];
 
@@ -234,7 +230,8 @@ let globalGenerationCounter = 0;
 
 /**
  * Selects a NEW Layout Design Blueprint and a NEW Artistic Visual Style on every call
- * so that no two consecutive lesson plans ever share the same design or visual style.
+ * using coprime offsets so that no two consecutive lesson plans ever share the same
+ * layout design or visual style.
  */
 export function pickNextDesignAndStyle(options?: IllustrationGeneratorOptions): {
   design: DesignBlueprint;
@@ -246,7 +243,8 @@ export function pickNextDesignAndStyle(options?: IllustrationGeneratorOptions): 
   const nonce = globalGenerationCounter + seedOffset;
 
   const designIndex = (nonce - 1) % DESIGN_BLUEPRINTS.length;
-  const styleIndex = (nonce * 3 + seedOffset) % ART_STYLE_DIRECTIONS.length;
+  // Multiplier 5 is coprime to DESIGN_BLUEPRINTS.length (6) and ART_STYLE_DIRECTIONS.length (6)
+  const styleIndex = (nonce * 5 + seedOffset) % ART_STYLE_DIRECTIONS.length;
 
   return {
     design: DESIGN_BLUEPRINTS[Math.abs(designIndex) % DESIGN_BLUEPRINTS.length],
@@ -466,8 +464,10 @@ const GEMINI_NATIVE_IMAGE_MODELS = [
 
 /**
  * Builds the Gemini AI Art Director & SVG Synthesizer prompt for a specific lesson topic,
- * enforcing a brand-new layout design and brand-new visual style on every generation.
- * If the lesson plan or textbook image contains a story, prioritizes illustrating the story itself.
+ * strictly embedding Kat's official classroom visual presentation standards from "sample ppt":
+ * - Authentic Filipino anime storybook character aesthetics (school uniforms, gentle expressions, rosy cheeks)
+ * - Pedagogical layout patterns (cloud headers, colored card borders, pill tags, 4-panel narrative comics)
+ * - Clear, high-contrast, beautiful educational design free of AI artifacts.
  */
 export function buildGeminiIllustrationPrompt(
   content: ReturnType<typeof extractIllustrationContent>,
@@ -496,7 +496,7 @@ export function buildGeminiIllustrationPrompt(
   const storyDirective = content.hasStory
     ? `
 ================================================================================
-*** MANDATORY STORY FOCUS ***
+*** MANDATORY STORY FOCUS (Modeled on Kat's PPT Stories 'Ang Araw ni Liza' & 'The Ant and the Grasshopper') ***
 THIS LESSON PLAN COVERS A SPECIFIC STORY: "${xmlSafeTitle}" (Story Focus: "${content.storyTitle}")!
 THE ILLUSTRATION MUST ILLUSTRATE THIS EXACT STORY:
 1. Depict the actual story characters (named people, animal fable characters, leaders, children, or family members) in the authentic story setting (e.g., village, farm, forest, home, river).
@@ -509,17 +509,18 @@ THE ILLUSTRATION MUST ILLUSTRATE THIS EXACT STORY:
 ================================================================================`
     : `
 ================================================================================
-*** LESSON TOPIC DIRECTIVE ***
+*** LESSON TOPIC DIRECTIVE (Modeled on Kat's PPT Presentations) ***
 Examine the attached textbook image(s) and lesson captions:
 1. If the attached textbook page contains a story, fable, or reading narrative, YOU MUST ILLUSTRATE THAT STORY across the panels!
-2. If it is a concept lesson without a story (e.g. places in school, parts of the house, mathematics, science senses), depict the exact real-world objects, environments, and activities described in the 4 captions:
+2. If it is a concept lesson without a story (e.g. Filipino grammar 'Saan? / Ano?', school personnel, parts of the house, mathematics, science senses, road safety):
    - Panel 1: "${xmlSafeCaptions[0]}"
    - Panel 2: "${xmlSafeCaptions[1]}"
    - Panel 3: "${xmlSafeCaptions[2]}"
    - Panel 4: "${xmlSafeCaptions[3]}"
+   Depict the exact real-world objects, environments, characters, and activities described in these captions.
 ================================================================================`;
 
-  return `You are a master educational textbook illustrator creating a brand-new, original illustration for a ${
+  return `You are a master educational textbook illustrator creating a brand-new, original classroom illustration for a ${
     content.gradeTier === "kinder2" ? "Kinder 2" : "Grade 1"
   } ${content.subject} lesson plan.
 
@@ -528,7 +529,7 @@ LESSON TOPIC: "${xmlSafeTitle}" (${content.subtitle})
 GUIDE QUESTION: "${xmlSafeQuestion}"
 ${storyDirective}
 
-MANDATORY NEW LAYOUT DESIGN FOR THIS GENERATION:
+MANDATORY NEW LAYOUT DESIGN FOR THIS GENERATION (From Kat's PPT Blueprints):
 Layout Name: ${design.name} (${design.id})
 ${design.layoutInstructions}
 
@@ -543,15 +544,22 @@ Color Palette:
 - Caption Box Gradient: ${artStyle.palette.captionBgTop} to ${artStyle.palette.captionBgBottom}
 - Caption Text Color: ${artStyle.palette.captionText}
 
-STRICT REALISM & COMPLETENESS REQUIREMENTS:
-1. CONNECT TO THE EXACT LESSON / STORY: Every scene must depict all necessary real-world elements for that specific story event or lesson sentence (e.g., if about a story, draw the characters interacting in their story world with props, nature, buildings, animals; if about school/home/science/nature, draw full 3D perspective, furniture, trees, equipment in rich detail).
-2. FULL-BODY PROPORTIONED HUMAN & ANIMAL FIGURES: Whenever people or characters appear, draw complete, naturally proportioned figures with shaded head, hair volume, expressive eyes with irises, warm smile, neck, clothing, articulated arms & hands interacting with the scene, legs, and shoes. NEVER draw armless blobs or stick figures.
-3. NO RANDOM LETTERS OR AI SLOP: Do NOT place random floating alphabet letters in the background. Do NOT include watermarks.
-4. XML-VALID STANDALONE SVG:
+CRITICAL VISUAL DESIGN STANDARDS EXTRACTED FROM TEACHER KAT'S SAMPLE PPTs:
+1. AUTHENTIC FILIPINO ANIME / STORYBOOK CHARACTERS:
+   - Filipino children and teachers have warm expressions, expressive almond eyes with white specular catchlights, gentle smiles, and shiny dark hair.
+   - School uniform details: crisp white collared blouse/polo, blue sailor necktie or vest, blue pleated skirt or shorts, pink headband for girls.
+   - Adult figures: teachers in pink/blue professional school polo with ID lanyards; canteen staff in aprons; security guards with peaked cap; grandfathers (Lolo) with glasses and cane; parents in casual attire.
+2. SUNNY, CHEERFUL COLOR & CARD HARMONY:
+   - Use soft pastel card backgrounds (#FFE4E6 pink, #E0F2FE sky blue, #FEF08A butter yellow, #F3E8FF lavender) with matching 3px borders.
+   - Add bubbly puffy cloud headers with radiating golden sunburst sparkles.
+   - In captions and questions, make text bold and high-contrast (#0F172A deep navy/charcoal) so it is 100% readable even at small preview sizes.
+3. STORY & CONCEPT REALISM:
+   - Every scene must contain all necessary real-world elements: buildings (school, house, church, palengke market), nature (sunny sky, puffy clouds, green trees, flowers), furniture (desks, chalkboards, bookshelves, bathtubs, kitchen stoves), or animals.
+4. NO AI SLOP & STRICT XML COMPLIANCE:
+   - NO random floating letters, no gibberish text in the background.
    - Output ONLY a single valid <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540">...</svg> element.
-   - Use <defs> with <linearGradient>, <radialGradient>, <filter id="dropShadow">, and <clipPath> for each panel so artwork stays crisply inside its rounded panel border.
-   - Always escape ampersands as &amp; inside <text> elements.
-   - Keep total SVG length between 7,500 and 14,500 characters so the closing </svg> tag is 100% complete.`;
+   - Use <defs> with <linearGradient>, <radialGradient>, and <clipPath> so artwork stays neatly inside rounded cards.
+   - Always escape ampersands as &amp; in XML. Keep SVG length between 7,500 and 14,500 characters so closing </svg> is never cut off.`;
 }
 
 /**
@@ -714,7 +722,7 @@ export async function requestGeminiIllustration(
               {
                 parts: [
                   {
-                    text: `Create a realistic, child-friendly educational textbook illustration (${artStyle.name}, ${design.name}) for the ${content.subject} lesson "${content.title}": 1) ${content.panels[0]} 2) ${content.panels[1]} 3) ${content.panels[2]} 4) ${content.panels[3]}. Include all necessary scene elements and full-body characters, no random letters.`,
+                    text: `Create a realistic, child-friendly educational textbook illustration (${artStyle.name}, ${design.name}) for the ${content.subject} lesson "${content.title}": 1) ${content.panels[0]} 2) ${content.panels[1]} 3) ${content.panels[2]} 4) ${content.panels[3]}. Modeled after Kat's Philippine school presentations with clean school uniforms, sunny colors, and high visual appeal.`,
                   },
                 ],
               },
@@ -772,7 +780,7 @@ export async function requestGeminiIllustration(
     // Ignore
   }
 
-  // 4. Dynamic Algorithmic SVG Synthesis (only if completely offline / in airgapped tests)
+  // 4. Dynamic Algorithmic SVG Synthesis (modeled on Kat's PPT slides)
   const dynamicOfflineSvg = buildOfflineDynamicSvg(content, design, artStyle, generationNonce);
   return { svg: dynamicOfflineSvg, design, artStyle };
 }
@@ -868,9 +876,9 @@ async function normalizeImageToPngDataUri(dataUri: string, width = 960, height =
 
 /**
  * Main Entry Point:
- * Every time a lesson plan is generated (or "Regenerate Art" is clicked),
+ * Every time a lesson plan is generated,
  * calls Gemini AI to synthesize a brand-new illustration corresponding to the lesson topic
- * with a NEW layout design and NEW artistic style.
+ * with a NEW layout design and NEW artistic style modeled after Kat's PPT presentations.
  */
 export async function generateUniqueLessonIllustration(
   plan: LessonPlan,
@@ -891,12 +899,16 @@ export async function generateUniqueLessonIllustration(
 }
 
 /**
- * Generates a dynamic, parameterized SVG when running completely offline or in airgapped tests,
- * still respecting the unique `DesignBlueprint`, `ArtStyleDirection`, and `generationNonce`.
+ * Generates an SVG modeled on Kat's authentic PPT slides when running offline or in tests:
+ * - Yellow puffy cloud header with sparkles and lesson title
+ * - Smiling cartoon sun mascot with rosy cheeks in top corner
+ * - 4 pastel color-coded cards (Pink, Blue, Yellow, Purple) with dashed inner frames
+ * - Student character figures with neat uniforms and poses
+ * - Clean, high-contrast captions and bottom encouraging moral banner.
  */
 function buildOfflineDynamicSvg(
   content: ReturnType<typeof extractIllustrationContent>,
-  design: DesignBlueprint,
+  _design: DesignBlueprint,
   artStyle: ArtStyleDirection,
   nonce: number
 ): string {
@@ -908,51 +920,120 @@ function buildOfflineDynamicSvg(
       .replace(/"/g, "&quot;");
 
   const p = artStyle.palette;
-  const hueShift = nonce % 360;
+  const cardThemes = [
+    { bg: "#FFF1F2", border: "#FB7185", tag: "#E11D48", label: "Tagpo 1 / Simula" },
+    { bg: "#F0F9FF", border: "#38BDF8", tag: "#0284C7", label: "Tagpo 2 / Kilos" },
+    { bg: "#FEFCE8", border: "#FACC15", tag: "#D97706", label: "Tagpo 3 / Pagsasanay" },
+    { bg: "#FAF5FF", border: "#C084FC", tag: "#7C3AED", label: "Tagpo 4 / Aral" },
+  ];
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540">
   <defs>
-    <linearGradient id="bg_${nonce}" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="${p.canvasBg}"/>
-      <stop offset="100%" stop-color="${p.captionBgBottom}"/>
+    <linearGradient id="bg_${nonce}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="${p.canvasBg}"/>
     </linearGradient>
-    <linearGradient id="sky_${nonce}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="hsl(${(hueShift + 200) % 360}, 78%, 84%)"/>
-      <stop offset="100%" stop-color="hsl(${(hueShift + 45) % 360}, 88%, 94%)"/>
-    </linearGradient>
-    <linearGradient id="ground_${nonce}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="hsl(${(hueShift + 110) % 360}, 45%, 62%)"/>
-      <stop offset="100%" stop-color="hsl(${(hueShift + 30) % 360}, 52%, 44%)"/>
-    </linearGradient>
+    <filter id="shadow_${nonce}" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.08"/>
+    </filter>
   </defs>
+
+  <!-- Master Canvas Background -->
   <rect width="960" height="540" fill="url(#bg_${nonce})"/>
+
+  <!-- Top Yellow Cloud Header (Modeled on Kat's PPT Header) -->
+  <g transform="translate(230, 8)" filter="url(#shadow_${nonce})">
+    <rect x="0" y="0" width="500" height="50" rx="25" fill="#FEF08A" stroke="#F59E0B" stroke-width="2.5"/>
+    <!-- Sparkles -->
+    <path d="M 18,25 L 24,19 L 30,25 L 24,31 Z" fill="#F59E0B"/>
+    <path d="M 470,25 L 476,19 L 482,25 L 476,31 Z" fill="#F59E0B"/>
+    <text x="250" y="32" font-family="system-ui, -apple-system, sans-serif" font-size="19" font-weight="800" fill="#0F172A" text-anchor="middle" letter-spacing="0.5">${esc(
+      content.title
+    )}</text>
+  </g>
+
+  <!-- Smiling Cartoon Sun Mascot (Top Right) -->
+  <g transform="translate(890, 32)">
+    <circle cx="0" cy="0" r="22" fill="#FDE047" stroke="#F59E0B" stroke-width="2.5"/>
+    <!-- Sun Rays -->
+    <line x1="0" y1="-30" x2="0" y2="-24" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+    <line x1="0" y1="24" x2="0" y2="30" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+    <line x1="-30" y1="0" x2="-24" y2="0" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+    <line x1="24" y1="0" x2="30" y2="0" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+    <!-- Cute Eyes & Smile -->
+    <circle cx="-7" cy="-4" r="2.5" fill="#0F172A"/>
+    <circle cx="7" cy="-4" r="2.5" fill="#0F172A"/>
+    <circle cx="-11" cy="4" r="3" fill="#FB7185" opacity="0.6"/>
+    <circle cx="11" cy="4" r="3" fill="#FB7185" opacity="0.6"/>
+    <path d="M -7,4 Q 0,11 7,4" fill="none" stroke="#0F172A" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- 4 Kat-Style Color-Coded Concept & Narrative Cards (2x2 Grid) -->
   ${[0, 1, 2, 3]
     .map((idx) => {
       const col = idx % 2;
       const row = Math.floor(idx / 2);
       const x = 18 + col * 472;
-      const y = 18 + row * 262;
-      return `<g transform="translate(${x}, ${y})">
-        <rect width="452" height="242" rx="16" fill="url(#sky_${nonce})" stroke="${p.panelBorder}" stroke-width="3"/>
-        <rect y="148" width="452" height="50" fill="url(#ground_${nonce})"/>
-        <circle cx="${90 + idx * 35}" cy="52" r="22" fill="${p.primaryAccent}" opacity="0.85"/>
-        <g transform="translate(210, 95)">
-          <circle cx="0" cy="-22" r="14" fill="#F5C693" stroke="#2C1810" stroke-width="2"/>
-          <rect x="-14" y="-8" width="28" height="32" rx="6" fill="${
-            idx % 2 === 0 ? p.primaryAccent : p.secondaryAccent
-          }" stroke="#2C1810" stroke-width="2"/>
-          <line x1="-14" y1="-2" x2="-26" y2="14" stroke="#F5C693" stroke-width="6" stroke-linecap="round"/>
-          <line x1="14" y1="-2" x2="26" y2="-14" stroke="#F5C693" stroke-width="6" stroke-linecap="round"/>
-          <rect x="-11" y="24" width="9" height="24" fill="#1E293B"/>
-          <rect x="2" y="24" width="9" height="24" fill="#1E293B"/>
+      const y = 66 + row * 224;
+      const theme = cardThemes[idx];
+
+      return `<g transform="translate(${x}, ${y})" filter="url(#shadow_${nonce})">
+        <!-- Main Card Border & Background -->
+        <rect width="452" height="214" rx="16" fill="${theme.bg}" stroke="${theme.border}" stroke-width="2.5"/>
+        <rect x="6" y="6" width="440" height="202" rx="12" fill="none" stroke="${theme.border}" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+
+        <!-- Top Pill Tag -->
+        <rect x="14" y="10" width="130" height="24" rx="12" fill="${theme.tag}"/>
+        <text x="79" y="26" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">${
+          theme.label
+        }</text>
+
+        <!-- Illustration Scene Graphic (Filipino Student Figure & Environment Props) -->
+        <g transform="translate(226, 88)">
+          <!-- Ground / Desk -->
+          <ellipse cx="0" cy="48" rx="120" ry="14" fill="#E2E8F0"/>
+          <!-- Student Character -->
+          <circle cx="0" cy="-22" r="15" fill="#FCD34D" stroke="#0F172A" stroke-width="2"/>
+          <!-- Hair & Headband -->
+          <path d="M -15,-25 C -12,-38 12,-38 15,-25 C 10,-32 -10,-32 -15,-25 Z" fill="#1E293B"/>
+          <path d="M -14,-26 Q 0,-34 14,-26" fill="none" stroke="${theme.border}" stroke-width="3"/>
+          <!-- Face Eyes & Smile -->
+          <circle cx="-5" cy="-22" r="2" fill="#0F172A"/>
+          <circle cx="5" cy="-22" r="2" fill="#0F172A"/>
+          <circle cx="-8" cy="-17" r="2.5" fill="#FB7185" opacity="0.5"/>
+          <circle cx="8" cy="-17" r="2.5" fill="#FB7185" opacity="0.5"/>
+          <path d="M -4,-16 Q 0,-12 4,-16" fill="none" stroke="#0F172A" stroke-width="1.8" stroke-linecap="round"/>
+          <!-- School Uniform (White Blouse & Colored Sailor Necktie) -->
+          <path d="M -16,-5 L 16,-5 L 12,24 L -12,24 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="2"/>
+          <polygon points="0,-3 -4,12 0,16 4,12" fill="${theme.tag}"/>
+          <!-- Pleated Skirt / Shorts -->
+          <rect x="-13" y="24" width="26" height="14" rx="2" fill="${theme.border}" stroke="#0F172A" stroke-width="1.5"/>
+          <!-- Arms in Action Pose -->
+          <line x1="-15" y1="0" x2="-28" y2="${idx % 2 === 0 ? "16" : "-10"}" stroke="#FCD34D" stroke-width="5" stroke-linecap="round"/>
+          <line x1="15" y1="0" x2="28" y2="10" stroke="#FCD34D" stroke-width="5" stroke-linecap="round"/>
+          <!-- Legs & Shoes -->
+          <rect x="-9" y="38" width="6" height="12" fill="#FCD34D"/>
+          <rect x="3" y="38" width="6" height="12" fill="#FCD34D"/>
+          <ellipse cx="-6" cy="50" rx="6" ry="3.5" fill="#0F172A"/>
+          <ellipse cx="6" cy="50" rx="6" ry="3.5" fill="#0F172A"/>
         </g>
-        <rect y="196" width="452" height="46" rx="8" fill="${p.captionBgTop}" stroke="${p.panelBorder}" stroke-width="1.5"/>
-        <text x="226" y="224" font-family="Georgia, serif" font-size="13" font-weight="bold" fill="${p.captionText}" text-anchor="middle">${esc(
-        content.panels[idx]
-      )}</text>
+
+        <!-- Bottom Clean Caption Card -->
+        <rect x="8" y="156" width="436" height="50" rx="10" fill="#FFFFFF" stroke="${theme.border}" stroke-width="1.5"/>
+        <text x="226" y="186" font-family="system-ui, -apple-system, sans-serif" font-size="12.5" font-weight="700" fill="#0F172A" text-anchor="middle">${esc(
+          content.panels[idx]
+        )}</text>
       </g>`;
     })
     .join("\n")}
+
+  <!-- Bottom Encouraging Banner (Modeled on Kat's PPT Footer) -->
+  <g transform="translate(18, 514)">
+    <rect width="924" height="20" rx="10" fill="#FEF08A" stroke="#F59E0B" stroke-width="1.5"/>
+    <text x="462" y="528" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="#0F172A" text-anchor="middle">
+      Gawin natin ang mga bagay na tama at magandang asal araw-araw! • Kat's Learning Plan
+    </text>
+  </g>
 </svg>`;
 }
 
