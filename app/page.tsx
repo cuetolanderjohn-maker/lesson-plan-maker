@@ -356,8 +356,11 @@ export default function HomePage() {
         profile
       );
 
+      setProgressStatus("Generating brand-new Gemini AI illustration (unique design & style)...");
       try {
-        const illustrationUrl = await generateUniqueLessonIllustration(plan, images);
+        const illustrationUrl = await generateUniqueLessonIllustration(plan, images, {
+          forceNewGeneration: true,
+        });
         plan = {
           ...plan,
           generatedIllustrationUrl: illustrationUrl,
@@ -373,6 +376,7 @@ export default function HomePage() {
       setErrorMessage("Failed to assemble official lesson plan.");
     } finally {
       setIsGenerating(false);
+      setProgressStatus("");
     }
   };
 
@@ -462,9 +466,11 @@ export default function HomePage() {
       clearTimeout(timer2);
       clearTimeout(timer3);
 
-      setProgressStatus("Generating unique lesson illustration from textbook JPEG...");
+      setProgressStatus("Generating brand-new Gemini AI illustration (unique design & style)...");
       try {
-        const illustrationUrl = await generateUniqueLessonIllustration(plan, images);
+        const illustrationUrl = await generateUniqueLessonIllustration(plan, images, {
+          forceNewGeneration: true,
+        });
         plan = {
           ...plan,
           generatedIllustrationUrl: illustrationUrl,
@@ -572,14 +578,21 @@ export default function HomePage() {
     }
     setErrorMessage(null);
     setScanWarning(null);
+    setIsGenerating(true);
+    setProgressStatus("Generating brand-new Gemini AI illustration (unique design & style)...");
     try {
-      const illustrationUrl = await generateUniqueLessonIllustration(selectedSample, images);
+      const illustrationUrl = await generateUniqueLessonIllustration(selectedSample, images, {
+        forceNewGeneration: true,
+      });
       setCurrentPlan({
         ...selectedSample,
         generatedIllustrationUrl: illustrationUrl,
       });
     } catch {
       setCurrentPlan(selectedSample);
+    } finally {
+      setIsGenerating(false);
+      setProgressStatus("");
     }
   };
 

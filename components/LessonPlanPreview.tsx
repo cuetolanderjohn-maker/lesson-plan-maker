@@ -60,20 +60,19 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({
 
   useEffect(() => {
     let cancelled = false;
-    if (
-      lastRenderedIdentityRef.current === planIdentityKey &&
-      plan.generatedIllustrationUrl &&
-      plan.generatedIllustrationUrl.length >= 8000
-    ) {
+    if (plan.generatedIllustrationUrl && plan.generatedIllustrationUrl.length > 1000) {
+      lastRenderedIdentityRef.current = planIdentityKey;
       return;
     }
 
     (async () => {
+      setIsGeneratingArt(true);
       try {
         const style = getDefaultIllustrationStyle(plan);
         const dataUri = await generateUniqueLessonIllustration(plan, attachedImages, {
           style,
           variationSeed,
+          forceNewGeneration: true,
         });
         if (!cancelled && dataUri) {
           lastRenderedIdentityRef.current = planIdentityKey;
@@ -85,6 +84,10 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({
         }
       } catch (err) {
         console.warn("Illustration render skipped:", err);
+      } finally {
+        if (!cancelled) {
+          setIsGeneratingArt(false);
+        }
       }
     })();
 
@@ -102,6 +105,7 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({
       const dataUri = await generateUniqueLessonIllustration(plan, attachedImages, {
         style: nextStyle,
         variationSeed: nextSeed,
+        forceNewGeneration: true,
       });
       onUpdatePlan({
         ...plan,

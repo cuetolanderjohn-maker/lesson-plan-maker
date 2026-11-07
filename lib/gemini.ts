@@ -7,12 +7,14 @@ export interface ImageInput {
   mimeType: string;
 }
 
-const CANDIDATE_MODELS = [
-  "gemini-3.5-flash",
+export const GEMINI_CANDIDATE_MODELS = [
+  "gemini-3.5-flash-lite",
+  "gemini-flash-lite-latest",
   "gemini-3.1-flash-lite",
-  "gemini-3.6-flash",
   "gemini-3-flash-preview",
   "gemini-3.8-flash",
+  "gemini-flash-latest",
+  "gemini-3.5-flash",
   "gemini-3.1-pro-preview",
 ];
 
@@ -22,9 +24,10 @@ export async function generateLessonPlanWithGemini(
   profile?: TeacherProfile,
   customApiKey?: string
 ): Promise<LessonPlan> {
-  const envKey = typeof process !== "undefined"
-    ? (process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY)
-    : undefined;
+  const envKey =
+    typeof process !== "undefined"
+      ? process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY
+      : undefined;
   const rawKey =
     customApiKey?.trim() ||
     profile?.geminiApiKey?.trim() ||
@@ -83,7 +86,7 @@ export async function generateLessonPlanWithGemini(
       modelsToTry.push(profile.geminiModel);
     }
 
-    for (const candidate of CANDIDATE_MODELS) {
+    for (const candidate of GEMINI_CANDIDATE_MODELS) {
       if (!modelsToTry.includes(candidate)) {
         modelsToTry.push(candidate);
       }

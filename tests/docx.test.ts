@@ -17,134 +17,77 @@ import {
   dataUriToUint8Array,
 } from "../lib/schoolLogos";
 import {
-  generateUniqueLessonIllustration,
-  selectSceneForPanel,
-  type SceneId,
+  pickNextDesignAndStyle,
+  extractIllustrationContent,
+  buildGeminiIllustrationPrompt,
+  sanitizeGeminiSvg,
+  generateFallbackPngDataUri,
 } from "../lib/lessonIllustrationGenerator";
 
 test("getLccpBannerBuffer, getLccpCrestBuffer, and getLccpPaascuBuffer return authentic image assets", () => {
   const banner = getLccpBannerBuffer();
   assert.ok(banner && banner.length > 50000, "Banner buffer should be > 50KB");
-  // JPEG magic bytes: FF D8
   assert.strictEqual(banner[0], 0xff);
   assert.strictEqual(banner[1], 0xd8);
 
   const crest = getLccpCrestBuffer();
   assert.ok(crest && crest.length > 20000, "Crest buffer should be > 20KB");
-  // PNG magic bytes: 89 50 4E 47
   assert.strictEqual(crest[0], 0x89);
   assert.strictEqual(crest[1], 0x50);
 
   const paascu = getLccpPaascuBuffer();
   assert.ok(paascu && paascu.length > 50000, "PAASCU Level II logo buffer should be > 50KB");
-  // PNG magic bytes: 89 50 4E 47
   assert.strictEqual(paascu[0], 0x89);
   assert.strictEqual(paascu[1], 0x50);
   assert.strictEqual(paascu[2], 0x4e);
   assert.strictEqual(paascu[3], 0x47);
 });
 
-test("generateUniqueLessonIllustration creates a valid PNG data URI for every subject style", async () => {
-  const g1Art = await generateUniqueLessonIllustration(sampleMatatagPlan);
-  assert.ok(g1Art.startsWith("data:image/png;base64,"), "G1 Filipino art should be PNG data URI");
-  const g1Bytes = dataUriToUint8Array(g1Art);
-  assert.ok(g1Bytes && g1Bytes.length > 1000, "Decoded PNG bytes should be > 1KB");
-  assert.strictEqual(g1Bytes[0], 0x89);
-  assert.strictEqual(g1Bytes[1], 0x50);
+test("Gemini AI illustration engine rotates to a NEW design and NEW style on every generation", () => {
+  const first = pickNextDesignAndStyle();
+  const second = pickNextDesignAndStyle();
+  const third = pickNextDesignAndStyle();
 
-  const mathArt = await generateUniqueLessonIllustration(sampleK2MathPlan, [], {
-    style: "math_concept_sets",
-  });
-  assert.ok(mathArt.startsWith("data:image/png;base64,"));
-
-  const storyArt = await generateUniqueLessonIllustration(sampleK2SciencePlan, [], {
-    style: "comic_story",
-  });
-  assert.ok(storyArt.startsWith("data:image/png;base64,"));
-
-  const used = new Set<SceneId>();
-  assert.strictEqual(
-    selectSceneForPanel(
-      "The roof protects the house from rain and sun.",
-      "Learning About Parts of the House",
-      "Language",
-      0,
-      used
-    ),
-    "house_roof"
+  assert.notStrictEqual(
+    first.design.id,
+    second.design.id,
+    "Consecutive lesson plans must receive a NEW layout design"
   );
-  assert.strictEqual(
-    selectSceneForPanel(
-      "The walls divide the house into different rooms.",
-      "Learning About Parts of the House",
-      "Language",
-      1,
-      used
-    ),
-    "house_walls_rooms"
+  assert.notStrictEqual(
+    second.design.id,
+    third.design.id,
+    "Third lesson plan must also rotate to a NEW layout design"
   );
-  assert.strictEqual(
-    selectSceneForPanel(
-      "The stairs are used to go up and down.",
-      "Learning About Parts of the House",
-      "Language",
-      2,
-      used
-    ),
-    "house_stairs"
-  );
-  assert.strictEqual(
-    selectSceneForPanel(
-      "The door is used to get in and out of the house.",
-      "Learning About Parts of the House",
-      "Language",
-      3,
-      used
-    ),
-    "house_door"
+  assert.notStrictEqual(
+    first.artStyle.id,
+    second.artStyle.id,
+    "Consecutive lesson plans must receive a NEW artistic style"
   );
 
-  const usedSchool = new Set<SceneId>();
-  assert.strictEqual(
-    selectSceneForPanel(
-      "The classroom is where we study and learn new things.",
-      "Places in the School",
-      "Language",
-      0,
-      usedSchool
-    ),
-    "school_classroom"
+  const content = extractIllustrationContent(sampleLccpPlan);
+  const prompt = buildGeminiIllustrationPrompt(
+    content,
+    first.design,
+    first.artStyle,
+    first.generationNonce
   );
-  assert.strictEqual(
-    selectSceneForPanel(
-      "The library is where we read and borrow books.",
-      "Places in the School",
-      "Language",
-      1,
-      usedSchool
-    ),
-    "school_library"
+  assert.ok(prompt.includes(content.title), "Gemini prompt must include the exact lesson topic");
+  assert.ok(prompt.includes(first.design.name), "Gemini prompt must enforce the selected new layout design");
+  assert.ok(prompt.includes(first.artStyle.name), "Gemini prompt must enforce the selected new artistic style");
+
+  const sanitized = sanitizeGeminiSvg(
+    '```xml\n<svg><rect width="100" height="100"/><text>Read &amp; Learn & Grow</text></svg>\n```'
   );
-  assert.strictEqual(
-    selectSceneForPanel(
-      "The canteen is where we eat our meals.",
-      "Places in the School",
-      "Language",
-      2,
-      usedSchool
-    ),
-    "school_canteen"
-  );
-  assert.strictEqual(
-    selectSceneForPanel(
-      "The playground is where we play and exercise with friends.",
-      "Places in the School",
-      "Language",
-      3,
-      usedSchool
-    ),
-    "school_playground"
-  );
+  assert.ok(sanitized && sanitized.startsWith("<svg"), "Sanitized SVG must start with <svg");
+  assert.ok(sanitized.includes('viewBox="0 0 960 540"'), "Sanitized SVG must include 960x540 viewBox");
+  assert.ok(sanitized.includes("Read &amp; Learn &amp; Grow"), "Sanitized SVG must escape bare ampersands");
+
+  const fallbackPng = generateFallbackPngDataUri();
+  assert.ok(fallbackPng.startsWith("data:image/png;base64,"));
+  const pngBytes = dataUriToUint8Array(fallbackPng);
+  assert.ok(pngBytes && pngBytes.length > 1000, "Decoded PNG bytes should be > 1KB");
+  assert.strictEqual(pngBytes[0], 0x89);
+  assert.strictEqual(pngBytes[1], 0x50);
 });
 
 test("generateMatatagDocx produces a valid non-empty DOCX file with embedded school banner", async () => {
