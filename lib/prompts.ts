@@ -6,6 +6,8 @@ import type {
   LccpLearningPlan,
 } from "./types";
 import { defaultTeacherProfile } from "./sampleData";
+import { generateFallbackPngDataUri, getDefaultIllustrationStyle } from "./lessonIllustrationGenerator";
+
 
 export function buildMatatagSystemPrompt(
   meta: GenerateRequestMeta,
@@ -152,7 +154,14 @@ Return ONLY a valid JSON object matching this exact schema:
     "preparedBy": "${preparedBy}",
     "checkedBy": "${coordinator}",
     "observedBy": "${coordinator}"
-  }
+  },
+  "illustrationCaption": "Short Filipino caption describing the visual story/activity scene from the textbook",
+  "illustrationPanels": [
+    "Panel 1 story/concept caption in Filipino",
+    "Panel 2 story/concept caption in Filipino",
+    "Panel 3 story/concept caption in Filipino",
+    "Panel 4 story/concept caption in Filipino"
+  ]
 }`;
 }
 
@@ -312,7 +321,14 @@ Return ONLY a valid JSON object matching this exact schema:
     "closingPrayer": "Closing Prayer",
     "synthesis": ["string", "string"],
     "evaluation": ["string", "string"]
-  }
+  },
+  "illustrationCaption": "Short child-friendly caption describing the textbook illustration/story scene",
+  "illustrationPanels": [
+    "Panel 1 story/concept caption from the textbook",
+    "Panel 2 story/concept caption from the textbook",
+    "Panel 3 story/concept caption from the textbook",
+    "Panel 4 story/concept caption from the textbook"
+  ]
 }`;
 }
 
@@ -420,11 +436,17 @@ export function parseLessonPlanResponse(
         checkedBy: p.signatories?.checkedBy || "Bb. Sta. Ana Florence",
         observedBy: p.signatories?.observedBy || "Bb. Sta. Ana Florence",
       },
+      generatedIllustrationUrl: p.generatedIllustrationUrl || generateFallbackPngDataUri(11),
+      illustrationCaption:
+        p.illustrationCaption ||
+        `Larawan para sa Aralin: ${p.subjectMatter?.paksa || "Banghay-Aralin sa Filipino"}`,
+      illustrationPanels: Array.isArray(p.illustrationPanels) ? p.illustrationPanels : undefined,
+      illustrationStyle: p.illustrationStyle,
     };
   }
 
   const l = parsed as Partial<LccpLearningPlan>;
-  return {
+  const resultPlan: LccpLearningPlan = {
     templateType: "lccp",
     rveFormat: l.rveFormat || "portrait",
     adidse: l.adidse,
@@ -466,5 +488,13 @@ export function parseLessonPlanResponse(
       checkedBy: l.signatories?.checkedBy || "Mrs. Emma P. Dunque Lpt.",
       observedBy: l.signatories?.observedBy || "Mrs. Emma P. Dunque Lpt.",
     },
+    generatedIllustrationUrl: l.generatedIllustrationUrl || generateFallbackPngDataUri(22),
+    illustrationCaption:
+      l.illustrationCaption ||
+      `Lesson Illustration: ${l.subjectMatter?.lesson || l.subject || "Learning Plan"}`,
+    illustrationPanels: Array.isArray(l.illustrationPanels) ? l.illustrationPanels : undefined,
+    illustrationStyle: l.illustrationStyle,
   };
+  resultPlan.illustrationStyle = getDefaultIllustrationStyle(resultPlan);
+  return resultPlan;
 }

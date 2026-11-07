@@ -1,17 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import type {
+  IllustrationStyle,
+  ImageInput,
   LessonPlan,
   MatatagLessonPlan,
   LccpLearningPlan,
   TeacherProfile,
 } from "@/lib/types";
 import { downloadLessonPlanDocx } from "@/lib/docxGenerator";
-import { LCCP_BANNER_BASE64, LCCP_CREST_BASE64 } from "@/lib/schoolLogos";
-
-const LCCP_BANNER_DATA_URI = `data:image/jpeg;base64,${LCCP_BANNER_BASE64}`;
-const LCCP_CREST_DATA_URI = `data:image/png;base64,${LCCP_CREST_BASE64}`;
+import {
+  LCCP_BANNER_DATA_URI,
+  LCCP_CREST_DATA_URI,
+  LCCP_PAASCU_DATA_URI,
+} from "@/lib/schoolLogos";
+import {
+  generateUniqueLessonIllustration,
+  getDefaultIllustrationStyle,
+} from "@/lib/lessonIllustrationGenerator";
 import {
   FileDown,
   Printer,
@@ -22,21 +29,85 @@ import {
   Trash2,
   Columns,
   FileText,
+  Sparkles,
+  RefreshCw,
+  Image as ImageIcon,
 } from "lucide-react";
 
 interface LessonPlanPreviewProps {
   plan: LessonPlan;
   profile: TeacherProfile;
   onUpdatePlan: (updated: LessonPlan) => void;
+  attachedImages?: ImageInput[];
 }
 
 export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({
   plan,
   profile,
   onUpdatePlan,
+  attachedImages,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [variationSeed, setVariationSeed] = useState(0);
+  const [isGeneratingArt, setIsGeneratingArt] = useState(false);
+
+  const planIdentityKey =
+    plan.templateType === "matatag"
+      ? `matatag|${plan.subjectMatter.paksa}|${plan.gradeSection}`
+      : `lccp|${plan.subject}|${plan.subjectMatter.lesson}|${plan.rveFormat || "portrait"}`;
+
+  useEffect(() => {
+    let cancelled = false;
+    // Automatically upgrade fallback/empty illustration to high-res canvas illustration in browser
+    const needsCanvasRender =
+      !plan.generatedIllustrationUrl || plan.generatedIllustrationUrl.length < 8000;
+    if (!needsCanvasRender) return;
+
+    (async () => {
+      try {
+        const style = getDefaultIllustrationStyle(plan);
+        const dataUri = await generateUniqueLessonIllustration(plan, attachedImages, {
+          style,
+          variationSeed,
+        });
+        if (!cancelled && dataUri) {
+          onUpdatePlan({
+            ...plan,
+            generatedIllustrationUrl: dataUri,
+            illustrationStyle: style,
+          });
+        }
+      } catch (err) {
+        console.warn("Illustration render skipped:", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [planIdentityKey, attachedImages?.length]);
+
+  const handleRegenerateIllustration = async (customStyle?: IllustrationStyle) => {
+    setIsGeneratingArt(true);
+    try {
+      const nextSeed = variationSeed + 1;
+      setVariationSeed(nextSeed);
+      const nextStyle = customStyle || getDefaultIllustrationStyle(plan);
+      const dataUri = await generateUniqueLessonIllustration(plan, attachedImages, {
+        style: nextStyle,
+        variationSeed: nextSeed,
+      });
+      onUpdatePlan({
+        ...plan,
+        generatedIllustrationUrl: dataUri,
+        illustrationStyle: nextStyle,
+      });
+    } finally {
+      setIsGeneratingArt(false);
+    }
+  };
+
 
   const handleDownloadDocx = async () => {
     setIsDownloading(true);
@@ -143,6 +214,19 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({
 
           <button
             type="button"
+            onClick={() => handleRegenerateIllustration()}
+            disabled={isGeneratingArt}
+            title="Generate a new unique lesson illustration based on the textbook page"
+            className="flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors cursor-pointer disabled:opacity-60"
+          >
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${isGeneratingArt ? "animate-spin" : ""}`}
+            />
+            <span>New Unique Image</span>
+          </button>
+
+          <button
+            type="button"
             onClick={handlePrintPdf}
             className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-medium bg-canvas hover:bg-gray-200/70 text-gray-700 border border-borderMuted transition-colors"
           >
@@ -174,6 +258,8 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({
             profile={profile}
             isEditing={isEditing}
             onChange={(updated) => onUpdatePlan(updated)}
+            onRegenerateIllustration={handleRegenerateIllustration}
+            isGeneratingArt={isGeneratingArt}
           />
         ) : isRve && rveFormat === "landscape_adidse" && plan.adidse ? (
           <RveAdidseTableEditor
@@ -181,6 +267,8 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({
             profile={profile}
             isEditing={isEditing}
             onChange={(updated) => onUpdatePlan(updated)}
+            onRegenerateIllustration={handleRegenerateIllustration}
+            isGeneratingArt={isGeneratingArt}
           />
         ) : (
           <LccpTableEditor
@@ -188,6 +276,8 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({
             profile={profile}
             isEditing={isEditing}
             onChange={(updated) => onUpdatePlan(updated)}
+            onRegenerateIllustration={handleRegenerateIllustration}
+            isGeneratingArt={isGeneratingArt}
           />
         )}
       </div>
@@ -205,7 +295,16 @@ const MatatagTableEditor: React.FC<{
   profile: TeacherProfile;
   isEditing: boolean;
   onChange: (plan: MatatagLessonPlan) => void;
-}> = ({ plan, profile, isEditing, onChange }) => {
+  onRegenerateIllustration: (style?: IllustrationStyle) => void;
+  isGeneratingArt: boolean;
+}> = ({
+  plan,
+  profile,
+  isEditing,
+  onChange,
+  onRegenerateIllustration,
+  isGeneratingArt,
+}) => {
   const isKinder = plan.gradeSection.toLowerCase().includes("kinder");
 
   const updateField = <K extends keyof MatatagLessonPlan>(
@@ -635,6 +734,16 @@ const MatatagTableEditor: React.FC<{
                 )}
               </div>
 
+              {/* Unique Generated Textbook Illustration (Matches Kat's "sample lesson plan" folder) */}
+              <div className="pl-3 pt-1">
+                <EmbeddedLessonIllustrationBlock
+                  plan={plan}
+                  onChange={(updated) => onChange(updated as MatatagLessonPlan)}
+                  onRegenerate={onRegenerateIllustration}
+                  isGeneratingArt={isGeneratingArt}
+                />
+              </div>
+
               {/* c. Pagtalakay ng Aralin */}
               <div className="pl-3 space-y-2">
                 <div className="font-bold">
@@ -1002,7 +1111,16 @@ const LccpTableEditor: React.FC<{
   profile: TeacherProfile;
   isEditing: boolean;
   onChange: (plan: LccpLearningPlan) => void;
-}> = ({ plan, profile, isEditing, onChange }) => {
+  onRegenerateIllustration: (style?: IllustrationStyle) => void;
+  isGeneratingArt: boolean;
+}> = ({
+  plan,
+  profile,
+  isEditing,
+  onChange,
+  onRegenerateIllustration,
+  isGeneratingArt,
+}) => {
   const isRve = plan.subject.trim().toUpperCase() === "RVE";
 
   const updateField = <K extends keyof LccpLearningPlan>(
@@ -1019,30 +1137,37 @@ const LccpTableEditor: React.FC<{
     >
       <table className="lesson-table w-full border-collapse border border-black">
         <tbody>
-          {/* Row 1: Pure White Institutional Header with Left Crest & Centered Bold Text */}
+          {/* Row 1: Pure White Institutional Header with BOTH Left LCCP Crest & Right PAASCU Level II Logo */}
           <tr>
             <td
               colSpan={3}
               className="bg-white text-center py-4 px-6 border border-black"
             >
-              <div className="relative flex flex-col items-center justify-center">
+              <div className="flex items-center justify-between gap-4">
                 <img
                   src={LCCP_CREST_DATA_URI}
                   alt="La Consolacion College Pasig Seal"
-                  className="h-16 w-16 object-contain mb-2 sm:mb-0 sm:absolute sm:left-6 sm:top-1/2 sm:-translate-y-1/2"
+                  className="h-16 w-16 sm:h-20 sm:w-20 object-contain shrink-0"
                 />
-                <div className="font-bold text-base sm:text-lg tracking-wide text-black">
-                  {plan.header.institution || profile.schoolName}
+                <div className="flex-1 text-center">
+                  <div className="font-bold text-base sm:text-lg tracking-wide text-black">
+                    {plan.header.institution || profile.schoolName}
+                  </div>
+                  <div className="font-bold text-sm sm:text-base text-black">
+                    {plan.header.address || profile.schoolAddress}
+                  </div>
+                  <div className="font-bold text-base sm:text-lg text-black">
+                    {plan.header.title || "LEARNING PLAN"}
+                  </div>
+                  <div className="font-bold text-sm sm:text-base text-black">
+                    {plan.header.schoolYear || profile.schoolYear}
+                  </div>
                 </div>
-                <div className="font-bold text-sm sm:text-base text-black">
-                  {plan.header.address || profile.schoolAddress}
-                </div>
-                <div className="font-bold text-base sm:text-lg text-black">
-                  {plan.header.title || "LEARNING PLAN"}
-                </div>
-                <div className="font-bold text-sm sm:text-base text-black">
-                  {plan.header.schoolYear || profile.schoolYear}
-                </div>
+                <img
+                  src={LCCP_PAASCU_DATA_URI}
+                  alt="PAASCU Level II Accredited Logo"
+                  className="h-16 sm:h-20 w-auto object-contain shrink-0"
+                />
               </div>
             </td>
           </tr>
@@ -1278,6 +1403,16 @@ const LccpTableEditor: React.FC<{
                 )}
               </div>
 
+              {/* Unique Generated Textbook Illustration (Matches Kat's "sample lesson plan" folder) */}
+              <div className="pl-4 pt-1">
+                <EmbeddedLessonIllustrationBlock
+                  plan={plan}
+                  onChange={(updated) => onChange(updated as LccpLearningPlan)}
+                  onRegenerate={onRegenerateIllustration}
+                  isGeneratingArt={isGeneratingArt}
+                />
+              </div>
+
               <div className="pl-4 space-y-2">
                 <div className="font-bold">c. Learning Strategies</div>
                 {plan.procedures.learningStrategies.map((strat, sIdx) => (
@@ -1493,7 +1628,9 @@ const RveAdidseTableEditor: React.FC<{
   profile: TeacherProfile;
   isEditing: boolean;
   onChange: (plan: LccpLearningPlan) => void;
-}> = ({ plan, profile }) => {
+  onRegenerateIllustration: (style?: IllustrationStyle) => void;
+  isGeneratingArt: boolean;
+}> = ({ plan, profile, onChange, onRegenerateIllustration, isGeneratingArt }) => {
   const adidse = plan.adidse!;
 
   return (
@@ -1672,6 +1809,15 @@ const RveAdidseTableEditor: React.FC<{
                 <div className="font-bold">Lectio:</div>
                 <div>{adidse.lectio}</div>
               </div>
+              <div className="py-1">
+                <EmbeddedLessonIllustrationBlock
+                  plan={plan}
+                  onChange={(updated) => onChange(updated as LccpLearningPlan)}
+                  onRegenerate={onRegenerateIllustration}
+                  isGeneratingArt={isGeneratingArt}
+                  compact
+                />
+              </div>
               <div>
                 <div className="font-bold">
                   Meditatio: The teacher will ask the students:
@@ -1808,3 +1954,113 @@ const EditableStringList: React.FC<{
     </div>
   );
 };
+
+/* ============================================================================
+ * Embedded Unique Textbook Lesson Illustration Block
+ * Replicates the embedded story comics, PAG-UUGNAY speech scenes, and
+ * math set cards in Kat's "sample lesson plan" folder.
+ * ========================================================================== */
+const EmbeddedLessonIllustrationBlock: React.FC<{
+  plan: LessonPlan;
+  onChange: (plan: LessonPlan) => void;
+  onRegenerate: (style?: IllustrationStyle) => void;
+  isGeneratingArt: boolean;
+  compact?: boolean;
+}> = ({ plan, onChange, onRegenerate, isGeneratingArt, compact = false }) => {
+  const currentStyle = getDefaultIllustrationStyle(plan);
+
+  const handleUploadCustomIllustration = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        onChange({
+          ...plan,
+          generatedIllustrationUrl: reader.result,
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  if (!plan.generatedIllustrationUrl) return null;
+
+  return (
+    <div className="my-2 flex flex-col items-center">
+      {/* Interactive style & regenerate bar (Hidden when printing) */}
+      <div className="no-print mb-1.5 flex flex-wrap items-center justify-center gap-1.5 bg-stone-50 border border-stone-200 rounded-lg px-2.5 py-1 text-[11px] font-sans">
+        <span className="inline-flex items-center space-x-1 font-semibold text-stone-700">
+          <Sparkles className="w-3 h-3 text-amber-500" />
+          <span>Lesson Illustration:</span>
+        </span>
+        <button
+          type="button"
+          onClick={() => onRegenerate("comic_story")}
+          className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
+            currentStyle === "comic_story"
+              ? "bg-sage-600 text-white font-semibold"
+              : "bg-white text-stone-600 hover:bg-stone-100 border border-stone-200"
+          }`}
+        >
+          4-Panel Story Comic
+        </button>
+        <button
+          type="button"
+          onClick={() => onRegenerate("pag_uugnay_speech")}
+          className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
+            currentStyle === "pag_uugnay_speech"
+              ? "bg-sage-600 text-white font-semibold"
+              : "bg-white text-stone-600 hover:bg-stone-100 border border-stone-200"
+          }`}
+        >
+          PAG-UUGNAY Scene
+        </button>
+        <button
+          type="button"
+          onClick={() => onRegenerate("math_concept_sets")}
+          className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
+            currentStyle === "math_concept_sets"
+              ? "bg-sage-600 text-white font-semibold"
+              : "bg-white text-stone-600 hover:bg-stone-100 border border-stone-200"
+          }`}
+        >
+          Math Set Cards
+        </button>
+        <button
+          type="button"
+          onClick={() => onRegenerate(currentStyle)}
+          disabled={isGeneratingArt}
+          className="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 font-medium cursor-pointer"
+        >
+          <RefreshCw
+            className={`w-3 h-3 ${isGeneratingArt ? "animate-spin" : ""}`}
+          />
+          <span>Regenerate</span>
+        </button>
+        <label className="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-white text-stone-700 hover:bg-stone-100 border border-stone-200 cursor-pointer">
+          <ImageIcon className="w-3 h-3 text-stone-500" />
+          <span>Custom Image</span>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleUploadCustomIllustration}
+            className="hidden"
+          />
+        </label>
+      </div>
+
+      {/* Rendered Illustration Image (Included in Print & Word .docx Export) */}
+      <img
+        src={plan.generatedIllustrationUrl}
+        alt={plan.illustrationCaption || "Generated Lesson Illustration"}
+        className={`${
+          compact ? "max-w-[230px]" : "max-w-[460px] w-full"
+        } h-auto object-contain rounded border border-stone-300 shadow-2xs mx-auto`}
+      />
+    </div>
+  );
+};
+

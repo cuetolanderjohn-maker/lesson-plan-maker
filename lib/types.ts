@@ -2,6 +2,8 @@ export type GradeLevel = "kinder2" | "grade1";
 export type Subject = "filipino" | "language" | "science" | "math" | "rve";
 export type TemplateType = "matatag" | "lccp";
 export type RveFormatType = "portrait" | "landscape_adidse";
+export type IllustrationStyle = "comic_story" | "pag_uugnay_speech" | "math_concept_sets";
+
 
 export interface ImageInput {
   base64Data: string;
@@ -85,6 +87,10 @@ export interface MatatagLessonPlan {
     checkedBy: string;
     observedBy: string;
   };
+  generatedIllustrationUrl?: string;
+  illustrationCaption?: string;
+  illustrationPanels?: string[];
+  illustrationStyle?: IllustrationStyle;
 }
 
 export interface RveAdidseContent {
@@ -159,6 +165,10 @@ export interface LccpLearningPlan {
     checkedBy: string;
     observedBy: string;
   };
+  generatedIllustrationUrl?: string;
+  illustrationCaption?: string;
+  illustrationPanels?: string[];
+  illustrationStyle?: IllustrationStyle;
 }
 
 export type LessonPlan = MatatagLessonPlan | LccpLearningPlan;

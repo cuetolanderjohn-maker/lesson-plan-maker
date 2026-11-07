@@ -21,7 +21,59 @@ import type {
   LessonPlan,
   TeacherProfile,
 } from "./types";
-import { getLccpBannerBuffer, getLccpCrestBuffer } from "./schoolLogos";
+import {
+  dataUriToUint8Array,
+  getLccpBannerBuffer,
+  getLccpCrestBuffer,
+  getLccpPaascuBuffer,
+} from "./schoolLogos";
+import { generateFallbackPngDataUri } from "./lessonIllustrationGenerator";
+
+const NO_BORDER = {
+  style: BorderStyle.NONE,
+  size: 0,
+  color: "FFFFFF",
+};
+
+const BORDERLESS_CELL = {
+  top: NO_BORDER,
+  bottom: NO_BORDER,
+  left: NO_BORDER,
+  right: NO_BORDER,
+};
+
+function buildEmbeddedIllustrationParagraphs(
+  dataUri: string | undefined,
+  width = 330,
+  height = 208
+): Paragraph[] {
+  const effectiveUri = dataUri || generateFallbackPngDataUri(77);
+  const bytes = dataUriToUint8Array(effectiveUri);
+  if (!bytes || bytes.length < 16) return [];
+
+  const isJpeg =
+    effectiveUri.startsWith("data:image/jpeg") ||
+    effectiveUri.startsWith("data:image/jpg") ||
+    (bytes[0] === 0xff && bytes[1] === 0xd8);
+
+  return [
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 80, after: 80 },
+      children: [
+        new ImageRun({
+          data: bytes,
+          transformation: {
+            width,
+            height,
+          },
+          type: isJpeg ? "jpg" : "png",
+        }),
+      ],
+    }),
+  ];
+}
+
 
 const BORDER_SINGLE = {
   style: BorderStyle.SINGLE,
@@ -518,6 +570,11 @@ export async function generateMatatagDocx(
               .map((line) =>
                 p(line, { bullet: true, size: 20, indentLeft: 360 })
               ),
+            ...buildEmbeddedIllustrationParagraphs(
+              plan.generatedIllustrationUrl,
+              340,
+              214
+            ),
             p("c. Pagtalakay ng Aralin: (Day 1-4/30 mins)", {
               bold: true,
               size: 20,
@@ -1105,6 +1162,11 @@ async function generateRveAdidseLandscapeDocx(
               }),
               p("Lectio:", { bold: true, size: 19 }),
               p(adidse.lectio, { size: 19, spacingAfter: 40 }),
+              ...buildEmbeddedIllustrationParagraphs(
+                plan.generatedIllustrationUrl,
+                195,
+                123
+              ),
               p("Meditatio: The teacher will ask the students:", {
                 bold: true,
                 size: 19,
@@ -1267,28 +1329,9 @@ export async function generateLccpDocx(
     "Mrs. Emma P. Dunque Lpt.";
 
   const crestBuffer = getLccpCrestBuffer();
-  const headerChildren: Paragraph[] = [];
+  const paascuBuffer = getLccpPaascuBuffer();
 
-  if (crestBuffer) {
-    headerChildren.push(
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { before: 20, after: 40 },
-        children: [
-          new ImageRun({
-            data: crestBuffer,
-            transformation: {
-              width: 68,
-              height: 68,
-            },
-            type: "png",
-          }),
-        ],
-      })
-    );
-  }
-
-  headerChildren.push(
+  const headerTextParagraphs: Paragraph[] = [
     p(
       plan.header?.institution ||
         profile?.schoolName ||
@@ -1306,7 +1349,7 @@ export async function generateLccpDocx(
         "641 Mercedes Avenue, Brgy. San Miguel, Pasig City",
       {
         bold: true,
-        size: 28,
+        size: 26,
         align: AlignmentType.CENTER,
         spacingAfter: 20,
       }
@@ -1323,22 +1366,91 @@ export async function generateLccpDocx(
         "S.Y. 2026-2027",
       {
         bold: true,
-        size: 28,
+        size: 26,
         align: AlignmentType.CENTER,
         spacingAfter: 20,
       }
-    )
-  );
+    ),
+  ];
+
+  // Borderless 3-Column Header Table inside Row 1 so BOTH the LCCP Seal (Left) and PAASCU Level II Logo (Right) are always present
+  const dualLogoHeaderTable = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: {
+      top: NO_BORDER,
+      bottom: NO_BORDER,
+      left: NO_BORDER,
+      right: NO_BORDER,
+      insideHorizontal: NO_BORDER,
+      insideVertical: NO_BORDER,
+    },
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: 18, type: WidthType.PERCENTAGE },
+            borders: BORDERLESS_CELL,
+            verticalAlign: VerticalAlign.CENTER,
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: crestBuffer
+                  ? [
+                      new ImageRun({
+                        data: crestBuffer,
+                        transformation: {
+                          width: 68,
+                          height: 68,
+                        },
+                        type: "png",
+                      }),
+                    ]
+                  : [],
+              }),
+            ],
+          }),
+          new TableCell({
+            width: { size: 64, type: WidthType.PERCENTAGE },
+            borders: BORDERLESS_CELL,
+            verticalAlign: VerticalAlign.CENTER,
+            children: headerTextParagraphs,
+          }),
+          new TableCell({
+            width: { size: 18, type: WidthType.PERCENTAGE },
+            borders: BORDERLESS_CELL,
+            verticalAlign: VerticalAlign.CENTER,
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: paascuBuffer
+                  ? [
+                      new ImageRun({
+                        data: paascuBuffer,
+                        transformation: {
+                          width: 82,
+                          height: 68,
+                        },
+                        type: "png",
+                      }),
+                    ]
+                  : [],
+              }),
+            ],
+          }),
+        ],
+      }),
+    ],
+  });
 
   const rows: TableRow[] = [
-    // Row 1: Pure White Header Cell (columnSpan 3)
+    // Row 1: Pure White Header Cell (columnSpan 3) containing Dual Logos + Centered Title Lines
     new TableRow({
       children: [
         new TableCell({
           columnSpan: 3,
           borders: STANDARD_BORDERS,
           margins: CELL_PADDING,
-          children: headerChildren,
+          children: [dualLogoHeaderTable],
         }),
       ],
     }),
@@ -1504,6 +1616,11 @@ export async function generateLccpDocx(
                   indentLeft: 480,
                 })
               ),
+            ...buildEmbeddedIllustrationParagraphs(
+              plan.generatedIllustrationUrl,
+              340,
+              214
+            ),
             p("c. Learning Strategies", {
               bold: true,
               size: 24,

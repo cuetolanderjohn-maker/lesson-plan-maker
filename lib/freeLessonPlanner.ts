@@ -8,6 +8,10 @@ import type {
 } from "./types";
 import { defaultTeacherProfile } from "./sampleData";
 import { analyzeTextbookText, LearnedTextbookContent } from "./nlpAnalyzer";
+import {
+  inferIllustrationStyle,
+  generateFallbackPngDataUri,
+} from "./lessonIllustrationGenerator";
 
 /**
  * Generates a complete, institutional-grade LessonPlan from either
@@ -182,6 +186,22 @@ function buildFreeMatatagPlan(
     },
     assignment: `Gumawa ng tatlong pangungusap tungkol sa “${topic}” sa Filipino kwaderno at ipapasa sa biyernes.`,
     remarks: "",
+    illustrationCaption: isGrade1
+      ? `PAG-UUGNAY: “${topic}” (${vocabText})`
+      : topic,
+    illustrationPanels: [
+      `Panimula: ${topic}`,
+      guideQuestions[0] || `Pagbasa sa “${topic}”`,
+      guideQuestions[1] || `Pagtalakay sa ${vocabText}`,
+      `Aral: ${learned.theme}`,
+    ],
+    illustrationStyle: inferIllustrationStyle({
+      templateType: "matatag",
+      subject: "FILIPINO",
+      gradeSection: isGrade1 ? "Grade 1" : "Kinder 2",
+      subjectMatter: { paksa: topic },
+    }),
+    generatedIllustrationUrl: generateFallbackPngDataUri(topic),
     signatories: {
       preparedBy,
       checkedBy: coordinator,
@@ -332,6 +352,20 @@ function buildFreeLccpPlan(
     closure: `The teacher will recap the key takeaways on "${topic}" and praise the learners for their active participation.`,
     assignment: `Review "${topic}" at home with your parents in ${bookRef}.`,
     remarks: "",
+    illustrationCaption: topic,
+    illustrationPanels: [
+      `Exploring "${topic}"`,
+      questions[0] || `Observing examples of "${topic}"`,
+      questions[1] || `Practicing "${topic}" in class`,
+      `Living out the lesson on "${topic}"`,
+    ],
+    illustrationStyle: inferIllustrationStyle({
+      templateType: "lccp",
+      subject: displaySubject,
+      gradeLevel: profile.sectionKinder || "Kinder 2",
+      subjectMatter: { lesson: topic },
+    }),
+    generatedIllustrationUrl: generateFallbackPngDataUri(topic),
     signatories: {
       preparedBy: profile.teacherName || "Ms. Kathrynn Ross L. Acola",
       checkedBy: profile.coordinatorKinder || "Mrs. Emma P. Dunque Lpt.",

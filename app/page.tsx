@@ -27,6 +27,7 @@ import {
 } from "@/lib/sampleData";
 import { generatePlanFromExtractedText } from "@/lib/freeLessonPlanner";
 import { generateLessonPlanUniversal } from "@/lib/universalAiScanner";
+import { generateUniqueLessonIllustration } from "@/lib/lessonIllustrationGenerator";
 import { reportTelemetry } from "@/lib/clientTelemetry";
 import { analyzeTextbookText, LearnedTextbookContent } from "@/lib/nlpAnalyzer";
 import { preprocessTextbookImage } from "@/lib/imagePreprocessor";
@@ -336,13 +337,13 @@ export default function HomePage() {
     setLearnedContent(learned);
   };
 
-  const handleGenerateFromLearned = (learnedToUse?: LearnedTextbookContent) => {
+  const handleGenerateFromLearned = async (learnedToUse?: LearnedTextbookContent) => {
     const sourceLearned = learnedToUse || learnedContent;
     if (!sourceLearned) return;
 
     setIsGenerating(true);
     try {
-      const plan = generatePlanFromExtractedText(
+      let plan = generatePlanFromExtractedText(
         sourceLearned,
         {
           gradeLevel,
@@ -354,6 +355,16 @@ export default function HomePage() {
         },
         profile
       );
+
+      try {
+        const illustrationUrl = await generateUniqueLessonIllustration(plan, images);
+        plan = {
+          ...plan,
+          generatedIllustrationUrl: illustrationUrl,
+        };
+      } catch (illErr) {
+        console.warn("Illustration canvas fallback used:", illErr);
+      }
 
       setCurrentPlan(plan);
       handleSavePlanToHistory(plan);
@@ -451,6 +462,17 @@ export default function HomePage() {
       clearTimeout(timer2);
       clearTimeout(timer3);
 
+      setProgressStatus("Generating unique lesson illustration from textbook JPEG...");
+      try {
+        const illustrationUrl = await generateUniqueLessonIllustration(plan, images);
+        plan = {
+          ...plan,
+          generatedIllustrationUrl: illustrationUrl,
+        };
+      } catch (illErr) {
+        console.warn("Illustration generation warning:", illErr);
+      }
+
       reportTelemetry("info", "Textbook AI analysis succeeded", {
         provider: activeProfile.aiProvider,
         durationMs: Date.now() - callStartTime,
@@ -505,7 +527,7 @@ export default function HomePage() {
     }
   };
 
-  const handleLoadSample = (
+  const handleLoadSample = async (
     type:
       | "g1_filipino"
       | "k2_filipino"
@@ -514,41 +536,51 @@ export default function HomePage() {
       | "k2_science"
       | "k2_rve"
   ) => {
+    let selectedSample: LessonPlan;
     switch (type) {
       case "g1_filipino":
         setGradeLevel("grade1");
         setSubject("filipino");
-        setCurrentPlan(sampleMatatagPlan);
+        selectedSample = sampleMatatagPlan;
         break;
       case "k2_filipino":
         setGradeLevel("kinder2");
         setSubject("filipino");
-        setCurrentPlan(sampleKinder2FilipinoPlan);
+        selectedSample = sampleKinder2FilipinoPlan;
         break;
       case "k2_math":
         setGradeLevel("kinder2");
         setSubject("math");
-        setCurrentPlan(sampleK2MathPlan);
+        selectedSample = sampleK2MathPlan;
         break;
       case "k2_science":
         setGradeLevel("kinder2");
         setSubject("science");
-        setCurrentPlan(sampleK2SciencePlan);
+        selectedSample = sampleK2SciencePlan;
         break;
       case "k2_rve":
         setGradeLevel("kinder2");
         setSubject("rve");
-        setCurrentPlan(sampleK2RvePlan);
+        selectedSample = sampleK2RvePlan;
         break;
       case "k2_language":
       default:
         setGradeLevel("kinder2");
         setSubject("language");
-        setCurrentPlan(sampleLccpPlan);
+        selectedSample = sampleLccpPlan;
         break;
     }
     setErrorMessage(null);
     setScanWarning(null);
+    try {
+      const illustrationUrl = await generateUniqueLessonIllustration(selectedSample, images);
+      setCurrentPlan({
+        ...selectedSample,
+        generatedIllustrationUrl: illustrationUrl,
+      });
+    } catch {
+      setCurrentPlan(selectedSample);
+    }
   };
 
   const scrollToStudio = () => {
@@ -933,6 +965,7 @@ export default function HomePage() {
                 plan={currentPlan}
                 profile={profile}
                 onUpdatePlan={handleUpdateCurrentPlan}
+                attachedImages={images}
               />
             ) : (
               <div className="rounded-2xl border-2 border-dashed border-stone-200 p-12 text-center flex flex-col items-center justify-center text-stone-400 space-y-3 min-h-[380px]">

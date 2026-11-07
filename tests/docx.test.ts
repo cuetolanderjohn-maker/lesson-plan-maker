@@ -10,9 +10,15 @@ import {
   sampleK2RvePlan,
   defaultTeacherProfile,
 } from "../lib/sampleData";
-import { getLccpBannerBuffer, getLccpCrestBuffer } from "../lib/schoolLogos";
+import {
+  getLccpBannerBuffer,
+  getLccpCrestBuffer,
+  getLccpPaascuBuffer,
+  dataUriToUint8Array,
+} from "../lib/schoolLogos";
+import { generateUniqueLessonIllustration } from "../lib/lessonIllustrationGenerator";
 
-test("getLccpBannerBuffer and getLccpCrestBuffer return authentic image assets", () => {
+test("getLccpBannerBuffer, getLccpCrestBuffer, and getLccpPaascuBuffer return authentic image assets", () => {
   const banner = getLccpBannerBuffer();
   assert.ok(banner && banner.length > 50000, "Banner buffer should be > 50KB");
   // JPEG magic bytes: FF D8
@@ -24,6 +30,33 @@ test("getLccpBannerBuffer and getLccpCrestBuffer return authentic image assets",
   // PNG magic bytes: 89 50 4E 47
   assert.strictEqual(crest[0], 0x89);
   assert.strictEqual(crest[1], 0x50);
+
+  const paascu = getLccpPaascuBuffer();
+  assert.ok(paascu && paascu.length > 50000, "PAASCU Level II logo buffer should be > 50KB");
+  // PNG magic bytes: 89 50 4E 47
+  assert.strictEqual(paascu[0], 0x89);
+  assert.strictEqual(paascu[1], 0x50);
+  assert.strictEqual(paascu[2], 0x4e);
+  assert.strictEqual(paascu[3], 0x47);
+});
+
+test("generateUniqueLessonIllustration creates a valid PNG data URI for every subject style", async () => {
+  const g1Art = await generateUniqueLessonIllustration(sampleMatatagPlan);
+  assert.ok(g1Art.startsWith("data:image/png;base64,"), "G1 Filipino art should be PNG data URI");
+  const g1Bytes = dataUriToUint8Array(g1Art);
+  assert.ok(g1Bytes && g1Bytes.length > 1000, "Decoded PNG bytes should be > 1KB");
+  assert.strictEqual(g1Bytes[0], 0x89);
+  assert.strictEqual(g1Bytes[1], 0x50);
+
+  const mathArt = await generateUniqueLessonIllustration(sampleK2MathPlan, [], {
+    style: "math_concept_sets",
+  });
+  assert.ok(mathArt.startsWith("data:image/png;base64,"));
+
+  const storyArt = await generateUniqueLessonIllustration(sampleK2SciencePlan, [], {
+    style: "comic_story",
+  });
+  assert.ok(storyArt.startsWith("data:image/png;base64,"));
 });
 
 test("generateMatatagDocx produces a valid non-empty DOCX file with embedded school banner", async () => {
@@ -36,20 +69,30 @@ test("generateMatatagDocx produces a valid non-empty DOCX file with embedded sch
   assert.ok(k2Result);
 });
 
-test("generateLccpDocx produces valid DOCX files for Language, Math, Science, and RVE (Portrait & 5-Column ADIDSE)", async () => {
+test("generateLccpDocx produces valid DOCX files with BOTH LCCP Crest & PAASCU Level II logos plus generated illustration", async () => {
   const result = await generateLccpDocx(sampleLccpPlan, defaultTeacherProfile);
   assert.ok(result);
   const size = "size" in result ? result.size : (result as Buffer).length;
-  assert.ok(size > 25000, `Expected DOCX size > 25000 bytes with crest, got ${size}`);
+  assert.ok(
+    size > 85000,
+    `Expected DOCX size > 85000 bytes with both LCCP Crest + PAASCU Level II logo + illustration, got ${size}`
+  );
 
   const mathDocx = await generateLccpDocx(sampleK2MathPlan, defaultTeacherProfile);
   assert.ok(mathDocx);
+  const mathSize = "size" in mathDocx ? mathDocx.size : (mathDocx as Buffer).length;
+  assert.ok(mathSize > 85000, `Expected Math DOCX size > 85000 bytes, got ${mathSize}`);
 
   const scienceDocx = await generateLccpDocx(sampleK2SciencePlan, defaultTeacherProfile);
   assert.ok(scienceDocx);
+  const scienceSize = "size" in scienceDocx ? scienceDocx.size : (scienceDocx as Buffer).length;
+  assert.ok(scienceSize > 85000, `Expected Science DOCX size > 85000 bytes, got ${scienceSize}`);
 
   const rvePortraitDocx = await generateLccpDocx(sampleK2RvePlan, defaultTeacherProfile);
   assert.ok(rvePortraitDocx);
+  const rvePortraitSize =
+    "size" in rvePortraitDocx ? rvePortraitDocx.size : (rvePortraitDocx as Buffer).length;
+  assert.ok(rvePortraitSize > 85000, `Expected RVE Portrait DOCX size > 85000 bytes, got ${rvePortraitSize}`);
 
   const rveLandscapeDocx = await generateLccpDocx(
     { ...sampleK2RvePlan, rveFormat: "landscape_adidse" },
@@ -58,7 +101,7 @@ test("generateLccpDocx produces valid DOCX files for Language, Math, Science, an
   assert.ok(rveLandscapeDocx);
   const rveLandscapeSize =
     "size" in rveLandscapeDocx ? rveLandscapeDocx.size : (rveLandscapeDocx as Buffer).length;
-  assert.ok(rveLandscapeSize > 80000, "RVE Landscape ADIDSE DOCX should embed LCCP banner");
+  assert.ok(rveLandscapeSize > 85000, "RVE Landscape ADIDSE DOCX should embed LCCP banner and illustration");
 });
 
 test("generateMatatagDocx respects custom plan signatories over profile defaults", async () => {

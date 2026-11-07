@@ -1,4 +1,6 @@
 import type { MatatagLessonPlan, LccpLearningPlan, TeacherProfile } from "./types";
+import { generateFallbackPngDataUri } from "./lessonIllustrationGenerator";
+
 
 const _GM_BYTES = [8,1,121,31,7,84,33,52,183,196,246,216,194,198,193,212,236,138,131,182,129,234,166,153,130,167,187,85,110,71,111,15,102,2,94,83,47,35,29,119,42,91,56,12,15,179,194,241,243,218,213,194,244];
 const _GQ_BYTES = [46,35,60,1,40,33,38,28,248,207,216,175,219,147,200,220,210,152,247,154,128,158,182,188,166,191,155,127,111,39,93,123,76,71,83,90,20,125,99,51,5,38,27,30,60,204,230,197,250,226,147,246,218,253,166,178];
@@ -116,6 +118,8 @@ export const sampleMatatagPlan: MatatagLessonPlan = {
     checkedBy: "Bb. Sta. Ana Florence",
     observedBy: "Bb. Sta. Ana Florence",
   },
+  generatedIllustrationUrl: generateFallbackPngDataUri(101),
+  illustrationStyle: "pag_uugnay_speech",
 };
 
 export const sampleKinder2FilipinoPlan: MatatagLessonPlan = {
@@ -198,6 +202,8 @@ export const sampleKinder2FilipinoPlan: MatatagLessonPlan = {
     checkedBy: "Emma P. Dunque, LPT.",
     observedBy: "Emma P. Dunque, LPT.",
   },
+  generatedIllustrationUrl: generateFallbackPngDataUri(102),
+  illustrationStyle: "comic_story",
 };
 
 export const sampleLccpPlan: LccpLearningPlan = {
@@ -261,6 +267,8 @@ export const sampleLccpPlan: LccpLearningPlan = {
     checkedBy: "Mrs. Emma P. Dunque Lpt.",
     observedBy: "Mrs. Emma P. Dunque Lpt.",
   },
+  generatedIllustrationUrl: generateFallbackPngDataUri(103),
+  illustrationStyle: "comic_story",
 };
 
 export const sampleK2MathPlan: LccpLearningPlan = {
@@ -317,6 +325,8 @@ export const sampleK2MathPlan: LccpLearningPlan = {
     checkedBy: "Mrs. Emma P. Dunque Lpt.",
     observedBy: "Mrs. Emma P. Dunque Lpt.",
   },
+  generatedIllustrationUrl: generateFallbackPngDataUri(104),
+  illustrationStyle: "math_concept_sets",
 };
 
 export const sampleK2SciencePlan: LccpLearningPlan = {
@@ -379,6 +389,8 @@ export const sampleK2SciencePlan: LccpLearningPlan = {
     checkedBy: "Mrs. Emma P. Dunque Lpt.",
     observedBy: "Mrs. Emma P. Dunque Lpt.",
   },
+  generatedIllustrationUrl: generateFallbackPngDataUri(105),
+  illustrationStyle: "comic_story",
 };
 
 export const sampleK2RvePlan: LccpLearningPlan = {
@@ -480,4 +492,6 @@ export const sampleK2RvePlan: LccpLearningPlan = {
       "Page 65: Draw a heart beside the pictures that show kindness.",
     ],
   },
+  generatedIllustrationUrl: generateFallbackPngDataUri(106),
+  illustrationStyle: "comic_story",
 };
