@@ -155,12 +155,12 @@ Return ONLY a valid JSON object matching this exact schema:
     "checkedBy": "${coordinator}",
     "observedBy": "${coordinator}"
   },
-  "illustrationCaption": "Short Filipino caption describing the visual story/activity scene from the textbook",
+  "illustrationCaption": "Short Filipino caption: If the textbook page includes a story, provide the story title (e.g. 'Kuwento: [Story Title]'); otherwise the topic",
   "illustrationPanels": [
-    "Panel 1 story/concept caption in Filipino",
-    "Panel 2 story/concept caption in Filipino",
-    "Panel 3 story/concept caption in Filipino",
-    "Panel 4 story/concept caption in Filipino"
+    "Panel 1 story/concept caption in Filipino (Simula ng kuwento o konsepto)",
+    "Panel 2 story/concept caption in Filipino (Pangyayari/suliranin sa kuwento o konsepto)",
+    "Panel 3 story/concept caption in Filipino (Kasukdulan o mahalagang tagpo)",
+    "Panel 4 story/concept caption in Filipino (Katapusan, aral ng kuwento, o paglalapat)"
   ]
 }`;
 }
@@ -322,12 +322,12 @@ Return ONLY a valid JSON object matching this exact schema:
     "synthesis": ["string", "string"],
     "evaluation": ["string", "string"]
   },
-  "illustrationCaption": "Short child-friendly caption describing the textbook illustration/story scene",
+  "illustrationCaption": "Short child-friendly caption: If the textbook page includes a story, provide the story title; otherwise the lesson concept",
   "illustrationPanels": [
-    "Panel 1 story/concept caption from the textbook",
-    "Panel 2 story/concept caption from the textbook",
-    "Panel 3 story/concept caption from the textbook",
-    "Panel 4 story/concept caption from the textbook"
+    "Panel 1 caption: Beginning of the story or concept introduction",
+    "Panel 2 caption: Story rising action or concept activity",
+    "Panel 3 caption: Story climax or concept application",
+    "Panel 4 caption: Story moral/resolution or concept synthesis"
   ]
 }`;
 }

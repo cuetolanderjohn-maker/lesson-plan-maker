@@ -745,12 +745,7 @@ const MatatagTableEditor: React.FC<{
 
               {/* Unique Generated Textbook Illustration (Matches Kat's "sample lesson plan" folder) */}
               <div className="pl-3 pt-1">
-                <EmbeddedLessonIllustrationBlock
-                  plan={plan}
-                  onChange={(updated) => onChange(updated as MatatagLessonPlan)}
-                  onRegenerate={onRegenerateIllustration}
-                  isGeneratingArt={isGeneratingArt}
-                />
+                <EmbeddedLessonIllustrationBlock plan={plan} />
               </div>
 
               {/* c. Pagtalakay ng Aralin */}
@@ -1414,12 +1409,7 @@ const LccpTableEditor: React.FC<{
 
               {/* Unique Generated Textbook Illustration (Matches Kat's "sample lesson plan" folder) */}
               <div className="pl-4 pt-1">
-                <EmbeddedLessonIllustrationBlock
-                  plan={plan}
-                  onChange={(updated) => onChange(updated as LccpLearningPlan)}
-                  onRegenerate={onRegenerateIllustration}
-                  isGeneratingArt={isGeneratingArt}
-                />
+                <EmbeddedLessonIllustrationBlock plan={plan} />
               </div>
 
               <div className="pl-4 space-y-2">
@@ -1819,13 +1809,7 @@ const RveAdidseTableEditor: React.FC<{
                 <div>{adidse.lectio}</div>
               </div>
               <div className="py-1">
-                <EmbeddedLessonIllustrationBlock
-                  plan={plan}
-                  onChange={(updated) => onChange(updated as LccpLearningPlan)}
-                  onRegenerate={onRegenerateIllustration}
-                  isGeneratingArt={isGeneratingArt}
-                  compact
-                />
+                <EmbeddedLessonIllustrationBlock plan={plan} compact />
               </div>
               <div>
                 <div className="font-bold">
@@ -1966,107 +1950,22 @@ const EditableStringList: React.FC<{
 
 /* ============================================================================
  * Embedded Unique Textbook Lesson Illustration Block
- * Replicates the embedded story comics, PAG-UUGNAY speech scenes, and
- * math set cards in Kat's "sample lesson plan" folder.
+ * Clean, seamless embedding of the generated lesson illustration in the lesson table.
  * ========================================================================== */
 const EmbeddedLessonIllustrationBlock: React.FC<{
   plan: LessonPlan;
-  onChange: (plan: LessonPlan) => void;
-  onRegenerate: (style?: IllustrationStyle) => void;
-  isGeneratingArt: boolean;
   compact?: boolean;
-}> = ({ plan, onChange, onRegenerate, isGeneratingArt, compact = false }) => {
-  const currentStyle = getDefaultIllustrationStyle(plan);
-
-  const handleUploadCustomIllustration = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        onChange({
-          ...plan,
-          generatedIllustrationUrl: reader.result,
-        });
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
+}> = ({ plan, compact = false }) => {
   if (!plan.generatedIllustrationUrl) return null;
 
   return (
     <div className="my-2 flex flex-col items-center">
-      {/* Interactive style & regenerate bar (Hidden when printing) */}
-      <div className="no-print mb-1.5 flex flex-wrap items-center justify-center gap-1.5 bg-stone-50 border border-stone-200 rounded-lg px-2.5 py-1 text-[11px] font-sans">
-        <span className="inline-flex items-center space-x-1 font-semibold text-stone-700">
-          <Sparkles className="w-3 h-3 text-amber-500" />
-          <span>Lesson Illustration:</span>
-        </span>
-        <button
-          type="button"
-          onClick={() => onRegenerate("comic_story")}
-          className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
-            currentStyle === "comic_story"
-              ? "bg-sage-600 text-white font-semibold"
-              : "bg-white text-stone-600 hover:bg-stone-100 border border-stone-200"
-          }`}
-        >
-          4-Panel Story Comic
-        </button>
-        <button
-          type="button"
-          onClick={() => onRegenerate("pag_uugnay_speech")}
-          className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
-            currentStyle === "pag_uugnay_speech"
-              ? "bg-sage-600 text-white font-semibold"
-              : "bg-white text-stone-600 hover:bg-stone-100 border border-stone-200"
-          }`}
-        >
-          PAG-UUGNAY Scene
-        </button>
-        <button
-          type="button"
-          onClick={() => onRegenerate("math_concept_sets")}
-          className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
-            currentStyle === "math_concept_sets"
-              ? "bg-sage-600 text-white font-semibold"
-              : "bg-white text-stone-600 hover:bg-stone-100 border border-stone-200"
-          }`}
-        >
-          Math Set Cards
-        </button>
-        <button
-          type="button"
-          onClick={() => onRegenerate(currentStyle)}
-          disabled={isGeneratingArt}
-          className="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 font-medium cursor-pointer"
-        >
-          <RefreshCw
-            className={`w-3 h-3 ${isGeneratingArt ? "animate-spin" : ""}`}
-          />
-          <span>Regenerate</span>
-        </button>
-        <label className="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-white text-stone-700 hover:bg-stone-100 border border-stone-200 cursor-pointer">
-          <ImageIcon className="w-3 h-3 text-stone-500" />
-          <span>Custom Image</span>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleUploadCustomIllustration}
-            className="hidden"
-          />
-        </label>
-      </div>
-
       {/* Rendered Illustration Image (Included in Print & Word .docx Export) */}
       <img
         src={plan.generatedIllustrationUrl}
         alt={plan.illustrationCaption || "Generated Lesson Illustration"}
         className={`${
-          compact ? "max-w-[230px]" : "max-w-[460px] w-full"
+          compact ? "max-w-[240px]" : "max-w-[460px] w-full"
         } h-auto object-contain rounded border border-stone-300 shadow-2xs mx-auto`}
       />
     </div>

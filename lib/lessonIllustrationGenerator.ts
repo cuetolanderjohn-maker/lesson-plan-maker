@@ -13,7 +13,7 @@ export type DesignLayoutId =
   | "cinematic_hero_triptych"
   | "editorial_split_showcase"
   | "comic_strip_4_columns"
-  | "pag_uugnay_interactive_stage"
+  | "story_chronological_sequence"
   | "arched_gallery_quad";
 
 export type ArtStyleId =
@@ -56,25 +56,25 @@ const DESIGN_BLUEPRINTS: DesignBlueprint[] = [
 - Panel 2 (top-right): x="490" y="18" width="452" height="242" rx="16"
 - Panel 3 (bottom-left): x="18" y="280" width="452" height="242" rx="16"
 - Panel 4 (bottom-right): x="490" y="280" width="452" height="242" rx="16"
-Inside each panel, reserve the bottom 44px for a clean caption bar displaying that panel's exact caption text, and fill the upper 198px with a rich, realistic 3D-shaded scene.`,
+Inside each panel, reserve the bottom 44px for a clean caption bar displaying that panel's exact caption text, and fill the upper 198px with a rich, realistic 3D-shaded scene depicting the story or lesson.`,
   },
   {
     id: "cinematic_hero_triptych",
     name: "Cinematic Widescreen Hero + 3 Supporting Scenes",
     layoutInstructions: `Use an asymmetric widescreen hero + triptych layout on the 960x540 canvas:
-- Panel 1 (Top Cinematic Hero Banner): x="18" y="16" width="924" height="252" rx="18" (wide panoramic scene illustrating Caption 1 and the overall lesson topic, with a bottom 42px caption strip)
-- Panel 2 (Bottom-Left Scene): x="18" y="284" width="296" height="240" rx="14" (illustrating Caption 2 with bottom 44px caption strip)
-- Panel 3 (Bottom-Center Scene): x="332" y="284" width="296" height="240" rx="14" (illustrating Caption 3 with bottom 44px caption strip)
-- Panel 4 (Bottom-Right Scene): x="646" y="284" width="296" height="240" rx="14" (illustrating Caption 4 with bottom 44px caption strip)`,
+- Panel 1 (Top Cinematic Hero Banner): x="18" y="16" width="924" height="252" rx="18" (wide panoramic scene illustrating the main story or lesson scene, with a bottom 42px caption strip)
+- Panel 2 (Bottom-Left Scene): x="18" y="284" width="296" height="240" rx="14" (illustrating Scene 2 with bottom 44px caption strip)
+- Panel 3 (Bottom-Center Scene): x="332" y="284" width="296" height="240" rx="14" (illustrating Scene 3 with bottom 44px caption strip)
+- Panel 4 (Bottom-Right Scene): x="646" y="284" width="296" height="240" rx="14" (illustrating Scene 4 with bottom 44px caption strip)`,
   },
   {
     id: "editorial_split_showcase",
     name: "Editorial Feature Stage + 3 Discovery Cards",
     layoutInstructions: `Use an editorial magazine split layout on the 960x540 canvas:
-- Panel 1 (Left Tall Featured Story Stage): x="18" y="18" width="436" height="504" rx="18" (grand vertical scene illustrating Caption 1 with full-body characters, rich architecture/landscape, and a bottom 54px caption banner)
-- Panel 2 (Right-Top Card): x="472" y="18" width="470" height="156" rx="14" (illustrating Caption 2 with bottom 36px caption strip)
-- Panel 3 (Right-Middle Card): x="472" y="192" width="470" height="156" rx="14" (illustrating Caption 3 with bottom 36px caption strip)
-- Panel 4 (Right-Bottom Card): x="472" y="366" width="470" height="156" rx="14" (illustrating Caption 4 with bottom 36px caption strip)`,
+- Panel 1 (Left Tall Featured Story Stage): x="18" y="18" width="436" height="504" rx="18" (grand vertical scene illustrating Scene 1 with full-body story characters, rich environment, and a bottom 54px caption banner)
+- Panel 2 (Right-Top Card): x="472" y="18" width="470" height="156" rx="14" (illustrating Scene 2 with bottom 36px caption strip)
+- Panel 3 (Right-Middle Card): x="472" y="192" width="470" height="156" rx="14" (illustrating Scene 3 with bottom 36px caption strip)
+- Panel 4 (Right-Bottom Card): x="472" y="366" width="470" height="156" rx="14" (illustrating Scene 4 with bottom 36px caption strip)`,
   },
   {
     id: "comic_strip_4_columns",
@@ -84,25 +84,26 @@ Inside each panel, reserve the bottom 44px for a clean caption bar displaying th
 - Panel 2: x="252" y="18" width="220" height="504" rx="16"
 - Panel 3: x="488" y="18" width="220" height="504" rx="16"
 - Panel 4: x="724" y="18" width="220" height="504" rx="16"
-Each vertical panel has a numbered badge (1, 2, 3, 4) in its top-left corner, a rich multi-layered realistic vertical scene with full-body characters and environment from y=18 to y=456, and a clean caption card in the bottom 66px.`,
+Each vertical panel has a numbered badge (1, 2, 3, 4) in its top-left corner, a rich multi-layered realistic vertical scene with full-body story characters and environment from y=18 to y=456, and a clean caption card in the bottom 66px.`,
   },
   {
-    id: "pag_uugnay_interactive_stage",
-    name: "PAG-UUGNAY Interactive Question Stage + Dual Scene Windows",
-    layoutInstructions: `Use a split interactive textbook layout on the 960x540 canvas:
-- Left Presenter Stage (x="18" y="18" width="376" height="504" rx="18"): Top banner with title, a large rounded white speech bubble containing the Guide Question, and a realistic full-body Filipino student in school uniform (collared shirt, tie, pleated skirt/trousers, socks, shoes) below the speech bubble.
-- Right-Top Scene Window (x="412" y="18" width="530" height="244" rx="16"): Detailed realistic scene illustrating Captions 1 & 2 with a bottom caption bar.
-- Right-Bottom Scene Window (x="412" y="278" width="530" height="244" rx="16"): Detailed realistic scene illustrating Captions 3 & 4 with a bottom caption bar.`,
+    id: "story_chronological_sequence",
+    name: "Chronological 4-Scene Storyboard Narrative",
+    layoutInstructions: `Use 4 sequential story panels on the 960x540 canvas showing the full chronological story:
+- Panel 1 (Story Beginning): x="18" y="18" width="452" height="242" rx="16" (introducing main story characters and initial setting with bottom 44px caption bar)
+- Panel 2 (Story Rising Action): x="490" y="18" width="452" height="242" rx="16" (depicting the plot problem, conflict, or central journey with bottom 44px caption bar)
+- Panel 3 (Story Climax): x="18" y="280" width="452" height="242" rx="16" (depicting the dramatic turning point or character action with bottom 44px caption bar)
+- Panel 4 (Story Resolution & Moral): x="490" y="280" width="452" height="242" rx="16" (depicting the resolution, happy outcome, or moral lesson with bottom 44px caption bar)`,
   },
   {
     id: "arched_gallery_quad",
-    name: "Architectural Gallery Frames with Ribbon Banners",
+    name: "Architectural Gallery Frames with Story Scenes",
     layoutInstructions: `Use 4 architectural gallery frames on the 960x540 canvas:
 - Frame 1 (top-left): x="20" y="16" width="448" height="244" rx="22"
 - Frame 2 (top-right): x="492" y="16" width="448" height="244" rx="22"
 - Frame 3 (bottom-left): x="20" y="280" width="448" height="244" rx="22"
 - Frame 4 (bottom-right): x="492" y="280" width="448" height="244" rx="22"
-Each frame has a warm double border, a 3D perspective room or outdoor landscape filled with topic-accurate objects and full-body characters, and a floating pill-shaped caption banner at the bottom.`,
+Each frame has a warm double border, a 3D perspective landscape or room filled with topic-accurate story objects and full-body characters, and a floating pill-shaped caption banner at the bottom.`,
   },
 ];
 
@@ -244,11 +245,7 @@ export function pickNextDesignAndStyle(options?: IllustrationGeneratorOptions): 
   const seedOffset = options?.variationSeed ?? 0;
   const nonce = globalGenerationCounter + seedOffset;
 
-  let designIndex = (nonce - 1) % DESIGN_BLUEPRINTS.length;
-  if (options?.style === "pag_uugnay_speech" && seedOffset === 0 && globalGenerationCounter === 1) {
-    designIndex = DESIGN_BLUEPRINTS.findIndex((d) => d.id === "pag_uugnay_interactive_stage");
-  }
-
+  const designIndex = (nonce - 1) % DESIGN_BLUEPRINTS.length;
   const styleIndex = (nonce * 3 + seedOffset) % ART_STYLE_DIRECTIONS.length;
 
   return {
@@ -285,6 +282,8 @@ export function getDefaultIllustrationStyle(plan: LessonPlan): IllustrationStyle
 /**
  * Extracts the lesson title, subject, guide question, and 4 specific scene captions
  * directly from the generated LessonPlan so the illustration always connects to the exact topic.
+ * Detects whether the lesson plan is based on a story, fable, or narrative so the illustration
+ * directly portrays that story.
  */
 export function extractIllustrationContent(plan: LessonPlan): {
   title: string;
@@ -293,6 +292,9 @@ export function extractIllustrationContent(plan: LessonPlan): {
   questionPrompt: string;
   panels: [string, string, string, string];
   gradeTier: "kinder2" | "grade1";
+  hasStory: boolean;
+  storyTitle: string;
+  storySummary: string;
 } {
   const gradeStr =
     plan.templateType === "matatag"
@@ -313,6 +315,31 @@ export function extractIllustrationContent(plan: LessonPlan): {
       "Anong mahalagang aral ang natutuhan mo sa ating kuwento ngayong araw?";
 
     const customPanels = (plan.illustrationPanels || []).filter((p) => p && p.trim().length > 0);
+
+    // Detect if this Filipino lesson is centered on a story / fable / narrative
+    const matatagSignals = [
+      title,
+      plan.procedures?.motivation || "",
+      ...(plan.procedures?.discussion?.steps || []),
+      ...(plan.procedures?.discussion?.guideQuestions || []),
+    ].join(" ");
+
+    let hasStory = /\b(kuwento|kwento|story|fable|pabula|parabula|alamat|tauhan|lider|gamu-gamo|siso|leon|daga|pagong|matsing)\b/i.test(
+      matatagSignals
+    );
+    let storyTitle = title;
+
+    const stepWithStory = (plan.procedures?.discussion?.steps || []).find((s) =>
+      /kuwentong\s+babasahin|kwento|story/i.test(s)
+    );
+    if (stepWithStory) {
+      hasStory = true;
+      const match = stepWithStory.match(/“([^”"]+)”|"([^"]+)"|‘([^’']+)’/);
+      if (match) {
+        storyTitle = match[1] || match[2] || match[3] || title;
+      }
+    }
+
     const rawCandidates = [
       ...customPanels,
       ...(plan.procedures?.discussion?.guideQuestions || []),
@@ -323,10 +350,10 @@ export function extractIllustrationContent(plan: LessonPlan): {
       .filter((s) => s.length > 6);
 
     const panels: [string, string, string, string] = [
-      rawCandidates[0] || `Unang Tagpo: ${title}`,
-      rawCandidates[1] || `Ikalawang Tagpo: ${subtitle}`,
+      rawCandidates[0] || (hasStory ? `Simula ng kuwento: ${storyTitle}` : `Unang Tagpo: ${title}`),
+      rawCandidates[1] || (hasStory ? `Pangyayari sa kuwento: ${subtitle}` : `Ikalawang Tagpo: ${subtitle}`),
       rawCandidates[2] || plan.procedures?.valuesIntegration || "Pagpapakita ng mabuting asal",
-      rawCandidates[3] || plan.procedures?.summary?.split("\n")[0] || "Pagsasabuhay ng natutuhang aral",
+      rawCandidates[3] || plan.procedures?.summary?.split("\n")[0] || "Pagsasabuhay ng aral ng kuwento",
     ];
 
     return {
@@ -341,6 +368,9 @@ export function extractIllustrationContent(plan: LessonPlan): {
         truncateText(panels[3], 78),
       ],
       gradeTier,
+      hasStory,
+      storyTitle,
+      storySummary: (plan.procedures?.discussion?.guideQuestions || []).slice(0, 3).join("; "),
     };
   }
 
@@ -358,6 +388,16 @@ export function extractIllustrationContent(plan: LessonPlan): {
     if (strat.instructions) strategyLines.push(strat.instructions);
     if (strat.questions) strategyQuestions.push(...strat.questions);
   }
+
+  const lccpSignals = [
+    title,
+    plan.procedures?.motivation || "",
+    ...strategyLines,
+    ...strategyQuestions,
+  ].join(" ");
+
+  const hasStory = /\b(story|fable|tale|parable|rhyme|poem|character|plot|myth)\b/i.test(lccpSignals);
+  const storyTitle = title;
 
   const rawLines = [
     ...customPanels,
@@ -379,10 +419,10 @@ export function extractIllustrationContent(plan: LessonPlan): {
     `What important lesson did we discover about ${title}?`;
 
   const panels: [string, string, string, string] = [
-    rawLines[0] || `${title} — Scene 1`,
-    rawLines[1] || `${title} — Scene 2`,
-    rawLines[2] || plan.valuesStatement || `${title} — Scene 3`,
-    rawLines[3] || (plan.assessment || [])[0] || plan.closure || `${title} — Scene 4`,
+    rawLines[0] || (hasStory ? `${storyTitle} — Beginning` : `${title} — Scene 1`),
+    rawLines[1] || (hasStory ? `${storyTitle} — Event` : `${title} — Scene 2`),
+    rawLines[2] || plan.valuesStatement || (hasStory ? `${storyTitle} — Climax` : `${title} — Scene 3`),
+    rawLines[3] || (plan.assessment || [])[0] || plan.closure || (hasStory ? `${storyTitle} — Moral` : `${title} — Scene 4`),
   ];
 
   return {
@@ -397,6 +437,9 @@ export function extractIllustrationContent(plan: LessonPlan): {
       truncateText(panels[3], 78),
     ],
     gradeTier,
+    hasStory,
+    storyTitle,
+    storySummary: strategyQuestions.slice(0, 3).join("; "),
   };
 }
 
@@ -424,6 +467,7 @@ const GEMINI_NATIVE_IMAGE_MODELS = [
 /**
  * Builds the Gemini AI Art Director & SVG Synthesizer prompt for a specific lesson topic,
  * enforcing a brand-new layout design and brand-new visual style on every generation.
+ * If the lesson plan or textbook image contains a story, prioritizes illustrating the story itself.
  */
 export function buildGeminiIllustrationPrompt(
   content: ReturnType<typeof extractIllustrationContent>,
@@ -449,6 +493,32 @@ export function buildGeminiIllustrationPrompt(
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 
+  const storyDirective = content.hasStory
+    ? `
+================================================================================
+*** MANDATORY STORY FOCUS ***
+THIS LESSON PLAN COVERS A SPECIFIC STORY: "${xmlSafeTitle}" (Story Focus: "${content.storyTitle}")!
+THE ILLUSTRATION MUST ILLUSTRATE THIS EXACT STORY:
+1. Depict the actual story characters (named people, animal fable characters, leaders, children, or family members) in the authentic story setting (e.g., village, farm, forest, home, river).
+2. The 4 sequential panels MUST illustrate the chronological narrative arc of this story:
+   - Panel 1 (Story Beginning): Characters introduced in the opening story setting ("${xmlSafeCaptions[0]}").
+   - Panel 2 (Rising Action): Characters facing the central problem, challenge, or journey ("${xmlSafeCaptions[1]}").
+   - Panel 3 (Climax): The critical action, dramatic moment, or turning point of the story ("${xmlSafeCaptions[2]}").
+   - Panel 4 (Resolution & Moral): The conclusion, outcome, and positive moral lesson learned ("${xmlSafeCaptions[3]}").
+3. DO NOT draw generic empty classrooms or school desks when the lesson covers a story! Illustrate the actual world and characters of the story!
+================================================================================`
+    : `
+================================================================================
+*** LESSON TOPIC DIRECTIVE ***
+Examine the attached textbook image(s) and lesson captions:
+1. If the attached textbook page contains a story, fable, or reading narrative, YOU MUST ILLUSTRATE THAT STORY across the panels!
+2. If it is a concept lesson without a story (e.g. places in school, parts of the house, mathematics, science senses), depict the exact real-world objects, environments, and activities described in the 4 captions:
+   - Panel 1: "${xmlSafeCaptions[0]}"
+   - Panel 2: "${xmlSafeCaptions[1]}"
+   - Panel 3: "${xmlSafeCaptions[2]}"
+   - Panel 4: "${xmlSafeCaptions[3]}"
+================================================================================`;
+
   return `You are a master educational textbook illustrator creating a brand-new, original illustration for a ${
     content.gradeTier === "kinder2" ? "Kinder 2" : "Grade 1"
   } ${content.subject} lesson plan.
@@ -456,12 +526,7 @@ export function buildGeminiIllustrationPrompt(
 GENERATION ID: ${generationNonce} (Must be a 100% NEW visual design and NEW artistic style — never reuse preset templates)
 LESSON TOPIC: "${xmlSafeTitle}" (${content.subtitle})
 GUIDE QUESTION: "${xmlSafeQuestion}"
-
-SCENES TO ILLUSTRATE (Must directly depict the exact subject, objects, setting, and actions in each sentence):
-- Scene 1: "${xmlSafeCaptions[0]}"
-- Scene 2: "${xmlSafeCaptions[1]}"
-- Scene 3: "${xmlSafeCaptions[2]}"
-- Scene 4: "${xmlSafeCaptions[3]}"
+${storyDirective}
 
 MANDATORY NEW LAYOUT DESIGN FOR THIS GENERATION:
 Layout Name: ${design.name} (${design.id})
@@ -479,9 +544,9 @@ Color Palette:
 - Caption Text Color: ${artStyle.palette.captionText}
 
 STRICT REALISM & COMPLETENESS REQUIREMENTS:
-1. CONNECT TO THE EXACT LESSON TOPIC: Every scene must depict all necessary real-world elements for that specific sentence (e.g., if about a room or school place, draw 3D perspective walls, floor planks/tiles, windows, furniture, books, boards, tables, trees, playground equipment; if about nature/animals/plants/science/math/values, draw the exact animals, plants, lamps, objects, and setting in rich detail).
-2. FULL-BODY PROPORTIONED HUMAN FIGURES: Whenever children, students, teachers, or family members appear, draw complete, naturally proportioned human figures with shaded head, hair volume, eyes, warm smile, neck, collared shirt/dress, articulated arms & hands interacting with the scene, skirt/trousers, legs, socks, and shoes. NEVER draw armless blobs or stick figures.
-3. NO RANDOM LETTERS OR AI SLOP: Do NOT place random floating alphabet letters in the background unless the lesson caption explicitly teaches those letters. Do NOT include watermarks.
+1. CONNECT TO THE EXACT LESSON / STORY: Every scene must depict all necessary real-world elements for that specific story event or lesson sentence (e.g., if about a story, draw the characters interacting in their story world with props, nature, buildings, animals; if about school/home/science/nature, draw full 3D perspective, furniture, trees, equipment in rich detail).
+2. FULL-BODY PROPORTIONED HUMAN & ANIMAL FIGURES: Whenever people or characters appear, draw complete, naturally proportioned figures with shaded head, hair volume, expressive eyes with irises, warm smile, neck, clothing, articulated arms & hands interacting with the scene, legs, and shoes. NEVER draw armless blobs or stick figures.
+3. NO RANDOM LETTERS OR AI SLOP: Do NOT place random floating alphabet letters in the background. Do NOT include watermarks.
 4. XML-VALID STANDALONE SVG:
    - Output ONLY a single valid <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540">...</svg> element.
    - Use <defs> with <linearGradient>, <radialGradient>, <filter id="dropShadow">, and <clipPath> for each panel so artwork stays crisply inside its rounded panel border.
@@ -570,18 +635,20 @@ export async function requestGeminiIllustration(
     | { inlineData: { data: string; mimeType: string } }
   > = [{ text: promptText }];
 
-  if (sourceImages && sourceImages.length > 0 && sourceImages[0].base64Data) {
-    const rawB64 = sourceImages[0].base64Data.replace(/^data:[a-zA-Z0-9/+-]+;base64,/, "");
-    if (rawB64.length > 100) {
-      parts.push({
-        text: "Attached below is the textbook page photo for this lesson. Connect the visual scenes, objects, and concepts in your new illustration directly to this lesson (do NOT copy raw page text blocks or random background letters):",
-      });
-      parts.push({
-        inlineData: {
-          data: rawB64,
-          mimeType: sourceImages[0].mimeType || "image/jpeg",
-        },
-      });
+  if (sourceImages && sourceImages.length > 0) {
+    parts.push({
+      text: "Attached below is/are the textbook page image(s) for this lesson. CRITICAL CHECK: Carefully examine these page(s) for any story, fable, narrative reading passage, or characters. IF A STORY IS PRESENT, YOUR ENTIRE ILLUSTRATION MUST BE ABOUT THAT STORY and its characters!",
+    });
+    for (let i = 0; i < Math.min(sourceImages.length, 3); i++) {
+      const rawB64 = (sourceImages[i].base64Data || "").replace(/^data:[a-zA-Z0-9/+-]+;base64,/, "");
+      if (rawB64.length > 100) {
+        parts.push({
+          inlineData: {
+            data: rawB64,
+            mimeType: sourceImages[i].mimeType || "image/jpeg",
+          },
+        });
+      }
     }
   }
 
