@@ -1960,13 +1960,13 @@ const EmbeddedLessonIllustrationBlock: React.FC<{
 
   return (
     <div className="my-2 flex flex-col items-center">
-      {/* Rendered Illustration Image (Included in Print & Word .docx Export) */}
+      {/* High-Taste Educational Illustration (Rendered cleanly for Web, Print & Word .docx Export) */}
       <img
         src={plan.generatedIllustrationUrl}
         alt={plan.illustrationCaption || "Generated Lesson Illustration"}
         className={`${
-          compact ? "max-w-[240px]" : "max-w-[460px] w-full"
-        } h-auto object-contain rounded border border-stone-300 shadow-2xs mx-auto`}
+          compact ? "max-w-[260px]" : "max-w-[480px] w-full"
+        } h-auto object-contain rounded-xl border border-stone-200 shadow-xs mx-auto`}
       />
     </div>
   );
