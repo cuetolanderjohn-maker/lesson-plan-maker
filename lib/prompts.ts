@@ -1,80 +1,124 @@
-import type { GenerateRequestMeta, TeacherProfile, MatatagLessonPlan, LccpLearningPlan } from "./types";
+import type {
+  GenerateRequestMeta,
+  TeacherProfile,
+  LessonPlan,
+  MatatagLessonPlan,
+  LccpLearningPlan,
+} from "./types";
 import { defaultTeacherProfile } from "./sampleData";
 
-export function buildMatatagSystemPrompt(meta: GenerateRequestMeta, profile?: TeacherProfile): string {
-  const prof = profile || defaultTeacherProfile;
-  const gradeLabel = meta.gradeLevel === "grade1" ? "Grade 1" : "Kinder 2";
-  const sectionLabel = meta.gradeLevel === "grade1" ? prof.sectionGrade1 : prof.sectionKinder;
-  const teacherName = prof.teacherNameFilipino || "Bb. Kathrynn Ross L. Acola";
+export function buildMatatagSystemPrompt(
+  meta: GenerateRequestMeta,
+  profile: TeacherProfile = defaultTeacherProfile
+): string {
+  const isGrade1 = meta.gradeLevel === "grade1";
+  const gradeSection = isGrade1
+    ? profile.sectionGrade1 || "Grade 1 - OLOPH & OLOG"
+    : profile.sectionKinder || "Kinder 2";
+  const defaultBook = isGrade1
+    ? "Gr.1 Dawani"
+    : "Masayang Mag-aaral ng Filipino";
+  const bookRef = meta.bookReference?.trim() || defaultBook;
+  const termWeek = `${meta.term || (isGrade1 ? "1st term" : "1st Term")}-${
+    meta.weekNumber ? meta.weekNumber.toLowerCase() : "week 1"
+  }`;
+  const preparedBy = isGrade1
+    ? profile.teacherNameFilipino || "Bb. Kathrynn Ross L. Acola"
+    : "Acola, Kathrynn Ross L.";
+  const coordinator = isGrade1
+    ? profile.coordinatorGrade1 || "Bb. Sta. Ana Florence"
+    : "Emma P. Dunque, LPT.";
 
-  return `You are an expert curriculum assistant for La Consolacion College - Pasig following the official DepEd MATATAG K-12 Curriculum guidelines and school standards.
+  return `You are an expert Filipino curriculum designer for ${profile.schoolName} (${profile.schoolAddress}), creating a lesson plan that copies the EXACT format and writing style of Teacher Kathrynn Ross L. Acola's official "Banghay- Aralin sa FILIPINO" files.
 
-Your task is to analyze the attached textbook photo(s) and generate an official Banghay-Aralin (Lesson Plan) formatted EXACTLY for ${gradeLabel} - ${meta.subject.toUpperCase()}.
+Analyze the attached textbook/worktext image(s) carefully. Extract the exact story title, characters, grammar/skill focus (Wika) or letter/sound focus (Titik), page numbers, vocabulary words (Talasalitaan), comprehension questions, and exercises shown in the image(s).
+NEVER invent generic placeholder content when real titles, stories, or exercises are visible in the image(s).
+If the uploaded image is completely unreadable or blank, return ONLY: {"error": "The textbook image is too blurry or dark to read clearly. Please upload a clearer photo of the lesson page."}
 
-CRITICAL FORMAT & FIDELITY RULES:
-1. STRICT FORMAT PRESERVATION:
-   Do NOT alter, remove, or modify the table schema or structure. Every single row and section must match Kat's official DepEd MATATAG format exactly (4-column metadata row, 2-column Layunin / Paksang Aralin split, 6 official LCCP Integrations, 5-day procedure breakdown, Formative/Summative, and 3 Signatories).
-2. 100% CONTENT GROUNDING ON THE ATTACHED TEXTBOOK JPEG:
-   You MUST base 100% of the content on the attached textbook JPEG:
-   - Read and extract the EXACT lesson title / paksa directly visible in the image.
-   - Read the story / dialogue / reading passage, and incorporate the real characters, setting, and plot into the Motivation and Discussion.
-   - Extract the ACTUAL guide questions written on the page into "Gabay na tanong".
-   - Extract the ACTUAL drill items, multiple choice questions, or exercises from the page into "Pagtataya: Formative" and "Pagtataya: Summative (5 numbered items)".
-   - Connect the 6 LCCP integration values to the real theme of the textbook story.
-   - Zero hallucination: Do NOT output generic or made-up placeholder text. Everything must come directly from the textbook JPEG.
+Follow Teacher Kat's EXACT Banghay-Aralin work pattern:
+1. Header & Metadata:
+   - schoolYear: "${profile.schoolYear}"
+   - subject: "FILIPINO"
+   - gradeSection: "${gradeSection}"
+   - dateCoverage: "${meta.dateCoverage || "October 26-30, 2026"}"
+   - termWeek: "${termWeek}"
+2. I. Mga Layunin sa Pagkatuto (objectives):
+   - 3 clear, behavioral learning objectives in Filipino starting with action verbs ("Natutukoy...", "Naiuugnay...", "Nakabubuo...", "Naisusulat...", "Nabibigkas...").
+3. II. Paksang Aralin (subjectMatter):
+   - paksa: Exact story title or lesson title from the book (e.g., "Iyan ang lider" or "Ang Sinturon at ang Sapatos ni Siso").
+   - wika: Exact grammar or language topic from the book (for Grade 1, e.g., "Pantukoy na Ito, Iyan, at Iyon"; for Kinder 2, the target letter/sound e.g. "Titik Ss").
+   - sanggunian: "${bookRef}" (append exact page numbers if visible in the photo, e.g. "${bookRef}, pp. 154-157").
+   - aiDeclaration: "DO 3 s 2026 Annex (Banggitin kung paano ginamit ang AI sa pagbuo ng plano sa pagtuturo)\\nAng banghay- aralin na ay binuo sa tulong ng AI upang masiguro ang pagka-ayon nito sa mga Pamantayan ng Kurikulum ng DepEd MATATAG K-12."
+4. III. Mga Kasanayan sa Pagkatuto (learningCompetencies):
+   - Single comprehensive paragraph in Filipino starting with "${
+     isGrade1
+       ? "Naipamamalas ng mga mag-aaral ang pag-unawa sa"
+       : "Naipapakita ng mag-aaral ang pag-unawa sa"
+   }..."
+5. IV. Integrasyon (integrations):
+   - laudatoSi ("Laudato Si"): Specific environmental/stewardship integration connected to the lesson in Filipino (e.g., "Nagpapakita ng pagmamahal sa kalikasan...").
+   - justiceAndPeace ("Justice and Peace Education"): Specific peace/fairness integration connected to the story in Filipino (e.g., "Sa kwento ay nagpapakita na...").
+   - genderAndDevelopment ("Gender and Development"): Specific gender equality integration in Filipino (e.g., "Nagpapakita na kahit ano pa ang iyong kasarian ay...").
+   - lccpCare ("LCCP- Care"): Specific compassion/malasakit integration in Filipino (e.g., "Ipinapakita sa kwento ang pagmamalasakit...").
+   - interdisciplinary: "${
+     isGrade1
+       ? "Values Ed: [specific value learned]\\nReligion: [specific Christian/faith connection]"
+       : "Values Ed: [specific value learned]"
+   }"
+   - techTeaching: "Canva presentasyon"
+6. V. Pamamaraan (procedures):
+   - routine: ${JSON.stringify(
+     isGrade1
+       ? [
+           "Panalangin",
+           "Pagbati",
+           "Pagpupulot ng basura at pag aayos ng upuan",
+           "Pagsusuri ng liban",
+         ]
+       : [
+           "Pagpupulot ng basura at pag aayos ng upuan",
+           "Minuto para gumamit ng comfort room",
+         ]
+   )}
+   - motivation: Specific motivational question, picture prompt, or Talasalitaan activity from the book (include page number if visible).
+   - discussion.steps: 4 to 5 bullet steps in Teacher Kat's exact style:
+     * "Ipapakilala ng guro ang kuwentong babasahin at ito ay, “[Story Title]”."
+     * "Magkakaroon ng katanungan ang guro tungkol sa binasang kwento."
+     * "Ipapaliwanag ng guro ang kahulugan ng [Grammar/Wika Concept]."
+     * "Magbibigay ng halimbawa ang guro."
+     * "Hihingi ang guro ng halimbawa ng pangungusap gamit ang [Concept] sa mga estudyante."
+   - discussion.teachingMethods: "Demonstrasyon, Talakayan at Pagtatanong, Drill at Practice"
+   - discussion.guideQuestions: 3 to 4 comprehension questions based directly on the story ("Sino...", "Ano...", "Bakit...", "Kung ikaw...").
+   - discussion.deepening: 2 reflection questions ("Bakit mahalagang matutunan ang ...?", "Ano ang epekto nito sa pakikipag usap sa araw araw na buhay?").
+   - valuesIntegration: "Ipapaliwanag ng guro ang kahalagahan ng ..."
+   - summary: Concise definitions and examples of each key concept from the lesson (e.g. "[Konsepto] – ginagamit kapag... Halimbawa: ...").
+7. VI- Pagtataya (assessment):
+   - formative: Specific book page exercises from the photo (e.g., "Sagutan ang pahina 156 (Kulayan ang bilog...)\\nSagutan ang pahina 157 (Isulat sa patlang...)").
+   - summativeInstruction: "PAGSASANAY: [Topic]\\nPanuto: [Clear Filipino directions]"
+   - summativeItems: 5 numbered test items in Filipino matching the lesson topic.
+8. VII- Takdang- Aralin (assignment):
+   - Notebook or textbook homework in Teacher Kat's style (e.g. "Gumawa ng tatlong pangungusap gamit ang [Topic] sa Filipino kwaderno at ipapasa sa biyernes.").
+9. Mga Tala at Pagninilay (remarks):
+   - Set to "" (empty string so Teacher Kat can write handwritten reflections after class).
+10. Signatories:
+   - preparedBy: "${preparedBy}"
+   - checkedBy: "${coordinator}"
+   - observedBy: "${coordinator}"
 
-UNREADABLE / NON-BOOK IMAGE RULE:
-If the photo is completely black, blank, unreadable, or does not contain an educational textbook lesson, you MUST respond ONLY with this JSON:
-{"error": "The textbook image is too blurry, unreadable, or does not appear to be a lesson page. Please take a clearer, well-lit photo of the textbook page."}
-
-CRITICAL SCHOOL REQUIREMENTS:
-1. DepEd MATATAG Curriculum Alignment:
-   - II. Paksang Aralin MUST include:
-     - Paksa (Topic/Story title extracted from textbook)
-     - Wika (Grammar/Skill concept)
-     - Sanggunian (Book title and page numbers)
-     - Deklarasyon sa Paggamit ng AI: "DO 3 s 2026 Annex (Ang banghay- aralin na ay binuo sa tulong ng AI upang masiguro ang pagka-ayon nito sa mga Pamantayan ng Kurikulum ng DepEd MATATAG K-12.)"
-   - III. Mga Kasanayan sa Pagkatuto: DepEd MATATAG competency statement ("Naipamamalas ng mga mag-aaral ang pag-unawa sa...").
-
-2. IV. Integrasyon (Official LCCP Core Values - MUST populate all 6):
-   - Laudato Si': Care for nature and God's creation related to the lesson.
-   - Justice and Peace Education: Fairness, respect, and peaceful interaction.
-   - Gender and Development: Equal respect and opportunity regardless of gender.
-   - LCCP- Care: Caring for others, compassion (malasakit).
-   - Integrasyong Interdisiplinaryo: Values Ed and Religion connections.
-   - Paggamit ng Teknolohiya sa Pagtuturo: "Canva presentasyon" or educational technology tool.
-
-3. Pamamaraan (5-day structured breakdown):
-   - a. Mga Panimulang Gawain (5-10 mins): Panalangin, Pagbati, Pagpupulot ng basura at pag-aayos ng upuan, Pagsusuri ng liban.
-   - b. Pagganyak (15 mins): Interactive activity or exercise directly from the book page.
-   - c. Pagtalakay ng Aralin (Day 1-4/30 mins): Step-by-step introduction, story discussion, Teaching Methods ("Demonstrasyon, Talakayan at Pagtatanong, Drill at Practice"), at least 3-5 specific "Gabay na tanong", and "Pagpapalalim" questions.
-   - d. Integrasyon ng Pagpapahalaga (Day 4/15 mins): Values reflection.
-   - e. Pagbubuod (Day 4/15 mins): Grammatical/topic generalization rule.
-
-4. VI. Pagtataya:
-   - Formative: Book exercises or guided class activity.
-   - Summative: 5 numbered questions testing the topic.
-
-5. Signatories:
-   - Inihanda ni: "${teacherName}"
-   - Sinuri ni: "${prof.coordinatorGrade1 || 'Bb. Sta. Ana Florence'}"
-   - Inobserbahan ni: "${prof.coordinatorGrade1 || 'Bb. Sta. Ana Florence'}"
-
-OUTPUT FORMAT:
-You MUST respond with ONLY a valid JSON object matching the schema:
+Return ONLY a valid JSON object matching this exact schema:
 {
   "templateType": "matatag",
-  "schoolYear": "${prof.schoolYear || 'S.Y. 2026-2027'}",
-  "subject": "${meta.subject.toUpperCase()}",
-  "gradeSection": "${sectionLabel}",
-  "dateCoverage": "${meta.dateCoverage || 'Current Term Week'}",
-  "termWeek": "${meta.term || '1st Term'} - ${meta.weekNumber || 'Week 1'}",
-  "objectives": ["string", "string", "string", "string"],
+  "schoolYear": "${profile.schoolYear}",
+  "subject": "FILIPINO",
+  "gradeSection": "${gradeSection}",
+  "dateCoverage": "string",
+  "termWeek": "${termWeek}",
+  "objectives": ["string", "string", "string"],
   "subjectMatter": {
     "paksa": "string",
     "wika": "string",
     "sanggunian": "string",
-    "aiDeclaration": "DO 3 s 2026 Annex (Ang banghay- aralin na ay binuo sa tulong ng AI upang masiguro ang pagka-ayon nito sa mga Pamantayan ng Kurikulum ng DepEd MATATAG K-12.)"
+    "aiDeclaration": "DO 3 s 2026 Annex (Banggitin kung paano ginamit ang AI sa pagbuo ng plano sa pagtuturo)\\nAng banghay- aralin na ay binuo sa tulong ng AI upang masiguro ang pagka-ayon nito sa mga Pamantayan ng Kurikulum ng DepEd MATATAG K-12."
   },
   "learningCompetencies": "string",
   "integrations": {
@@ -86,12 +130,12 @@ You MUST respond with ONLY a valid JSON object matching the schema:
     "techTeaching": "Canva presentasyon"
   },
   "procedures": {
-    "routine": ["Panalangin", "Pagbati", "Pagpupulot ng basura at pag-aayos ng upuan", "Pagsusuri ng liban"],
+    "routine": ["string"],
     "motivation": "string",
     "discussion": {
-      "steps": ["string", "string"],
+      "steps": ["string"],
       "teachingMethods": "Demonstrasyon, Talakayan at Pagtatanong, Drill at Practice",
-      "guideQuestions": ["string", "string", "string"],
+      "guideQuestions": ["string"],
       "deepening": ["string"]
     },
     "valuesIntegration": "string",
@@ -100,164 +144,327 @@ You MUST respond with ONLY a valid JSON object matching the schema:
   "assessment": {
     "formative": "string",
     "summativeInstruction": "string",
-    "summativeItems": ["item 1", "item 2", "item 3", "item 4", "item 5"]
+    "summativeItems": ["string", "string", "string", "string", "string"]
   },
   "assignment": "string",
-  "remarks": "Accomplished according to plan.",
+  "remarks": "",
   "signatories": {
-    "preparedBy": "${teacherName}",
-    "checkedBy": "${prof.coordinatorGrade1 || 'Bb. Sta. Ana Florence'}",
-    "observedBy": "${prof.coordinatorGrade1 || 'Bb. Sta. Ana Florence'}"
+    "preparedBy": "${preparedBy}",
+    "checkedBy": "${coordinator}",
+    "observedBy": "${coordinator}"
   }
 }`;
 }
 
-export function buildLccpSystemPrompt(meta: GenerateRequestMeta, profile?: TeacherProfile): string {
-  const prof = profile || defaultTeacherProfile;
-  const subjectDisplay = meta.subject.charAt(0).toUpperCase() + meta.subject.slice(1);
-  const teacherName = prof.teacherName || "Ms. Kathrynn Ross L. Acola";
+export function buildLccpSystemPrompt(
+  meta: GenerateRequestMeta,
+  profile: TeacherProfile = defaultTeacherProfile
+): string {
+  const subjectMap: Record<string, string> = {
+    language: "Language",
+    science: "Science",
+    math: "Mathematics",
+    rve: "RVE",
+    filipino: "Filipino",
+  };
+  const displaySubject = subjectMap[meta.subject] || "Language";
 
-  return `You are an expert early childhood curriculum assistant for LA CONSOLACION COLLEGE-PASIG (Pasig City).
+  const defaultReferenceMap: Record<string, string> = {
+    language: "Early Beginnings: Language Kinder worktext",
+    science: "Early Beginnings: Science Kinder worktext",
+    math: "Early Beginnings: Mathematics Kinder worktext",
+    rve: "Seed of Faith Christian Life and Character Education Series",
+    filipino: "Masayang Mag-aaral ng Filipino",
+  };
+  const bookRef =
+    meta.bookReference?.trim() ||
+    defaultReferenceMap[meta.subject] ||
+    "Early Beginnings Kinder worktext";
 
-Your task is to analyze the attached textbook photo(s) and generate an official LCCP LEARNING PLAN for Kinder 2 - ${subjectDisplay}.
+  const weekDate = meta.dateCoverage
+    ? `${meta.weekNumber || "Week 6"} – ${meta.dateCoverage}`
+    : `${meta.weekNumber || "Week 6"} – August 17-21, 2026`;
+  const termLabel = meta.term?.replace(/1st\s+Term/i, "Term 1").replace(/2nd\s+Term/i, "Term 2") || "Term 1";
 
-CRITICAL FORMAT & FIDELITY RULES:
-1. STRICT FORMAT PRESERVATION:
-   Do NOT alter, remove, or modify the table schema or structure. Every single row and section must match Kat's official LCCP Institutional format exactly (School header, 3-column metadata row, Layunin & Subject Matter split, Learning Competencies, Catholic Values Statement, 5-part procedures, Assessment, Closure, Assignment, and 3 Signatories).
-2. 100% CONTENT GROUNDING ON THE ATTACHED TEXTBOOK JPEG:
-   You MUST base 100% of the content on the attached textbook JPEG:
-   - Read and extract the EXACT lesson title and topic from the textbook page.
-   - Examine the illustrations, stories, rhymes, or objects on the page and incorporate them directly into Motivation and Learning Strategies.
-   - Formulate discussion questions directly about the textbook pictures and text.
-   - Include the EXACT workbook tasks shown on the page (matching, circling, coloring, tracing) into Assessment and Assignment.
-   - Connect the Catholic Values Statement directly to the specific topic shown in the JPEG.
-   - Zero hallucination: Do NOT output generic filler. Everything must be deeply faithful to the textbook JPEG.
+  return `You are an expert Kinder 2 curriculum designer for ${profile.schoolName} (${profile.schoolAddress}), creating a learning plan that copies the EXACT format and writing style of Teacher Kathrynn Ross L. Acola's official LCCP Learning Plans for ${displaySubject}.
 
-UNREADABLE / NON-BOOK IMAGE RULE:
-If the photo is completely blank, black, unreadable, or does not contain an educational textbook lesson, you MUST respond ONLY with this JSON:
-{"error": "The textbook image is too blurry, unreadable, or does not appear to be a lesson page. Please take a clearer, well-lit photo of the textbook page."}
+Analyze the attached textbook/worktext image(s) carefully. Extract the exact lesson title, concepts, bible verse (if RVE), examples, and worktext page activities shown in the image(s).
+If the uploaded image is completely unreadable or blank, return ONLY: {"error": "The textbook image is too blurry or dark to read clearly. Please upload a clearer photo of the lesson page."}
 
-CRITICAL SCHOOL REQUIREMENTS:
-1. Header & Identity:
-   - Institution: "LA CONSOLACION COLLEGE-PASIG"
-   - Address: "641 Mercedes Avenue, Brgy. San Miguel, Pasig City"
-   - Title: "LEARNING PLAN"
-   - School Year: "${prof.schoolYear || 'S.Y. 2026-2027'}"
-   - Subject: "${subjectDisplay}"
-   - Grade Level: "Kinder 2"
-   - Date Coverage: "${meta.dateCoverage || 'Week 1'}"
-   - Term: "${meta.term || 'Term 1'}"
+Follow Teacher Kat's EXACT LCCP Learning Plan work pattern for ${displaySubject}:
+1. Header & Metadata:
+   - institution: "LA CONSOLACION COLLEGE-PASIG"
+   - address: "641 Mercedes Avenue, Brgy. San Miguel, Pasig City"
+   - title: "LEARNING PLAN"
+   - schoolYear: "${profile.schoolYear}"
+   - subject: "${displaySubject}"
+   - gradeLevel: "Kinder 2"
+   - dateCoverage: "${weekDate}"
+   - term: "${termLabel}"
+2. I Learning Objectives (objectives):
+   - 3 clear, child-friendly objectives starting with action verbs ("Identify...", "Color...", "Count...", "Demonstrate...", "Show...").
+3. II Subject Matter (subjectMatter):
+   - lesson: Exact lesson title from the textbook page.
+   - references: "${bookRef}" (include page numbers if visible).
+4. III - Learning Competencies (learningCompetencies):
+   - For Science/Language: "Demonstrate understanding/awareness of..." (or "" if not applicable).
+5. III- Values Statement (valuesStatement):
+   - ${
+     meta.subject === "rve"
+       ? 'For RVE: MUST start with `Bible verse: “[Exact Bible Verse from the lesson]” – [Scripture Reference]`.'
+       : meta.subject === "math"
+       ? 'For Mathematics: First-person child values statement thanking God (e.g., "I use numbers and shapes to learn and solve problems. I try my best, share with my classmates, and thank God for my mind that helps me count, think, and grow.").'
+       : 'God-centered values statement connected to the lesson (e.g., "God gave us... When we take care of..., we show respect and gratitude to God and our family.").'
+   }
+6. IV- Procedures (procedures):
+   - routineActivities: ["Prayer", "Attendance", "Circle Time"]
+   - motivation: Engaging song, rhyme, picture talk, or story + optional "Guide Question:\\n1. ...\\n2. ...".
+   - learningStrategies ("c. Learning Strategies"): 2 to 3 strategies using Teacher Kat's exact strategy titles:
+     * For Mathematics: "Practice and Drill", "Play base"
+     * For Science / Language: "Show and Tell", "Demonstration", "Instruction", "Art of questioning", "Play based"
+     * For RVE: "Play based (sharing what you have)", "Demonstration (Sharing the message)"
+7. V- Assessment (assessment):
+   - 2 to 3 specific worktext exercises with page numbers if visible.
+8. VI- Closure (closure):
+   - 1 to 2 sentences wrapping up the lesson and reinforcing the core value.
+9. VII- Assignment (assignment):
+   - Home activity, worktext page, or video recitation of the value statement.
+10. Remarks (remarks):
+   - Set to "" (blank space for handwritten teacher notes).
+11. Signatories:
+   - preparedBy: "${profile.teacherName || "Ms. Kathrynn Ross L. Acola"}"
+   - checkedBy: "${profile.coordinatorKinder || "Mrs. Emma P. Dunque Lpt."}"
+   - observedBy: "${profile.coordinatorKinder || "Mrs. Emma P. Dunque Lpt."}"
+12. Optional ADIDSE block (adidse):
+   - Always populate the "adidse" object when subject is "RVE" (and optionally for other subjects) so the 5-Column Landscape Augustinian Lectio-Divina (ADIDSE) table is also available.
 
-2. Components:
-   - I. Learning Objectives: 3-5 preschool-appropriate action objectives ("At the end of the lesson the students will be able to:").
-   - II. Subject Matter: Lesson title and Textbook Reference (e.g., "Early Beginnings: ${subjectDisplay} Kinder worktext").
-   - III. Learning Competencies: "The learner demonstrates understanding of..."
-   - III. Values Statement: Catholic values statement connecting the topic to God and gratitude (e.g., "God gave us...", "Caring for...").
-   - IV. Procedures:
-     - a. Routine Activities: Prayer, Circle Time, Attendance
-     - b. Motivation: Catchy rhyme, song, dance, or interactive game
-     - c. Learning Strategies: Picture Talk, Demonstration, Practice & Drill, or Play-based learning with specific teacher instructions and questions.
-   - V. Assessment: 2-3 developmentally sound evaluation activities (matching, oral recitation, drawing, coloring, circling).
-   - VI. Closure: Summary reflection, song, or recap.
-   - VII. Assignment: Meaningful home activity with workbook page numbers if visible.
-   - Signatories:
-     - Prepared by: "${teacherName}"
-     - Checked by: "${prof.coordinatorKinder || 'Mrs. Emma P. Dunque Lpt.'}"
-     - Observed by: "${prof.coordinatorKinder || 'Mrs. Emma P. Dunque Lpt.'}"
-
-OUTPUT FORMAT:
-You MUST respond with ONLY a valid JSON object matching the schema:
+Return ONLY a valid JSON object matching this exact schema:
 {
   "templateType": "lccp",
+  "rveFormat": "${meta.rveFormat || "portrait"}",
   "header": {
     "institution": "LA CONSOLACION COLLEGE-PASIG",
     "address": "641 Mercedes Avenue, Brgy. San Miguel, Pasig City",
     "title": "LEARNING PLAN",
-    "schoolYear": "${prof.schoolYear || 'S.Y. 2026-2027'}"
+    "schoolYear": "${profile.schoolYear}"
   },
-  "subject": "${subjectDisplay}",
+  "subject": "${displaySubject}",
   "gradeLevel": "Kinder 2",
-  "dateCoverage": "${meta.dateCoverage || 'Week 1'}",
-  "term": "${meta.term || 'Term 1'}",
+  "dateCoverage": "${weekDate}",
+  "term": "${termLabel}",
   "objectives": ["string", "string", "string"],
   "subjectMatter": {
     "lesson": "string",
-    "references": "Early Beginnings: ${subjectDisplay} Kinder worktext"
+    "references": "string"
   },
   "learningCompetencies": "string",
   "valuesStatement": "string",
   "procedures": {
-    "routineActivities": ["Prayer", "Circle Time", "Attendance"],
+    "routineActivities": ["Prayer", "Attendance", "Circle Time"],
     "motivation": "string",
     "learningStrategies": [
       {
         "title": "string",
         "instructions": "string",
-        "questions": ["string", "string"]
+        "questions": ["string"]
       }
     ]
   },
   "assessment": ["string", "string"],
   "closure": "string",
   "assignment": "string",
-  "remarks": "Accomplished with active student participation.",
+  "remarks": "",
   "signatories": {
-    "preparedBy": "${teacherName}",
-    "checkedBy": "${prof.coordinatorKinder || 'Mrs. Emma P. Dunque Lpt.'}",
-    "observedBy": "${prof.coordinatorKinder || 'Mrs. Emma P. Dunque Lpt.'}"
+    "preparedBy": "${profile.teacherName || "Ms. Kathrynn Ross L. Acola"}",
+    "checkedBy": "${profile.coordinatorKinder || "Mrs. Emma P. Dunque Lpt."}",
+    "observedBy": "${profile.coordinatorKinder || "Mrs. Emma P. Dunque Lpt."}"
+  },
+  "adidse": {
+    "unitTitle": "FIRST TERM\\nUNIT I: God is good to us",
+    "lessonTitle": "string",
+    "sectionName": "KINDER 2 – OUR LADY OF CONSOLATION",
+    "weekDate": "${weekDate}",
+    "valueFocus": "string",
+    "references": "Seed of faith, God’s Gift of Character, Bible",
+    "materialsNeeded": "Textbook, Crayons, Laptop, Tv",
+    "integritas": "Arts – Drawing and Coloring",
+    "coreValues": {
+      "laudatoSi": "string",
+      "justiceAndPeace": "string",
+      "genderAndDevelopment": "string",
+      "lccpCare": "string"
+    },
+    "routineActivities": [
+      "Opening Prayer",
+      "Flag ceremony",
+      "What’s the weather today?",
+      "Checking of Attendance",
+      "Sharing of Feelings"
+    ],
+    "lectio": "string",
+    "meditatio": ["string", "string"],
+    "oratio": "string",
+    "contemplatio": "string",
+    "communicatio": "Sharing the message of faith.",
+    "inputDeepening": "string",
+    "furtherDiscussion": "string",
+    "closingSong": "Closing Song",
+    "closingPrayer": "Closing Prayer",
+    "synthesis": ["string", "string"],
+    "evaluation": ["string", "string"]
   }
 }`;
 }
 
-export function parseLessonPlanResponse(rawText: string, expectedType: "matatag" | "lccp"): MatatagLessonPlan | LccpLearningPlan {
-  let cleaned = rawText.trim();
+export function parseLessonPlanResponse(
+  rawText: string,
+  expectedTemplate: "matatag" | "lccp"
+): LessonPlan {
+  if (!rawText || typeof rawText !== "string") {
+    throw new Error("Empty response from AI vision model.");
+  }
 
-  // 1. Try to extract from fenced code blocks (```json ... ``` or ``` ... ```)
-  const codeBlockMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  let cleaned = rawText.trim();
+  const codeBlockMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (codeBlockMatch && codeBlockMatch[1]) {
     cleaned = codeBlockMatch[1].trim();
   } else {
-    // 2. Look for the outermost JSON object bounds { ... }
     const firstBrace = cleaned.indexOf("{");
     const lastBrace = cleaned.lastIndexOf("}");
     if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      cleaned = cleaned.substring(firstBrace, lastBrace + 1).trim();
+      cleaned = cleaned.slice(firstBrace, lastBrace + 1);
     }
   }
+
+  // Remove trailing commas before closing braces/brackets
+  cleaned = cleaned.replace(/,\s*([}\]])/g, "$1");
 
   let parsed: Record<string, unknown>;
   try {
     parsed = JSON.parse(cleaned);
   } catch {
-    // Attempt cleaning trailing commas
-    try {
-      const relaxed = cleaned.replace(/,\s*([}\]])/g, "$1");
-      parsed = JSON.parse(relaxed);
-    } catch {
-      throw new Error(
-        "The AI response could not be parsed as a lesson plan. Please ensure the textbook photo is clear and well-lit."
-      );
-    }
+    throw new Error(
+      "The AI vision response could not be parsed as a structured lesson plan. Please try scanning again."
+    );
   }
 
   if (typeof parsed.error === "string" && parsed.error.trim().length > 0) {
     throw new Error(parsed.error);
   }
 
-  if (!parsed.objectives || !parsed.subjectMatter) {
-    throw new Error(
-      "The textbook photo did not contain enough readable content to generate a complete lesson plan. Please upload a clearer photo."
-    );
+  if (expectedTemplate === "matatag" || parsed.templateType === "matatag") {
+    const p = parsed as Partial<MatatagLessonPlan>;
+    return {
+      templateType: "matatag",
+      schoolYear: p.schoolYear || "S.Y. 2026-2027",
+      subject: p.subject || "FILIPINO",
+      gradeSection: p.gradeSection || "Grade 1 - OLOPH & OLOG",
+      dateCoverage: p.dateCoverage || "",
+      termWeek: p.termWeek || "1st term-week 1",
+      objectives: Array.isArray(p.objectives) ? p.objectives : [],
+      subjectMatter: {
+        paksa: p.subjectMatter?.paksa || "Aralin sa Filipino",
+        wika: p.subjectMatter?.wika || "",
+        sanggunian: p.subjectMatter?.sanggunian || "Gr.1 Dawani",
+        aiDeclaration:
+          p.subjectMatter?.aiDeclaration ||
+          "DO 3 s 2026 Annex (Banggitin kung paano ginamit ang AI sa pagbuo ng plano sa pagtuturo)\nAng banghay- aralin na ay binuo sa tulong ng AI upang masiguro ang pagka-ayon nito sa mga Pamantayan ng Kurikulum ng DepEd MATATAG K-12.",
+      },
+      learningCompetencies: p.learningCompetencies || "",
+      integrations: {
+        laudatoSi: p.integrations?.laudatoSi || "",
+        justiceAndPeace: p.integrations?.justiceAndPeace || "",
+        genderAndDevelopment: p.integrations?.genderAndDevelopment || "",
+        lccpCare: p.integrations?.lccpCare || "",
+        interdisciplinary: p.integrations?.interdisciplinary || "",
+        techTeaching: p.integrations?.techTeaching || "Canva presentasyon",
+      },
+      procedures: {
+        routine: Array.isArray(p.procedures?.routine)
+          ? p.procedures.routine
+          : [
+              "Panalangin",
+              "Pagbati",
+              "Pagpupulot ng basura at pag aayos ng upuan",
+              "Pagsusuri ng liban",
+            ],
+        motivation: p.procedures?.motivation || "",
+        discussion: {
+          steps: Array.isArray(p.procedures?.discussion?.steps)
+            ? p.procedures.discussion.steps
+            : [],
+          teachingMethods:
+            p.procedures?.discussion?.teachingMethods ||
+            "Demonstrasyon, Talakayan at Pagtatanong, Drill at Practice",
+          guideQuestions: Array.isArray(p.procedures?.discussion?.guideQuestions)
+            ? p.procedures.discussion.guideQuestions
+            : [],
+          deepening: Array.isArray(p.procedures?.discussion?.deepening)
+            ? p.procedures.discussion.deepening
+            : [],
+        },
+        valuesIntegration: p.procedures?.valuesIntegration || "",
+        summary: p.procedures?.summary || "",
+      },
+      assessment: {
+        formative: p.assessment?.formative || "",
+        summativeInstruction: p.assessment?.summativeInstruction || "",
+        summativeItems: Array.isArray(p.assessment?.summativeItems)
+          ? p.assessment.summativeItems
+          : [],
+      },
+      assignment: p.assignment || "",
+      remarks: typeof p.remarks === "string" ? p.remarks : "",
+      signatories: {
+        preparedBy: p.signatories?.preparedBy || "Bb. Kathrynn Ross L. Acola",
+        checkedBy: p.signatories?.checkedBy || "Bb. Sta. Ana Florence",
+        observedBy: p.signatories?.observedBy || "Bb. Sta. Ana Florence",
+      },
+    };
   }
 
-  // Normalize string objectives into array if needed
-  if (typeof parsed.objectives === "string") {
-    parsed.objectives = (parsed.objectives as string)
-      .split("\n")
-      .map((s) => s.replace(/^[•\-\*\d\.]+\s*/, "").trim())
-      .filter((s) => s.length > 0);
-  }
-
-  parsed.templateType = expectedType;
-  return parsed as unknown as MatatagLessonPlan | LccpLearningPlan;
+  const l = parsed as Partial<LccpLearningPlan>;
+  return {
+    templateType: "lccp",
+    rveFormat: l.rveFormat || "portrait",
+    adidse: l.adidse,
+    header: {
+      institution: l.header?.institution || "LA CONSOLACION COLLEGE-PASIG",
+      address:
+        l.header?.address || "641 Mercedes Avenue, Brgy. San Miguel, Pasig City",
+      title: l.header?.title || "LEARNING PLAN",
+      schoolYear: l.header?.schoolYear || "S.Y. 2026-2027",
+    },
+    subject: l.subject || "Language",
+    gradeLevel: l.gradeLevel || "Kinder 2",
+    dateCoverage: l.dateCoverage || "",
+    term: l.term || "Term 1",
+    objectives: Array.isArray(l.objectives) ? l.objectives : [],
+    subjectMatter: {
+      lesson: l.subjectMatter?.lesson || "Lesson",
+      references:
+        l.subjectMatter?.references ||
+        "Early Beginnings Kinder worktext",
+    },
+    learningCompetencies: l.learningCompetencies || "",
+    valuesStatement: l.valuesStatement || "",
+    procedures: {
+      routineActivities: Array.isArray(l.procedures?.routineActivities)
+        ? l.procedures.routineActivities
+        : ["Prayer", "Attendance", "Circle Time"],
+      motivation: l.procedures?.motivation || "",
+      learningStrategies: Array.isArray(l.procedures?.learningStrategies)
+        ? l.procedures.learningStrategies
+        : [],
+    },
+    assessment: Array.isArray(l.assessment) ? l.assessment : [],
+    closure: l.closure || "",
+    assignment: l.assignment || "",
+    remarks: typeof l.remarks === "string" ? l.remarks : "",
+    signatories: {
+      preparedBy: l.signatories?.preparedBy || "Ms. Kathrynn Ross L. Acola",
+      checkedBy: l.signatories?.checkedBy || "Mrs. Emma P. Dunque Lpt.",
+      observedBy: l.signatories?.observedBy || "Mrs. Emma P. Dunque Lpt.",
+    },
+  };
 }

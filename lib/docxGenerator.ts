@@ -2,499 +2,1207 @@ import {
   Document,
   Packer,
   Paragraph,
-  Table,
-  TableCell,
-  TableRow,
   TextRun,
-  ImageRun,
+  Table,
+  TableRow,
+  TableCell,
   WidthType,
-  AlignmentType,
   BorderStyle,
+  AlignmentType,
   VerticalAlign,
-  convertInchesToTwip,
+  ShadingType,
+  ImageRun,
+  PageOrientation,
 } from "docx";
-import type { MatatagLessonPlan, LccpLearningPlan, TeacherProfile } from "./types";
+import { saveAs } from "file-saver";
+import type {
+  MatatagLessonPlan,
+  LccpLearningPlan,
+  LessonPlan,
+  TeacherProfile,
+} from "./types";
 import { getLccpBannerBuffer, getLccpCrestBuffer } from "./schoolLogos";
 
-const BORDER_STYLE = {
+const BORDER_SINGLE = {
   style: BorderStyle.SINGLE,
-  size: 4,
+  size: 6,
   color: "000000",
 };
 
-const TABLE_BORDERS = {
-  top: BORDER_STYLE,
-  bottom: BORDER_STYLE,
-  left: BORDER_STYLE,
-  right: BORDER_STYLE,
-  insideHorizontal: BORDER_STYLE,
-  insideVertical: BORDER_STYLE,
+const STANDARD_BORDERS = {
+  top: BORDER_SINGLE,
+  bottom: BORDER_SINGLE,
+  left: BORDER_SINGLE,
+  right: BORDER_SINGLE,
 };
+
+const CELL_PADDING = {
+  top: 70,
+  bottom: 70,
+  left: 110,
+  right: 110,
+};
+
+const FONT_FAMILY = "Times New Roman";
 
 function p(
   text: string,
   options?: {
     bold?: boolean;
-    align?: (typeof AlignmentType)[keyof typeof AlignmentType];
+    italics?: boolean;
     size?: number;
-    italic?: boolean;
+    align?: (typeof AlignmentType)[keyof typeof AlignmentType];
+    spacingAfter?: number;
+    spacingBefore?: number;
+    bullet?: boolean;
+    indentLeft?: number;
+    color?: string;
   }
-) {
+): Paragraph {
   return new Paragraph({
     alignment: options?.align || AlignmentType.LEFT,
-    spacing: { before: 30, after: 30, line: 240 },
+    spacing: {
+      before: options?.spacingBefore ?? 0,
+      after: options?.spacingAfter ?? 40,
+    },
+    indent: options?.indentLeft ? { left: options.indentLeft } : undefined,
     children: [
       new TextRun({
-        text,
-        font: "Calibri",
-        size: options?.size || 20, // 10pt
+        text: options?.bullet ? `• ${text}` : text,
         bold: options?.bold || false,
-        italics: options?.italic || false,
+        italics: options?.italics || false,
+        size: options?.size || 20, // 10pt default for Banghay-Aralin
+        font: FONT_FAMILY,
+        color: options?.color,
       }),
     ],
   });
 }
 
-function cell(
-  paragraphs: Paragraph | Paragraph[],
+function pMixed(
+  runs: {
+    text: string;
+    bold?: boolean;
+    italics?: boolean;
+    size?: number;
+    color?: string;
+  }[],
   options?: {
-    colSpan?: number;
-    widthPercent?: number;
-    shadingColor?: string;
+    align?: (typeof AlignmentType)[keyof typeof AlignmentType];
+    spacingAfter?: number;
+    spacingBefore?: number;
+    indentLeft?: number;
   }
-) {
-  const children = Array.isArray(paragraphs) ? paragraphs : [paragraphs];
-  return new TableCell({
-    columnSpan: options?.colSpan || 1,
-    width: options?.widthPercent
-      ? { size: options.widthPercent, type: WidthType.PERCENTAGE }
-      : undefined,
-    shading: options?.shadingColor
-      ? { fill: options.shadingColor }
-      : undefined,
-    margins: {
-      top: 80,
-      bottom: 80,
-      left: 120,
-      right: 120,
+): Paragraph {
+  return new Paragraph({
+    alignment: options?.align || AlignmentType.LEFT,
+    spacing: {
+      before: options?.spacingBefore ?? 0,
+      after: options?.spacingAfter ?? 40,
     },
-    verticalAlign: VerticalAlign.TOP,
-    children,
+    indent: options?.indentLeft ? { left: options.indentLeft } : undefined,
+    children: runs.map(
+      (r) =>
+        new TextRun({
+          text: r.text,
+          bold: r.bold || false,
+          italics: r.italics || false,
+          size: r.size || 20,
+          font: FONT_FAMILY,
+          color: r.color,
+        })
+    ),
+  });
+}
+
+function parseInterdisciplinaryLines(text: string): Paragraph[] {
+  const lines = text
+    .split(/\n+/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (lines.length === 0) return [p("")];
+
+  return lines.map((line) => {
+    const colonIdx = line.indexOf(":");
+    if (colonIdx !== -1 && colonIdx < 25) {
+      const label = line.slice(0, colonIdx + 1);
+      const rest = line.slice(colonIdx + 1);
+      return pMixed([
+        { text: label, bold: true, size: 20 },
+        { text: rest, size: 20 },
+      ]);
+    }
+    return p(line, { size: 20 });
   });
 }
 
 /**
- * Generates an exact Microsoft Word document for the DepEd MATATAG / Banghay-Aralin format
- * Matching Kat's files: Grade 1 - FILIPINO - LP- WEEK 10 and K2 - LP - WEEK 1-3.docx
+ * Generates Kat's EXACT Banghay-Aralin sa FILIPINO .docx (Grade 1 & Kinder 2 Filipino)
+ * Matches G1-Filipino-LP-Week 11.docx, GRADE1-FILIPINO-LP-WEEK14 true.pdf, and K2 - Week 4 Filipino.docx
  */
-export async function generateMatatagDocx(plan: MatatagLessonPlan, profile?: TeacherProfile) {
-  const prepName = plan.signatories?.preparedBy || profile?.teacherNameFilipino || "Bb. Kathrynn Ross L. Acola";
-  const checkName = plan.signatories?.checkedBy || profile?.coordinatorGrade1 || "Bb. Sta. Ana Florence";
-  const obsName = plan.signatories?.observedBy || profile?.coordinatorGrade1 || "Bb. Sta. Ana Florence";
+export async function generateMatatagDocx(
+  plan: MatatagLessonPlan,
+  profile?: TeacherProfile
+): Promise<Blob | Buffer> {
+  const isKinder = plan.gradeSection.toLowerCase().includes("kinder");
+  const preparedBy =
+    plan.signatories?.preparedBy ||
+    (isKinder
+      ? "Acola, Kathrynn Ross L."
+      : profile?.teacherNameFilipino || "Bb. Kathrynn Ross L. Acola");
+  const checkedBy =
+    plan.signatories?.checkedBy ||
+    (isKinder
+      ? "Emma P. Dunque, LPT."
+      : profile?.coordinatorGrade1 || "Bb. Sta. Ana Florence");
+  const observedBy =
+    plan.signatories?.observedBy ||
+    (isKinder
+      ? "Emma P. Dunque, LPT."
+      : profile?.coordinatorGrade1 || "Bb. Sta. Ana Florence");
 
-  const rows: TableRow[] = [];
-
-  // Row 0: Title Header (Colspan 4 with Official School Banner)
   const bannerBuffer = getLccpBannerBuffer();
-  rows.push(
+  const headerChildren: Paragraph[] = [];
+
+  if (bannerBuffer) {
+    headerChildren.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 20, after: 40 },
+        children: [
+          new ImageRun({
+            data: bannerBuffer,
+            transformation: {
+              width: 245,
+              height: 83,
+            },
+            type: "jpg",
+          }),
+        ],
+      })
+    );
+  }
+
+  headerChildren.push(
+    p("Banghay- Aralin sa FILIPINO", {
+      bold: true,
+      size: 32, // 16pt Times New Roman bold
+      align: AlignmentType.CENTER,
+      spacingAfter: 20,
+    }),
+    p(plan.schoolYear || profile?.schoolYear || "S.Y. 2026-2027", {
+      bold: false,
+      size: 20, // 10pt Times New Roman regular
+      align: AlignmentType.CENTER,
+      spacingAfter: 20,
+    })
+  );
+
+  // Split AI declaration into main header + indented body paragraph matching Kat's files
+  const aiLines = (plan.subjectMatter.aiDeclaration || "").split("\n");
+  const aiHeaderNote =
+    aiLines[0]?.replace(/^DO\s*3\s*s\.?\s*2026\s*Annex\s*/i, "").trim() ||
+    "(Banggitin kung paano ginamit ang AI sa pagbuo ng plano sa pagtuturo)";
+  const aiBodyText =
+    aiLines[1]?.trim() ||
+    "Ang banghay- aralin na ay binuo sa tulong ng AI upang masiguro ang pagka-ayon nito sa mga Pamantayan ng Kurikulum ng DepEd MATATAG K-12.";
+
+  const rows: TableRow[] = [
+    // Row 1: Pure White Header Banner Cell (columnSpan 6)
     new TableRow({
       children: [
-        cell(
-          [
-            new Paragraph({
-              alignment: AlignmentType.CENTER,
-              spacing: { before: 40, after: 60 },
-              children: [
-                new ImageRun({
-                  data: bannerBuffer,
-                  transformation: {
-                    width: 580,
-                    height: 89,
-                  },
-                  type: "jpg",
-                }),
-              ],
-            }),
-            p(`Banghay- Aralin sa ${plan.subject.toUpperCase()}`, {
+        new TableCell({
+          columnSpan: 6,
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: headerChildren,
+        }),
+      ],
+    }),
+
+    // Row 2: Exact 3-Column Metadata Row (Subject | Grade & Section | Date Coverage + Term & Week)
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 2,
+          width: { size: 30, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("Subject:", { bold: true, size: 20 }),
+            p("", { size: 20 }),
+            p(plan.subject || "FILIPINO", { bold: true, size: 20 }),
+          ],
+        }),
+        new TableCell({
+          columnSpan: 2,
+          width: { size: 35, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("Grade & Section:", { bold: true, size: 20 }),
+            p("", { size: 20 }),
+            p(plan.gradeSection || "Grade 1 - OLOPH & OLOG", {
               bold: true,
-              align: AlignmentType.CENTER,
-              size: 24,
-            }),
-            p(plan.schoolYear || "S.Y. 2026-2027", {
-              bold: true,
-              align: AlignmentType.CENTER,
               size: 20,
             }),
           ],
-          { colSpan: 4, shadingColor: "F2F2F2" }
-        ),
-      ],
-    })
-  );
-
-  // Row 1: Metadata Row (Exact 4 Columns matching Kat's PDF)
-  rows.push(
-    new TableRow({
-      children: [
-        cell(
-          [p("Subject:", { bold: true }), p(plan.subject)],
-          { widthPercent: 22 }
-        ),
-        cell(
-          [p("Grade & Section:", { bold: true }), p(plan.gradeSection)],
-          { widthPercent: 28 }
-        ),
-        cell(
-          [p(`Date Coverage: ${plan.dateCoverage}`, { bold: true })],
-          { widthPercent: 28 }
-        ),
-        cell(
-          [p(`Term & Week: ${plan.termWeek}`, { bold: true })],
-          { widthPercent: 22 }
-        ),
-      ],
-    })
-  );
-
-  // Row 2: Objectives & Subject Matter (2 columns split, 50% each)
-  const objParagraphs: Paragraph[] = [
-    p("I. Mga Layunin sa Pagkatuto:", { bold: true }),
-    p("Sa pagtatapos ng talakayan, ang mga mag-aaral ay inaasahang;"),
-    ...plan.objectives.map((obj) => p(`• ${obj}`)),
-  ];
-
-  const subjParagraphs: Paragraph[] = [
-    p("II. Paksang Aralin:", { bold: true }),
-    p(`Paksa: ${plan.subjectMatter.paksa}`),
-    ...(plan.subjectMatter.wika ? [p(`Wika: ${plan.subjectMatter.wika}`)] : []),
-    p(`Sanggunian: ${plan.subjectMatter.sanggunian}`),
-    p("Deklarasyon sa Paggamit ng AI: DO 3 s 2026 Annex (Banggitin kung paano ginamit ang AI sa pagbuo ng plano sa pagtuturo)", {
-      bold: true,
-      size: 17,
-    }),
-    p(
-      plan.subjectMatter.aiDeclaration ||
-        "Ang banghay- aralin na ay binuo sa tulong ng AI upang masiguro ang pagka-ayon nito sa mga Pamantayan ng Kurikulum ng DepEd MATATAG K-12.",
-      { italic: true, size: 17 }
-    ),
-  ];
-
-  rows.push(
-    new TableRow({
-      children: [
-        cell(objParagraphs, { widthPercent: 50, colSpan: 2 }),
-        cell(subjParagraphs, { widthPercent: 50, colSpan: 2 }),
-      ],
-    })
-  );
-
-  // Row 3: Learning Competencies (Colspan 4)
-  rows.push(
-    new TableRow({
-      children: [
-        cell(
-          [
-            p("III. Mga Kasanayan sa Pagkatuto:", { bold: true }),
-            p(`● ${plan.learningCompetencies}`),
+        }),
+        new TableCell({
+          columnSpan: 2,
+          width: { size: 35, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p(`Date Coverage: ${plan.dateCoverage}`, { bold: true, size: 20 }),
+            p("", { size: 20 }),
+            p(`Term & Week: ${plan.termWeek}`, { bold: true, size: 20 }),
           ],
-          { colSpan: 4 }
-        ),
+        }),
       ],
-    })
-  );
+    }),
 
-  // Row 4: Integrasyon Title (Colspan 4)
-  rows.push(
+    // Row 3: Two Columns (I. Mga Layunin sa Pagkatuto | II. Paksang Aralin)
     new TableRow({
       children: [
-        cell([p("IV. Integrasyon:", { bold: true })], { colSpan: 4, shadingColor: "F8F8F8" }),
+        new TableCell({
+          columnSpan: 3,
+          width: { size: 50, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("I. Mga Layunin sa Pagkatuto:", { bold: true, size: 20 }),
+            p("Sa pagtatapos ng talakayan, ang mga mag-aaral ay inaasahang;", {
+              italics: true,
+              size: 20,
+              spacingAfter: 60,
+            }),
+            ...plan.objectives.map((obj) =>
+              p(obj, { bullet: true, size: 20, indentLeft: 180 })
+            ),
+          ],
+        }),
+        new TableCell({
+          columnSpan: 3,
+          width: { size: 50, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("II. Paksang Aralin:", { bold: true, size: 20 }),
+            pMixed([
+              { text: "Paksa: ", bold: true, size: 20 },
+              { text: plan.subjectMatter.paksa, size: 20 },
+            ]),
+            ...(plan.subjectMatter.wika
+              ? [
+                  pMixed([
+                    { text: "Wika: ", bold: true, size: 20 },
+                    { text: plan.subjectMatter.wika, size: 20 },
+                  ]),
+                ]
+              : []),
+            p("", { size: 16 }),
+            p("Sanggunian:", { bold: true, size: 20 }),
+            p(plan.subjectMatter.sanggunian, { size: 20, spacingAfter: 60 }),
+            pMixed([
+              { text: "Deklarasyon sa Paggamit ng AI: ", bold: true, size: 17 },
+              { text: "DO 3 s 2026 Annex ", italics: true, size: 17 },
+              { text: aiHeaderNote, italics: true, size: 17 },
+            ]),
+            p(aiBodyText, { size: 17, indentLeft: 360 }),
+          ],
+        }),
       ],
-    })
-  );
+    }),
 
-  // Rows 5-10: 6 Integration Items (Exact Kat Format: 35% / 65%)
-  const integrationsList = [
-    { name: "Laudato Si", val: plan.integrations.laudatoSi },
-    { name: "Justice and Peace Education", val: plan.integrations.justiceAndPeace },
-    { name: "Gender and Development", val: plan.integrations.genderAndDevelopment },
-    { name: "LCCP- Care", val: plan.integrations.lccpCare },
-    { name: "Integrasyong Interdisiplinaryo", val: plan.integrations.interdisciplinary },
-    { name: "Paggamit ng Teknolohiya sa Pagtuturo", val: plan.integrations.techTeaching },
+    // Row 4: III. Mga Kasanayan sa Pagkatuto
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 6,
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("III. Mga Kasanayan sa Pagkatuto:", { bold: true, size: 20 }),
+            p(plan.learningCompetencies, {
+              bullet: isKinder,
+              size: 20,
+            }),
+          ],
+        }),
+      ],
+    }),
+
+    // Row 5: IV. Integrasyon Header (Pure White #FFFFFF)
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 6,
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [p("IV. Integrasyon:", { bold: true, size: 20 })],
+        }),
+      ],
+    }),
+
+    // Row 6: Laudato Si (Kat's Exact Sage Green #93C37D on BOTH cells)
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 2,
+          width: { size: 35, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          shading: { fill: "93C37D", type: ShadingType.CLEAR, color: "auto" },
+          children: [p("Laudato Si", { bold: true, size: 20 })],
+        }),
+        new TableCell({
+          columnSpan: 4,
+          width: { size: 65, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          shading: { fill: "93C37D", type: ShadingType.CLEAR, color: "auto" },
+          children: [p(plan.integrations.laudatoSi, { italics: true, size: 20 })],
+        }),
+      ],
+    }),
+
+    // Row 7: Justice and Peace Education (Kat's Exact Rust Brown #A34500 on BOTH cells)
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 2,
+          width: { size: 35, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          shading: { fill: "A34500", type: ShadingType.CLEAR, color: "auto" },
+          children: [p("Justice and Peace Education", { bold: true, size: 20 })],
+        }),
+        new TableCell({
+          columnSpan: 4,
+          width: { size: 65, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          shading: { fill: "A34500", type: ShadingType.CLEAR, color: "auto" },
+          children: [
+            p(plan.integrations.justiceAndPeace, { italics: true, size: 20 }),
+          ],
+        }),
+      ],
+    }),
+
+    // Row 8: Gender and Development (Kat's Exact Soft Lavender #B4A6D5 on BOTH cells)
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 2,
+          width: { size: 35, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          shading: { fill: "B4A6D5", type: ShadingType.CLEAR, color: "auto" },
+          children: [p("Gender and Development", { bold: true, size: 20 })],
+        }),
+        new TableCell({
+          columnSpan: 4,
+          width: { size: 65, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          shading: { fill: "B4A6D5", type: ShadingType.CLEAR, color: "auto" },
+          children: [
+            p(plan.integrations.genderAndDevelopment, {
+              italics: true,
+              size: 20,
+            }),
+          ],
+        }),
+      ],
+    }),
+
+    // Row 9: LCCP- Care (Kat's Exact Amber Orange #FF9900 on BOTH cells)
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 2,
+          width: { size: 35, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          shading: { fill: "FF9900", type: ShadingType.CLEAR, color: "auto" },
+          children: [p("LCCP- Care", { bold: true, size: 20 })],
+        }),
+        new TableCell({
+          columnSpan: 4,
+          width: { size: 65, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          shading: { fill: "FF9900", type: ShadingType.CLEAR, color: "auto" },
+          children: [p(plan.integrations.lccpCare, { italics: true, size: 20 })],
+        }),
+      ],
+    }),
+
+    // Row 10: Integrasyong Interdisiplinaryo (White background)
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 2,
+          width: { size: 35, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("Integrasyong Interdisiplinaryo", { bold: true, size: 20 }),
+          ],
+        }),
+        new TableCell({
+          columnSpan: 4,
+          width: { size: 65, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: parseInterdisciplinaryLines(
+            plan.integrations.interdisciplinary
+          ),
+        }),
+      ],
+    }),
+
+    // Row 11: Paggamit ng Teknolohiya sa Pagtuturo (White background)
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 2,
+          width: { size: 35, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("Paggamit ng Teknolohiya sa Pagtuturo", { bold: true, size: 20 }),
+          ],
+        }),
+        new TableCell({
+          columnSpan: 4,
+          width: { size: 65, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p(plan.integrations.techTeaching, { italics: true, size: 20 }),
+          ],
+        }),
+      ],
+    }),
+
+    // Row 12: • Pamamaraan
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 6,
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("• Pamamaraan:", { bold: true, size: 20, spacingAfter: 60 }),
+            p(
+              isKinder
+                ? "a. Mga Panimulang Gawain (5 mins)"
+                : "a. Mga Panimulang Gawain (Day 1/10 mins)",
+              { bold: true, size: 20, indentLeft: 180 }
+            ),
+            ...plan.procedures.routine.map((r) =>
+              p(r, { bullet: true, size: 20, indentLeft: 360 })
+            ),
+            p("b. Pagganyak (day 1/15 mins)", {
+              bold: true,
+              size: 20,
+              indentLeft: 180,
+              spacingBefore: 60,
+            }),
+            ...plan.procedures.motivation
+              .split("\n")
+              .filter(Boolean)
+              .map((line) =>
+                p(line, { bullet: true, size: 20, indentLeft: 360 })
+              ),
+            p("c. Pagtalakay ng Aralin: (Day 1-4/30 mins)", {
+              bold: true,
+              size: 20,
+              indentLeft: 180,
+              spacingBefore: 60,
+            }),
+            ...plan.procedures.discussion.steps.map((s) =>
+              p(s, { bullet: true, size: 20, indentLeft: 360 })
+            ),
+            p("Gabay na tanong:", {
+              bold: true,
+              size: 20,
+              indentLeft: 180,
+              spacingBefore: 60,
+            }),
+            ...plan.procedures.discussion.guideQuestions.map((q, idx) =>
+              p(`${idx + 1}. ${q}`, { size: 20, indentLeft: 360 })
+            ),
+            pMixed(
+              [
+                { text: "Pamamaraan sa Pagturo: ", bold: true, size: 20 },
+                {
+                  text:
+                    plan.procedures.discussion.teachingMethods ||
+                    "Demonstrasyon, Talakayan at Pagtatanong, Drill at Practice",
+                  italics: true,
+                  size: 20,
+                },
+              ],
+              { spacingBefore: 60 }
+            ),
+            p("Pagpapalalim:", {
+              bold: true,
+              size: 20,
+              spacingBefore: 60,
+            }),
+            ...plan.procedures.discussion.deepening.map((d) =>
+              p(d, { bullet: true, size: 20, indentLeft: 360 })
+            ),
+            p("d. Integrasyon ng Pagpapahalaga: (Day 4/ 15 mins)", {
+              bold: true,
+              size: 20,
+              indentLeft: 180,
+              spacingBefore: 60,
+            }),
+            p(plan.procedures.valuesIntegration, {
+              bullet: true,
+              size: 20,
+              indentLeft: 360,
+            }),
+            p("e. Pagbubuod: (Day 4/ 15 mins)", {
+              bold: true,
+              size: 20,
+              indentLeft: 180,
+              spacingBefore: 60,
+            }),
+            ...plan.procedures.summary
+              .split("\n")
+              .filter(Boolean)
+              .map((line) =>
+                p(line, { bullet: true, size: 20, indentLeft: 360 })
+              ),
+          ],
+        }),
+      ],
+    }),
+
+    // Row 13: VI- Pagtataya: (Day 5/ 20 mins)
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 6,
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("VI- Pagtataya: (Day 5/ 20 mins)", {
+              bold: true,
+              size: 20,
+              spacingAfter: 60,
+            }),
+            ...(isKinder
+              ? [
+                  ...plan.assessment.formative
+                    .split("\n")
+                    .filter(Boolean)
+                    .map((line) =>
+                      p(line, { bullet: true, size: 20, indentLeft: 360 })
+                    ),
+                  ...(plan.assessment.summativeInstruction
+                    ? [
+                        p(plan.assessment.summativeInstruction, {
+                          bullet: true,
+                          size: 20,
+                          indentLeft: 360,
+                        }),
+                      ]
+                    : []),
+                ]
+              : [
+                  p("Formative", { bold: true, size: 20 }),
+                  ...plan.assessment.formative
+                    .split("\n")
+                    .filter(Boolean)
+                    .map((line) =>
+                      p(line, { bullet: true, size: 20, indentLeft: 360 })
+                    ),
+                  p("Summative", { bold: true, size: 20, spacingBefore: 60 }),
+                  ...plan.assessment.summativeInstruction
+                    .split("\n")
+                    .filter(Boolean)
+                    .map((line) => p(line, { bold: true, size: 20 })),
+                  ...plan.assessment.summativeItems.map((item, idx) =>
+                    p(`${idx + 1}. ${item}`, { size: 20 })
+                  ),
+                ]),
+          ],
+        }),
+      ],
+    }),
+
+    // Row 14: VII- Takdang- Aralin:
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 6,
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("VII- Takdang- Aralin:", { bold: true, size: 20 }),
+            p(plan.assignment, { size: 20 }),
+          ],
+        }),
+      ],
+    }),
+
+    // Row 15: Mga Tala at Pagninilay:
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 6,
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("Mga Tala at Pagninilay:", { bold: true, size: 20 }),
+            p(plan.remarks || "", { size: 20, spacingAfter: 120 }),
+          ],
+        }),
+      ],
+    }),
+
+    // Row 16: 3-Column Signatories (Inihanda / Sinuri / Inobserbahan)
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 2,
+          width: { size: 33, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p(isKinder ? "Inihanda ni:" : "Inihanda:", {
+              bold: true,
+              size: 20,
+              spacingAfter: 120,
+            }),
+            p(preparedBy, { bold: true, size: 20 }),
+          ],
+        }),
+        new TableCell({
+          columnSpan: 2,
+          width: { size: 33, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p(isKinder ? "Sinuri ni:" : "Sinuri:", {
+              bold: true,
+              size: 20,
+              spacingAfter: 120,
+            }),
+            p(checkedBy, { bold: true, size: 20 }),
+          ],
+        }),
+        new TableCell({
+          columnSpan: 2,
+          width: { size: 34, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p(isKinder ? "Inobserbahan ni:" : "Inobserbahan:", {
+              bold: true,
+              size: 20,
+              spacingAfter: 120,
+            }),
+            p(observedBy, { bold: true, size: 20 }),
+          ],
+        }),
+      ],
+    }),
   ];
-
-  for (const item of integrationsList) {
-    rows.push(
-      new TableRow({
-        children: [
-          cell([p(item.name, { bold: true })], { colSpan: 2, widthPercent: 35 }),
-          cell([p(item.val || "—")], { colSpan: 2, widthPercent: 65 }),
-        ],
-      })
-    );
-  }
-
-  // Row 11: Procedures (Pamamaraan) (Colspan 4)
-  const procParagraphs: Paragraph[] = [
-    p("• Pamamaraan:", { bold: true, size: 22 }),
-    p("a. Mga Panimulang Gawain (Day 1/10 mins)", { bold: true }),
-    ...plan.procedures.routine.map((r) => p(`  • ${r}`)),
-    p("b. Pagganyak (day 1/15 mins)", { bold: true }),
-    p(`  ${plan.procedures.motivation}`),
-    p("c. Pagtalakay ng Aralin: (Day 1-4/30 mins)", { bold: true }),
-    ...plan.procedures.discussion.steps.map((st) => p(`  • ${st}`)),
-    p(`  Pamamaraan sa Pagturo: ${plan.procedures.discussion.teachingMethods}`, { italic: true }),
-    p("              Gabay na tanong:", { bold: true }),
-    ...plan.procedures.discussion.guideQuestions.map((q, i) => p(`  ${i + 1}. ${q}`)),
-    ...(plan.procedures.discussion.deepening.length > 0
-      ? [
-          p("  Pagpapalalim:", { bold: true }),
-          ...plan.procedures.discussion.deepening.map((d, i) => p(`  • ${d}`)),
-        ]
-      : []),
-    p("d. Integrasyon ng Pagpapahalaga: (Day 4/ 15 mins)", { bold: true }),
-    p(`  ${plan.procedures.valuesIntegration}`),
-    p("e. Pagbubuod: (Day 4/ 15 mins)", { bold: true }),
-    p(`  ${plan.procedures.summary}`),
-  ];
-
-  rows.push(
-    new TableRow({
-      children: [cell(procParagraphs, { colSpan: 4 })],
-    })
-  );
-
-  // Row 12: Assessment (Colspan 4)
-  const assessParagraphs: Paragraph[] = [
-    p("VI- Pagtataya: (Day 5/ 20 mins)", { bold: true }),
-    p(`• Formative – ${plan.assessment.formative}`),
-    p(`• Summative - Panuto: ${plan.assessment.summativeInstruction}`),
-    ...plan.assessment.summativeItems.map((item, idx) => p(`    ${idx + 1}. ${item}`)),
-  ];
-  rows.push(new TableRow({ children: [cell(assessParagraphs, { colSpan: 4 })] }));
-
-  // Row 13: Assignment (Colspan 4)
-  rows.push(
-    new TableRow({
-      children: [
-        cell([p("VII- Takdang- Aralin:", { bold: true }), p(plan.assignment)], { colSpan: 4 }),
-      ],
-    })
-  );
-
-  // Row 14: Remarks / Reflections (Colspan 4)
-  rows.push(
-    new TableRow({
-      children: [
-        cell([p("Mga Tala at Pagninilay:", { bold: true }), p(plan.remarks || "N/A")], { colSpan: 4 }),
-      ],
-    })
-  );
-
-  // Row 15: Signatories (Exact Kat Format: Inihanda / Sinuri / Inobserbahan)
-  rows.push(
-    new TableRow({
-      children: [
-        cell([p("Inihanda:", { bold: true }), p(prepName)], { colSpan: 1, widthPercent: 33 }),
-        cell([p("Sinuri:", { bold: true }), p(checkName)], { colSpan: 1, widthPercent: 33 }),
-        cell([p("Inobserbahan:", { bold: true }), p(obsName)], { colSpan: 2, widthPercent: 34 }),
-      ],
-    })
-  );
 
   const doc = new Document({
     sections: [
       {
         properties: {
           page: {
+            size: {
+              width: 12240, // 8.5 inches
+              height: 20160, // 14 inches (Legal paper matching Kat's files)
+            },
             margin: {
-              top: convertInchesToTwip(0.5),
-              bottom: convertInchesToTwip(0.5),
-              left: convertInchesToTwip(0.5),
-              right: convertInchesToTwip(0.5),
+              top: 720,
+              bottom: 720,
+              left: 720,
+              right: 720,
             },
           },
         },
         children: [
           new Table({
-            rows,
             width: { size: 100, type: WidthType.PERCENTAGE },
-            borders: TABLE_BORDERS,
+            rows,
           }),
         ],
       },
     ],
   });
 
-  if (typeof window !== "undefined") {
-    return await Packer.toBlob(doc);
+  if (typeof window === "undefined") {
+    return await Packer.toBuffer(doc);
   }
-  return await Packer.toBuffer(doc);
+  return await Packer.toBlob(doc);
 }
 
 /**
- * Generates an exact Microsoft Word document for the LCCP Institutional Learning Plan format
- * Matching Kat's files: K2-LANGUAGE-LP.docx and K2-SCIENCE LP.docx
+ * Generates Kat's 5-Column Landscape RELIGION LEARNING PLAN (ADIDSE / Lectio-Divina Format)
+ * Matches WEEK 1-3 RVE LP.docx and RVE LESSON 4-8
  */
-export async function generateLccpDocx(plan: LccpLearningPlan, profile?: TeacherProfile) {
-  const prepName = plan.signatories?.preparedBy || profile?.teacherName || "Ms. Kathrynn Ross L. Acola";
-  const checkName = plan.signatories?.checkedBy || profile?.coordinatorKinder || "Mrs. Emma P. Dunque Lpt.";
-  const obsName = plan.signatories?.observedBy || profile?.coordinatorKinder || "Mrs. Emma P. Dunque Lpt.";
+async function generateRveAdidseLandscapeDocx(
+  plan: LccpLearningPlan,
+  profile?: TeacherProfile
+): Promise<Blob | Buffer> {
+  const adidse = plan.adidse!;
+  const bannerBuffer = getLccpBannerBuffer();
+  const topChildren: (Paragraph | Table)[] = [];
 
-  const rows: TableRow[] = [];
-
-  // Row 0: School Header (Colspan 3 with Official LCCP Crest)
-  const crestBuffer = getLccpCrestBuffer();
-  rows.push(
-    new TableRow({
-      children: [
-        cell(
-          [
-            new Paragraph({
-              alignment: AlignmentType.CENTER,
-              spacing: { before: 40, after: 40 },
-              children: [
-                new ImageRun({
-                  data: crestBuffer,
-                  transformation: {
-                    width: 72,
-                    height: 78,
-                  },
-                  type: "png",
-                }),
-              ],
-            }),
-            p(plan.header.institution, { bold: true, align: AlignmentType.CENTER, size: 22 }),
-            p(plan.header.address, { align: AlignmentType.CENTER, size: 18 }),
-            p(plan.header.title, { bold: true, align: AlignmentType.CENTER, size: 22 }),
-            p(plan.header.schoolYear, { bold: true, align: AlignmentType.CENTER, size: 20 }),
-          ],
-          { colSpan: 3, shadingColor: "F2F2F2" }
-        ),
-      ],
-    })
-  );
-
-  // Row 1: Metadata Row (3 cols)
-  rows.push(
-    new TableRow({
-      children: [
-        cell([p(`Subject: ${plan.subject}`, { bold: true })], { widthPercent: 30 }),
-        cell([p(`Grade Level: ${plan.gradeLevel}`, { bold: true })], { widthPercent: 30 }),
-        cell([p(`Date Coverage: ${plan.dateCoverage}         ${plan.term}`, { bold: true })], { widthPercent: 40 }),
-      ],
-    })
-  );
-
-  // Row 2: Objectives & Subject Matter
-  const objParagraphs: Paragraph[] = [
-    p("I Learning Objectives: At the end of the lesson the students will be able to:", { bold: true }),
-    ...plan.objectives.map((obj) => p(`${obj}`)),
-  ];
-
-  const subjParagraphs: Paragraph[] = [
-    p("II Subject Matter", { bold: true }),
-    p(`Lesson: ${plan.subjectMatter.lesson}`),
-    p(`Reference/s: ${plan.subjectMatter.references}`),
-  ];
-
-  rows.push(
-    new TableRow({
-      children: [
-        cell(objParagraphs, { widthPercent: 55 }),
-        cell(subjParagraphs, { widthPercent: 45, colSpan: 2 }),
-      ],
-    })
-  );
-
-  // Row 3: Learning Competencies (Included when present)
-  if (plan.learningCompetencies) {
-    rows.push(
-      new TableRow({
+  if (bannerBuffer) {
+    topChildren.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 0, after: 60 },
         children: [
-          cell([p("III - Learning Competencies:", { bold: true }), p(plan.learningCompetencies)], { colSpan: 3 }),
+          new ImageRun({
+            data: bannerBuffer,
+            transformation: {
+              width: 260,
+              height: 88,
+            },
+            type: "jpg",
+          }),
         ],
       })
     );
   }
 
-  // Row 4: Values Statement
-  rows.push(
-    new TableRow({
-      children: [
-        cell([p("III- Values Statement:", { bold: true }), p(plan.valuesStatement)], { colSpan: 3 }),
+  // Top Metadata Block
+  topChildren.push(
+    pMixed(
+      [
+        {
+          text: "SUBJECT/ LEVEL: RELIGION – KINDER 2\t\t\t\tGRADE & SECTION: ",
+          bold: true,
+          size: 20,
+        },
+        {
+          text: adidse.sectionName || "KINDER 2 – OUR LADY OF CONSOLATION",
+          bold: true,
+          size: 20,
+        },
       ],
-    })
+      { spacingAfter: 20 }
+    ),
+    pMixed(
+      [
+        {
+          text: `SCHOOL YEAR : ${
+            plan.header.schoolYear || profile?.schoolYear || "2026 - 2027"
+          }\t\t\t\t\tWEEK # / DATE: `,
+          bold: true,
+          size: 20,
+        },
+        {
+          text: adidse.weekDate || plan.dateCoverage,
+          bold: true,
+          size: 20,
+        },
+      ],
+      { spacingAfter: 100 }
+    )
   );
 
-  // Row 5: Procedures
-  const procParagraphs: Paragraph[] = [
-    p("IV- Procedures:", { bold: true }),
-    p("a. Routine Activities", { bold: true }),
-    ...plan.procedures.routineActivities.map((r) => p(`  ${r}`)),
-    p(`b. Motivation: ${plan.procedures.motivation}`, { bold: true }),
-    p("c. Learning Strategies", { bold: true }),
-    ...plan.procedures.learningStrategies.flatMap((strat) => [
-      p(`  ${strat.title}: ${strat.instructions}`, { bold: false }),
-      ...(strat.questions ? [p("  Questions:", { bold: true }), ...strat.questions.map((q) => p(`    ${q}`))] : []),
-    ]),
-  ];
+  // Nested 4-Row Core Values Table inside Column 1 of Row 3
+  const nestedCoreValuesTable = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: 42, type: WidthType.PERCENTAGE },
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            shading: { fill: "92D050", type: ShadingType.CLEAR, color: "auto" },
+            children: [p("Laudato Si", { bold: true, size: 18 })],
+          }),
+          new TableCell({
+            width: { size: 58, type: WidthType.PERCENTAGE },
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            children: [p(adidse.coreValues.laudatoSi, { size: 18 })],
+          }),
+        ],
+      }),
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: 42, type: WidthType.PERCENTAGE },
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            shading: { fill: "EE0000", type: ShadingType.CLEAR, color: "auto" },
+            children: [
+              p("Justice & Peace Education", {
+                bold: true,
+                size: 18,
+                color: "FFFFFF",
+              }),
+            ],
+          }),
+          new TableCell({
+            width: { size: 58, type: WidthType.PERCENTAGE },
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            children: [p(adidse.coreValues.justiceAndPeace, { size: 18 })],
+          }),
+        ],
+      }),
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: 42, type: WidthType.PERCENTAGE },
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            shading: { fill: "BC8FDD", type: ShadingType.CLEAR, color: "auto" },
+            children: [p("Gender & Development", { bold: true, size: 18 })],
+          }),
+          new TableCell({
+            width: { size: 58, type: WidthType.PERCENTAGE },
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            children: [p(adidse.coreValues.genderAndDevelopment, { size: 18 })],
+          }),
+        ],
+      }),
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: 42, type: WidthType.PERCENTAGE },
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            shading: { fill: "F57E1B", type: ShadingType.CLEAR, color: "auto" },
+            children: [p("LCCP Care", { bold: true, size: 18 })],
+          }),
+          new TableCell({
+            width: { size: 58, type: WidthType.PERCENTAGE },
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            children: [p(adidse.coreValues.lccpCare, { size: 18 })],
+          }),
+        ],
+      }),
+    ],
+  });
 
-  rows.push(
-    new TableRow({
-      children: [cell(procParagraphs, { colSpan: 3 })],
-    })
-  );
+  // 5-Column Main ADIDSE Table
+  const mainTable = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [
+      // Row 1: Sky Blue #8DB3E2 Header Row
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: 24, type: WidthType.PERCENTAGE },
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            shading: { fill: "8DB3E2", type: ShadingType.CLEAR, color: "auto" },
+            verticalAlign: VerticalAlign.CENTER,
+            children: [
+              p("CONTENT/ OBJECTIVES", {
+                bold: true,
+                size: 20,
+                align: AlignmentType.CENTER,
+              }),
+            ],
+          }),
+          new TableCell({
+            width: { size: 18, type: WidthType.PERCENTAGE },
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            shading: { fill: "8DB3E2", type: ShadingType.CLEAR, color: "auto" },
+            verticalAlign: VerticalAlign.CENTER,
+            children: [
+              p("ALL ABOUT MY EXPERIENCE", {
+                bold: true,
+                size: 20,
+                align: AlignmentType.CENTER,
+              }),
+              p("(Activity – Discussion)", {
+                italics: true,
+                size: 18,
+                align: AlignmentType.CENTER,
+              }),
+            ],
+          }),
+          new TableCell({
+            width: { size: 26, type: WidthType.PERCENTAGE },
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            shading: { fill: "8DB3E2", type: ShadingType.CLEAR, color: "auto" },
+            verticalAlign: VerticalAlign.CENTER,
+            children: [
+              p("ALL ABOUT FAITH", {
+                bold: true,
+                size: 20,
+                align: AlignmentType.CENTER,
+              }),
+              p("(Input – Further Discussion)", {
+                italics: true,
+                size: 18,
+                align: AlignmentType.CENTER,
+              }),
+            ],
+          }),
+          new TableCell({
+            width: { size: 22, type: WidthType.PERCENTAGE },
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            shading: { fill: "8DB3E2", type: ShadingType.CLEAR, color: "auto" },
+            verticalAlign: VerticalAlign.CENTER,
+            children: [
+              p("ALL ABOUT MY LEARNING", {
+                bold: true,
+                size: 20,
+                align: AlignmentType.CENTER,
+              }),
+              p("(Integrated Synthesis – Evaluation)", {
+                italics: true,
+                size: 18,
+                align: AlignmentType.CENTER,
+              }),
+            ],
+          }),
+          new TableCell({
+            width: { size: 10, type: WidthType.PERCENTAGE },
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            shading: { fill: "8DB3E2", type: ShadingType.CLEAR, color: "auto" },
+            verticalAlign: VerticalAlign.CENTER,
+            children: [
+              p("Remarks", {
+                bold: true,
+                size: 20,
+                align: AlignmentType.CENTER,
+              }),
+            ],
+          }),
+        ],
+      }),
 
-  // Row 6: Assessment
-  rows.push(
-    new TableRow({
-      children: [
-        cell(
-          [
-            p("V- Assessment:", { bold: true }),
-            ...plan.assessment.map((a) => p(`${a}`)),
-          ],
-          { colSpan: 3 }
-        ),
+      // Row 2: Unit & Lesson Banner Row
+      new TableRow({
+        children: [
+          new TableCell({
+            columnSpan: 2,
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            children: adidse.unitTitle
+              .split("\n")
+              .map((line) =>
+                p(line, {
+                  bold: true,
+                  size: 20,
+                  align: AlignmentType.CENTER,
+                })
+              ),
+          }),
+          new TableCell({
+            columnSpan: 2,
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            verticalAlign: VerticalAlign.CENTER,
+            children: [
+              p(adidse.lessonTitle || plan.subjectMatter.lesson, {
+                bold: true,
+                size: 20,
+                align: AlignmentType.CENTER,
+              }),
+            ],
+          }),
+          new TableCell({
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            children: [p("", { size: 20 })],
+          }),
+        ],
+      }),
+
+      // Row 3: 5-Column Main Content Row
+      new TableRow({
+        children: [
+          // Col 1: LECTIO-DIVINA + Objectives + A/B/C/D + Nested Core Values Table
+          new TableCell({
+            width: { size: 24, type: WidthType.PERCENTAGE },
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            children: [
+              p("LECTIO- DIVINA", { bold: true, size: 20, spacingAfter: 40 }),
+              p("Objectives: At the end of lesson the learners can:", {
+                bold: true,
+                size: 19,
+              }),
+              ...plan.objectives.map((obj) =>
+                p(obj, { bullet: true, size: 19, indentLeft: 140 })
+              ),
+              p("A. VALUE FOCUS:", { bold: true, size: 19, spacingBefore: 60 }),
+              p(adidse.valueFocus, { size: 19 }),
+              pMixed(
+                [
+                  { text: "B. REFERENCE: ", bold: true, size: 19 },
+                  { text: adidse.references, size: 19 },
+                ],
+                { spacingBefore: 40 }
+              ),
+              pMixed(
+                [
+                  { text: "C. MATERIALS NEEDED: ", bold: true, size: 19 },
+                  { text: adidse.materialsNeeded, size: 19 },
+                ],
+                { spacingBefore: 40 }
+              ),
+              pMixed(
+                [
+                  { text: "D. INTEGRITAS: ", bold: true, size: 19 },
+                  { text: adidse.integritas, size: 19 },
+                ],
+                { spacingBefore: 40, spacingAfter: 60 }
+              ),
+              nestedCoreValuesTable,
+            ],
+          }),
+
+          // Col 2: I. ROUTINE ACTIVITIES
+          new TableCell({
+            width: { size: 18, type: WidthType.PERCENTAGE },
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            children: [
+              p("I. ROUTINE ACTIVITIES", {
+                bold: true,
+                size: 20,
+                spacingAfter: 60,
+              }),
+              ...adidse.routineActivities.map((act) =>
+                p(act, { bullet: true, size: 19, indentLeft: 140 })
+              ),
+            ],
+          }),
+
+          // Col 3: II. Augustinian Lectio- Divina Proper (ADIDSE)
+          new TableCell({
+            width: { size: 26, type: WidthType.PERCENTAGE },
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            children: [
+              p("II. Augustinian Lectio- Divina Proper (ADIDSE)", {
+                bold: true,
+                size: 20,
+                spacingAfter: 60,
+              }),
+              p("Lectio:", { bold: true, size: 19 }),
+              p(adidse.lectio, { size: 19, spacingAfter: 40 }),
+              p("Meditatio: The teacher will ask the students:", {
+                bold: true,
+                size: 19,
+              }),
+              ...adidse.meditatio.map((m) =>
+                p(m, { bullet: true, size: 19, indentLeft: 140 })
+              ),
+              p("Oratio:", { bold: true, size: 19, spacingBefore: 40 }),
+              p(adidse.oratio, { bullet: true, size: 19, indentLeft: 140 }),
+              p("Contemplatio:", { bold: true, size: 19, spacingBefore: 40 }),
+              p(adidse.contemplatio, {
+                bullet: true,
+                size: 19,
+                indentLeft: 140,
+              }),
+              p("Communicatio:", { bold: true, size: 19, spacingBefore: 40 }),
+              p(adidse.communicatio, {
+                bullet: true,
+                size: 19,
+                indentLeft: 140,
+              }),
+              p("INPUT/ DEEPENING:", {
+                bold: true,
+                size: 19,
+                spacingBefore: 60,
+              }),
+              p(adidse.inputDeepening, {
+                bullet: true,
+                size: 19,
+                indentLeft: 140,
+              }),
+              p("FURTHER DISCUSSION:", {
+                bold: true,
+                size: 19,
+                spacingBefore: 60,
+              }),
+              p(adidse.furtherDiscussion, {
+                bullet: true,
+                size: 19,
+                indentLeft: 140,
+              }),
+            ],
+          }),
+
+          // Col 4: Closing Song/Prayer, SYNTHESIS, EVALUATION
+          new TableCell({
+            width: { size: 22, type: WidthType.PERCENTAGE },
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            children: [
+              p(`➢ ${adidse.closingSong || "Closing Song"}`, {
+                bold: true,
+                size: 19,
+              }),
+              p(`➢ ${adidse.closingPrayer || "Closing Prayer"}`, {
+                bold: true,
+                size: 19,
+                spacingAfter: 60,
+              }),
+              p("SYNTHESIS:", { bold: true, size: 19 }),
+              ...adidse.synthesis.map((s) =>
+                p(s, { bullet: true, size: 19, indentLeft: 140 })
+              ),
+              p("EVALUATION:", { bold: true, size: 19, spacingBefore: 60 }),
+              ...adidse.evaluation.map((ev) =>
+                p(ev, { bullet: true, size: 19, indentLeft: 140 })
+              ),
+            ],
+          }),
+
+          // Col 5: Remarks
+          new TableCell({
+            width: { size: 10, type: WidthType.PERCENTAGE },
+            borders: STANDARD_BORDERS,
+            margins: CELL_PADDING,
+            children: [p(plan.remarks || "", { size: 19 })],
+          }),
+        ],
+      }),
+    ],
+  });
+
+  topChildren.push(
+    mainTable,
+    pMixed(
+      [
+        {
+          text: "PREPARED BY : Acola, Kathrynn Ross L. (Subject Teacher)\t\tCHECKED BY : _____________________ (SAC, RELIGION/VE/ GMRC)\t\tOBSERVED BY : _______________________",
+          bold: true,
+          size: 18,
+        },
       ],
-    })
-  );
-
-  // Row 7: Closure
-  rows.push(
-    new TableRow({
-      children: [
-        cell([p("VI- Closure:", { bold: true }), p(plan.closure)], { colSpan: 3 }),
-      ],
-    })
-  );
-
-  // Row 8: Assignment
-  rows.push(
-    new TableRow({
-      children: [
-        cell([p("VII- Assignment:", { bold: true }), p(plan.assignment)], { colSpan: 3 }),
-      ],
-    })
-  );
-
-  // Row 9: Remarks
-  rows.push(
-    new TableRow({
-      children: [
-        cell([p("Remarks:", { bold: true }), p(plan.remarks || "")], { colSpan: 3 }),
-      ],
-    })
-  );
-
-  // Row 10: Signatories (Prepared by / Checked by / Observed by)
-  rows.push(
-    new TableRow({
-      children: [
-        cell([p("Prepared by:", { bold: true }), p(prepName)], { widthPercent: 33 }),
-        cell([p("Checked by:", { bold: true }), p(checkName)], { widthPercent: 33 }),
-        cell([p("Observed by:", { bold: true }), p(obsName)], { widthPercent: 34 }),
-      ],
+      { spacingBefore: 120, spacingAfter: 60 }
+    ),
+    p("R E L I G I O N   L E A R N I N G   P L A N", {
+      bold: true,
+      size: 20,
+      align: AlignmentType.CENTER,
     })
   );
 
@@ -503,27 +1211,490 @@ export async function generateLccpDocx(plan: LccpLearningPlan, profile?: Teacher
       {
         properties: {
           page: {
+            size: {
+              orientation: PageOrientation.LANDSCAPE,
+              width: 12240,
+              height: 18720,
+            },
             margin: {
-              top: convertInchesToTwip(0.5),
-              bottom: convertInchesToTwip(0.5),
-              left: convertInchesToTwip(0.5),
-              right: convertInchesToTwip(0.5),
+              top: 560,
+              bottom: 560,
+              left: 560,
+              right: 560,
+            },
+          },
+        },
+        children: topChildren,
+      },
+    ],
+  });
+
+  if (typeof window === "undefined") {
+    return await Packer.toBuffer(doc);
+  }
+  return await Packer.toBlob(doc);
+}
+
+/**
+ * Generates Kat's EXACT LA CONSOLACION COLLEGE-PASIG LEARNING PLAN .docx
+ * Matches K2 -WEEK 6 - MATHEMATICS.docx, K2-SCIENCE-W6.docx, and RVE LESSON 9.docx
+ * (Or 5-Column Landscape ADIDSE Religion Learning Plan when rveFormat === "landscape_adidse")
+ */
+export async function generateLccpDocx(
+  plan: LccpLearningPlan,
+  profile?: TeacherProfile
+): Promise<Blob | Buffer> {
+  if (
+    plan.subject.toUpperCase() === "RVE" &&
+    plan.rveFormat === "landscape_adidse" &&
+    plan.adidse
+  ) {
+    return generateRveAdidseLandscapeDocx(plan, profile);
+  }
+
+  const isRve = plan.subject.toUpperCase() === "RVE";
+  const preparedBy =
+    plan.signatories?.preparedBy ||
+    profile?.teacherName ||
+    "Ms. Kathrynn Ross L. Acola";
+  const checkedBy =
+    plan.signatories?.checkedBy ||
+    profile?.coordinatorKinder ||
+    "Mrs. Emma P. Dunque Lpt.";
+  const observedBy =
+    plan.signatories?.observedBy ||
+    profile?.coordinatorKinder ||
+    "Mrs. Emma P. Dunque Lpt.";
+
+  const crestBuffer = getLccpCrestBuffer();
+  const headerChildren: Paragraph[] = [];
+
+  if (crestBuffer) {
+    headerChildren.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 20, after: 40 },
+        children: [
+          new ImageRun({
+            data: crestBuffer,
+            transformation: {
+              width: 68,
+              height: 68,
+            },
+            type: "png",
+          }),
+        ],
+      })
+    );
+  }
+
+  headerChildren.push(
+    p(
+      plan.header?.institution ||
+        profile?.schoolName ||
+        "LA CONSOLACION COLLEGE-PASIG",
+      {
+        bold: true,
+        size: 28, // 14pt Times New Roman bold
+        align: AlignmentType.CENTER,
+        spacingAfter: 20,
+      }
+    ),
+    p(
+      plan.header?.address ||
+        profile?.schoolAddress ||
+        "641 Mercedes Avenue, Brgy. San Miguel, Pasig City",
+      {
+        bold: true,
+        size: 28,
+        align: AlignmentType.CENTER,
+        spacingAfter: 20,
+      }
+    ),
+    p(plan.header?.title || "LEARNING PLAN", {
+      bold: true,
+      size: 28,
+      align: AlignmentType.CENTER,
+      spacingAfter: 20,
+    }),
+    p(
+      plan.header?.schoolYear ||
+        profile?.schoolYear ||
+        "S.Y. 2026-2027",
+      {
+        bold: true,
+        size: 28,
+        align: AlignmentType.CENTER,
+        spacingAfter: 20,
+      }
+    )
+  );
+
+  const rows: TableRow[] = [
+    // Row 1: Pure White Header Cell (columnSpan 3)
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 3,
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: headerChildren,
+        }),
+      ],
+    }),
+
+    // Row 2: 3-Column Metadata Row (Subject | Grade Level | Date Coverage + Term)
+    new TableRow({
+      children: [
+        new TableCell({
+          width: { size: 30, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            pMixed([
+              { text: "Subject: ", bold: true, size: 24 },
+              { text: plan.subject, size: 24 },
+            ]),
+          ],
+        }),
+        new TableCell({
+          width: { size: 30, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            pMixed([
+              { text: "Grade Level: ", bold: true, size: 24 },
+              { text: plan.gradeLevel || "Kinder 2", size: 24 },
+            ]),
+          ],
+        }),
+        new TableCell({
+          width: { size: 40, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            pMixed([
+              { text: "Date Coverage: ", bold: true, size: 24 },
+              { text: plan.dateCoverage, size: 24 },
+            ]),
+            p(plan.term || "Term 1", { bold: true, size: 24 }),
+          ],
+        }),
+      ],
+    }),
+
+    // Row 3: 2-Column Split (I Learning Objectives | II Subject Matter)
+    new TableRow({
+      children: [
+        new TableCell({
+          width: { size: 50, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            pMixed([
+              { text: "I Learning Objectives: ", bold: true, size: 24 },
+              {
+                text: "At the end of the lesson the students will be able to:",
+                size: 24,
+              },
+            ]),
+            ...plan.objectives.map((obj, idx) =>
+              isRve
+                ? p(`${String.fromCharCode(97 + idx)}. ${obj}`, {
+                    size: 24,
+                    indentLeft: 240,
+                  })
+                : p(obj, { bullet: true, size: 24, indentLeft: 240 })
+            ),
+          ],
+        }),
+        new TableCell({
+          columnSpan: 2,
+          width: { size: 50, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("II Subject Matter", { bold: true, size: 24 }),
+            pMixed([
+              { text: "Lesson: ", bold: true, size: 24 },
+              { text: plan.subjectMatter.lesson, size: 24 },
+            ]),
+            p("", { size: 16 }),
+            pMixed([
+              { text: "Reference/s: ", bold: true, size: 24 },
+              { text: plan.subjectMatter.references, size: 24 },
+            ]),
+          ],
+        }),
+      ],
+    }),
+
+    // Optional Row 4: III - Learning Competencies (when present, e.g. Science Weeks 6-7)
+    ...(plan.learningCompetencies && plan.learningCompetencies.trim().length > 0
+      ? [
+          new TableRow({
+            children: [
+              new TableCell({
+                columnSpan: 3,
+                borders: STANDARD_BORDERS,
+                margins: CELL_PADDING,
+                children: [
+                  p("III - Learning Competencies:", { bold: true, size: 24 }),
+                  p(plan.learningCompetencies, {
+                    bullet: true,
+                    size: 24,
+                    indentLeft: 240,
+                  }),
+                ],
+              }),
+            ],
+          }),
+        ]
+      : []),
+
+    // Row 5: III- Values Statement
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 3,
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("III- Values Statement:", { bold: true, size: 24 }),
+            p(plan.valuesStatement, {
+              bullet: !isRve,
+              size: 24,
+              indentLeft: isRve ? 0 : 240,
+            }),
+          ],
+        }),
+      ],
+    }),
+
+    // Row 6: IV- Procedures
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 3,
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("IV- Procedures:", { bold: true, size: 24 }),
+            p("a. Routine Activities", {
+              bold: true,
+              size: 24,
+              indentLeft: 240,
+            }),
+            ...plan.procedures.routineActivities.map((act) =>
+              p(act, { bullet: true, size: 24, indentLeft: 480 })
+            ),
+            p("b. Motivation:", {
+              bold: true,
+              size: 24,
+              indentLeft: 240,
+              spacingBefore: 60,
+            }),
+            ...plan.procedures.motivation
+              .split("\n")
+              .filter(Boolean)
+              .map((line) =>
+                p(line, {
+                  bold: /^guide question/i.test(line.trim()),
+                  size: 24,
+                  indentLeft: 480,
+                })
+              ),
+            p("c. Learning Strategies", {
+              bold: true,
+              size: 24,
+              indentLeft: 240,
+              spacingBefore: 60,
+            }),
+            ...plan.procedures.learningStrategies.flatMap((strat) => [
+              pMixed(
+                [
+                  { text: `${strat.title} – `, bold: true, size: 24 },
+                  { text: strat.instructions, size: 24 },
+                ],
+                { indentLeft: 360, spacingBefore: 40 }
+              ),
+              ...(strat.questions && strat.questions.length > 0
+                ? [
+                    p("Guide Questions:", {
+                      bold: true,
+                      size: 24,
+                      indentLeft: 480,
+                    }),
+                    ...strat.questions.map((q, qIdx) =>
+                      p(`${qIdx + 1}. ${q}`, { size: 24, indentLeft: 600 })
+                    ),
+                  ]
+                : []),
+            ]),
+          ],
+        }),
+      ],
+    }),
+
+    // Row 7: V- Assessment
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 3,
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("V- Assessment:", { bold: true, size: 24 }),
+            ...plan.assessment.map((item) =>
+              p(item, {
+                bullet: !/^[A-Z]\./.test(item.trim()),
+                size: 24,
+                indentLeft: 240,
+              })
+            ),
+          ],
+        }),
+      ],
+    }),
+
+    // Row 8: VI- Closure
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 3,
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("VI- Closure:", { bold: true, size: 24 }),
+            p(plan.closure, { size: 24 }),
+          ],
+        }),
+      ],
+    }),
+
+    // Row 9: VII- Assignment
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 3,
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("VII- Assignment:", { bold: true, size: 24 }),
+            p(plan.assignment, { size: 24 }),
+          ],
+        }),
+      ],
+    }),
+
+    // Row 10: Remarks
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 3,
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("Remarks:", { bold: true, size: 24 }),
+            p(plan.remarks || "", { size: 24, spacingAfter: 120 }),
+          ],
+        }),
+      ],
+    }),
+
+    // Row 11: 3-Column Signatories (Prepared by / Checked by / Observed by)
+    new TableRow({
+      children: [
+        new TableCell({
+          width: { size: 33, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("Prepared by:", { bold: true, size: 24, spacingAfter: 120 }),
+            p(preparedBy, { size: 24 }),
+          ],
+        }),
+        new TableCell({
+          width: { size: 33, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("Checked by:", { bold: true, size: 24, spacingAfter: 120 }),
+            p(checkedBy, { size: 24 }),
+          ],
+        }),
+        new TableCell({
+          width: { size: 34, type: WidthType.PERCENTAGE },
+          borders: STANDARD_BORDERS,
+          margins: CELL_PADDING,
+          children: [
+            p("Observed by:", { bold: true, size: 24, spacingAfter: 120 }),
+            p(observedBy, { size: 24 }),
+          ],
+        }),
+      ],
+    }),
+  ];
+
+  const doc = new Document({
+    sections: [
+      {
+        properties: {
+          page: {
+            size: {
+              width: 12240, // 8.5 inches
+              height: 20160, // 14 inches (Legal paper matching Kat's files)
+            },
+            margin: {
+              top: 720,
+              bottom: 720,
+              left: 720,
+              right: 720,
             },
           },
         },
         children: [
           new Table({
-            rows,
             width: { size: 100, type: WidthType.PERCENTAGE },
-            borders: TABLE_BORDERS,
+            rows,
           }),
         ],
       },
     ],
   });
 
-  if (typeof window !== "undefined") {
-    return await Packer.toBlob(doc);
+  if (typeof window === "undefined") {
+    return await Packer.toBuffer(doc);
   }
-  return await Packer.toBuffer(doc);
+  return await Packer.toBlob(doc);
+}
+
+export async function downloadLessonPlanDocx(
+  plan: LessonPlan,
+  profile?: TeacherProfile
+): Promise<void> {
+  const blob =
+    plan.templateType === "matatag"
+      ? await generateMatatagDocx(plan, profile)
+      : await generateLccpDocx(plan, profile);
+
+  const rawTopic =
+    plan.templateType === "matatag"
+      ? plan.subjectMatter.paksa
+      : plan.subjectMatter.lesson;
+  const cleanTopic = (rawTopic || "Lesson_Plan")
+    .replace(/[^a-zA-Z0-9_-]/g, "_")
+    .replace(/_+/g, "_")
+    .slice(0, 40);
+
+  const fileName =
+    plan.templateType === "matatag"
+      ? `${
+          plan.gradeSection.toLowerCase().includes("kinder")
+            ? "K2-FILIPINO"
+            : "GRADE1-FILIPINO-LP"
+        }-${cleanTopic}.docx`
+      : `K2-${plan.subject.toUpperCase()}-${cleanTopic}.docx`;
+
+  saveAs(blob as Blob, fileName);
 }

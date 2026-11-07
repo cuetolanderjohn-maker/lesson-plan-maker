@@ -1,7 +1,15 @@
 import assert from "node:assert";
 import { test } from "node:test";
 import { generateMatatagDocx, generateLccpDocx } from "../lib/docxGenerator";
-import { sampleMatatagPlan, sampleLccpPlan, defaultTeacherProfile } from "../lib/sampleData";
+import {
+  sampleMatatagPlan,
+  sampleKinder2FilipinoPlan,
+  sampleLccpPlan,
+  sampleK2MathPlan,
+  sampleK2SciencePlan,
+  sampleK2RvePlan,
+  defaultTeacherProfile,
+} from "../lib/sampleData";
 import { getLccpBannerBuffer, getLccpCrestBuffer } from "../lib/schoolLogos";
 
 test("getLccpBannerBuffer and getLccpCrestBuffer return authentic image assets", () => {
@@ -22,16 +30,35 @@ test("generateMatatagDocx produces a valid non-empty DOCX file with embedded sch
   const result = await generateMatatagDocx(sampleMatatagPlan, defaultTeacherProfile);
   assert.ok(result);
   const size = "size" in result ? result.size : (result as Buffer).length;
-  // With the 82KB banner image embedded, DOCX should be > 80,000 bytes
   assert.ok(size > 80000, `Expected DOCX size > 80000 bytes with banner, got ${size}`);
+
+  const k2Result = await generateMatatagDocx(sampleKinder2FilipinoPlan, defaultTeacherProfile);
+  assert.ok(k2Result);
 });
 
-test("generateLccpDocx produces a valid non-empty DOCX file with embedded school crest", async () => {
+test("generateLccpDocx produces valid DOCX files for Language, Math, Science, and RVE (Portrait & 5-Column ADIDSE)", async () => {
   const result = await generateLccpDocx(sampleLccpPlan, defaultTeacherProfile);
   assert.ok(result);
   const size = "size" in result ? result.size : (result as Buffer).length;
-  // With the 26KB crest image embedded, DOCX should be > 25,000 bytes
   assert.ok(size > 25000, `Expected DOCX size > 25000 bytes with crest, got ${size}`);
+
+  const mathDocx = await generateLccpDocx(sampleK2MathPlan, defaultTeacherProfile);
+  assert.ok(mathDocx);
+
+  const scienceDocx = await generateLccpDocx(sampleK2SciencePlan, defaultTeacherProfile);
+  assert.ok(scienceDocx);
+
+  const rvePortraitDocx = await generateLccpDocx(sampleK2RvePlan, defaultTeacherProfile);
+  assert.ok(rvePortraitDocx);
+
+  const rveLandscapeDocx = await generateLccpDocx(
+    { ...sampleK2RvePlan, rveFormat: "landscape_adidse" },
+    defaultTeacherProfile
+  );
+  assert.ok(rveLandscapeDocx);
+  const rveLandscapeSize =
+    "size" in rveLandscapeDocx ? rveLandscapeDocx.size : (rveLandscapeDocx as Buffer).length;
+  assert.ok(rveLandscapeSize > 80000, "RVE Landscape ADIDSE DOCX should embed LCCP banner");
 });
 
 test("generateMatatagDocx respects custom plan signatories over profile defaults", async () => {
@@ -46,4 +73,3 @@ test("generateMatatagDocx respects custom plan signatories over profile defaults
   const result = await generateMatatagDocx(customPlan, defaultTeacherProfile);
   assert.ok(result);
 });
-

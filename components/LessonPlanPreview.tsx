@@ -1,11 +1,28 @@
 "use client";
 
 import React, { useState } from "react";
-import { Download, Printer, Copy, Check, Edit3 } from "lucide-react";
-import type { LessonPlan, MatatagLessonPlan, LccpLearningPlan, TeacherProfile } from "@/lib/types";
-import { generateMatatagDocx, generateLccpDocx } from "@/lib/docxGenerator";
+import type {
+  LessonPlan,
+  MatatagLessonPlan,
+  LccpLearningPlan,
+  TeacherProfile,
+} from "@/lib/types";
+import { downloadLessonPlanDocx } from "@/lib/docxGenerator";
 import { LCCP_BANNER_BASE64, LCCP_CREST_BASE64 } from "@/lib/schoolLogos";
-import { saveAs } from "file-saver";
+
+const LCCP_BANNER_DATA_URI = `data:image/jpeg;base64,${LCCP_BANNER_BASE64}`;
+const LCCP_CREST_DATA_URI = `data:image/png;base64,${LCCP_CREST_BASE64}`;
+import {
+  FileDown,
+  Printer,
+  Edit3,
+  Check,
+  Loader2,
+  Plus,
+  Trash2,
+  Columns,
+  FileText,
+} from "lucide-react";
 
 interface LessonPlanPreviewProps {
   plan: LessonPlan;
@@ -18,936 +35,1776 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({
   profile,
   onUpdatePlan,
 }) => {
-  const [copied, setCopied] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownloadDocx = async () => {
+    setIsDownloading(true);
     try {
-      setIsExporting(true);
-      if (plan.templateType === "matatag") {
-        const blob = await generateMatatagDocx(plan, profile);
-        saveAs(blob as Blob, `${plan.gradeSection} - ${plan.subject} - LP.docx`);
-      } else {
-        const blob = await generateLccpDocx(plan, profile);
-        saveAs(blob as Blob, `${plan.gradeLevel} - ${plan.subject} - LP.docx`);
-      }
-    } catch (err) {
-      console.error("DOCX generation error:", err);
-      alert("Failed to export Word document: " + err);
+      await downloadLessonPlanDocx(plan, profile);
+    } catch (e) {
+      console.error("Failed to generate DOCX:", e);
+      alert("Error generating Word document. Please try again.");
     } finally {
-      setIsExporting(false);
+      setIsDownloading(false);
     }
   };
 
-  const handlePrint = () => {
+  const handlePrintPdf = () => {
     window.print();
   };
 
-  const handleCopyText = () => {
-    let plainText = "";
-    if (plan.templateType === "matatag") {
-      plainText = `Banghay- Aralin sa ${plan.subject}\n${plan.schoolYear}\n\n` +
-        `Subject: ${plan.subject} | Grade & Section: ${plan.gradeSection} | Date Coverage: ${plan.dateCoverage} | Term & Week: ${plan.termWeek}\n\n` +
-        `I. Mga Layunin sa Pagkatuto:\nSa pagtatapos ng talakayan, ang mga mag-aaral ay inaasahang;\n${plan.objectives.map((o) => `• ${o}`).join("\n")}\n\n` +
-        `II. Paksang Aralin:\nPaksa: ${plan.subjectMatter.paksa}\nWika: ${plan.subjectMatter.wika || "—"}\nSanggunian: ${plan.subjectMatter.sanggunian}\nDeklarasyon sa Paggamit ng AI: DO 3 s 2026 Annex\n${plan.subjectMatter.aiDeclaration}\n\n` +
-        `III. Mga Kasanayan sa Pagkatuto:\n● ${plan.learningCompetencies}\n\n` +
-        `IV. Integrasyon:\n` +
-        `• Laudato Si: ${plan.integrations.laudatoSi}\n` +
-        `• Justice and Peace Education: ${plan.integrations.justiceAndPeace}\n` +
-        `• Gender and Development: ${plan.integrations.genderAndDevelopment}\n` +
-        `• LCCP- Care: ${plan.integrations.lccpCare}\n` +
-        `• Integrasyong Interdisiplinaryo: ${plan.integrations.interdisciplinary}\n` +
-        `• Paggamit ng Teknolohiya sa Pagtuturo: ${plan.integrations.techTeaching}\n\n` +
-        `• Pamamaraan:\n` +
-        `a. Mga Panimulang Gawain: ${plan.procedures.routine.join(", ")}\n` +
-        `b. Pagganyak: ${plan.procedures.motivation}\n` +
-        `c. Pagtalakay ng Aralin:\n${plan.procedures.discussion.steps.join("\n")}\n` +
-        `   Gabay na tanong:\n${plan.procedures.discussion.guideQuestions.map((q, i) => `   ${i + 1}. ${q}`).join("\n")}\n` +
-        `d. Integrasyon ng Pagpapahalaga: ${plan.procedures.valuesIntegration}\n` +
-        `e. Pagbubuod: ${plan.procedures.summary}\n\n` +
-        `VI- Pagtataya:\n• Formative – ${plan.assessment.formative}\n• Summative - Panuto: ${plan.assessment.summativeInstruction}\n${plan.assessment.summativeItems.map((item, i) => `   ${i + 1}. ${item}`).join("\n")}\n\n` +
-        `VII- Takdang- Aralin:\n${plan.assignment}\n\n` +
-        `Mga Tala at Pagninilay:\n${plan.remarks}\n\n` +
-        `Inihanda: ${plan.signatories.preparedBy} | Sinuri: ${plan.signatories.checkedBy} | Inobserbahan: ${plan.signatories.observedBy}`;
-    } else {
-      plainText = `${plan.header.institution}\n${plan.header.address}\n${plan.header.title}\n${plan.header.schoolYear}\n\n` +
-        `Subject: ${plan.subject} | Grade Level: ${plan.gradeLevel} | Date Coverage: ${plan.dateCoverage}         ${plan.term}\n\n` +
-        `I Learning Objectives:\n${plan.objectives.map((o) => `• ${o}`).join("\n")}\n\n` +
-        `II Subject Matter\nLesson: ${plan.subjectMatter.lesson}\nReference/s: ${plan.subjectMatter.references}\n\n` +
-        `III - Learning Competencies:\n${plan.learningCompetencies}\n\n` +
-        `III- Values Statement:\n${plan.valuesStatement}\n\n` +
-        `IV- Procedures:\n` +
-        `a. Routine Activities: ${plan.procedures.routineActivities.join(", ")}\n` +
-        `b. Motivation: ${plan.procedures.motivation}\n` +
-        `c. Learning Strategies:\n${plan.procedures.learningStrategies.map((s) => `• ${s.title}: ${s.instructions}`).join("\n")}\n\n` +
-        `V- Assessment:\n${plan.assessment.map((a) => `• ${a}`).join("\n")}\n\n` +
-        `VI- Closure:\n${plan.closure}\n\n` +
-        `VII- Assignment:\n${plan.assignment}\n\n` +
-        `Remarks:\n${plan.remarks}\n\n` +
-        `Prepared by: ${plan.signatories.preparedBy} | Checked by: ${plan.signatories.checkedBy} | Observed by: ${plan.signatories.observedBy}`;
-    }
-
-    navigator.clipboard.writeText(plainText).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
-  const updateField = (path: string, val: string) => {
-    const updated = JSON.parse(JSON.stringify(plan));
-    const parts = path.split(".");
-    let current = updated;
-    for (let i = 0; i < parts.length - 1; i++) {
-      current = current[parts[i]];
-    }
-    current[parts[parts.length - 1]] = val;
-    onUpdatePlan(updated);
-  };
+  const isMatatag = plan.templateType === "matatag";
+  const isRve =
+    !isMatatag && plan.subject.trim().toUpperCase() === "RVE";
+  const rveFormat = !isMatatag ? plan.rveFormat || "portrait" : "portrait";
 
   return (
     <div className="space-y-4">
-      {/* Action Toolbar */}
-      <div className="no-print bg-surface rounded-2xl border border-borderMuted p-3.5 shadow-xs flex flex-wrap items-center justify-between gap-2.5">
-        <div className="flex items-center space-x-2">
-          <span className="text-xs font-semibold text-gray-700 flex items-center space-x-1.5">
-            <Edit3 className="w-4 h-4 text-sage-600" />
-            <span>Interactive Live Document</span>
+      {/* Action Toolbar (Hidden on Print) */}
+      <div className="no-print flex flex-wrap items-center justify-between gap-3 bg-surface p-4 rounded-2xl border border-borderMuted shadow-2xs">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-sage-50 text-sage-700 border border-sage-200">
+            {isMatatag
+              ? "Banghay- Aralin sa FILIPINO (Exact Kat Format)"
+              : isRve && rveFormat === "landscape_adidse"
+              ? "Religion Learning Plan (5-Column Landscape ADIDSE)"
+              : "LCCP Learning Plan (Exact Kat Format)"}
           </span>
-          <span className="text-[11px] text-gray-400">
-            (Click any text in the table to edit directly)
+
+          {isRve && !isMatatag && (
+            <div className="inline-flex items-center p-0.5 rounded-lg bg-stone-100 border border-stone-200 text-[11px]">
+              <button
+                type="button"
+                onClick={() =>
+                  onUpdatePlan({
+                    ...plan,
+                    rveFormat: "portrait",
+                  })
+                }
+                className={`px-2.5 py-1 rounded-md font-medium flex items-center space-x-1 transition-all cursor-pointer ${
+                  rveFormat === "portrait"
+                    ? "bg-white text-stone-900 shadow-2xs font-semibold"
+                    : "text-stone-600 hover:text-stone-900"
+                }`}
+              >
+                <FileText className="w-3 h-3" />
+                <span>LCCP Portrait (Wk 9–15)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  onUpdatePlan({
+                    ...plan,
+                    rveFormat: "landscape_adidse",
+                  })
+                }
+                className={`px-2.5 py-1 rounded-md font-medium flex items-center space-x-1 transition-all cursor-pointer ${
+                  rveFormat === "landscape_adidse"
+                    ? "bg-white text-stone-900 shadow-2xs font-semibold"
+                    : "text-stone-600 hover:text-stone-900"
+                }`}
+              >
+                <Columns className="w-3 h-3" />
+                <span>5-Col ADIDSE (Wk 1–8)</span>
+              </button>
+            </div>
+          )}
+
+          <span className="text-xs text-gray-500 hidden sm:inline">
+            {isEditing
+              ? "Click any text box to customize before exporting"
+              : "Exact school table format ready to download or print"}
           </span>
         </div>
 
         <div className="flex items-center space-x-2">
           <button
             type="button"
-            onClick={handleCopyText}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-gray-700 bg-surface hover:bg-canvas border border-borderMuted transition-colors"
-            title="Copy plain text"
+            onClick={() => setIsEditing(!isEditing)}
+            className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-medium border transition-all ${
+              isEditing
+                ? "bg-amber-50 border-amber-300 text-amber-800"
+                : "bg-canvas hover:bg-surface border-borderMuted text-gray-700"
+            }`}
           >
-            {copied ? (
+            {isEditing ? (
               <>
-                <Check className="w-3.5 h-3.5 text-sage-600" />
-                <span className="text-sage-700 font-semibold">Copied!</span>
+                <Check className="w-3.5 h-3.5 text-amber-600" />
+                <span>Done Editing</span>
               </>
             ) : (
               <>
-                <Copy className="w-3.5 h-3.5 text-gray-500" />
-                <span>Copy</span>
+                <Edit3 className="w-3.5 h-3.5 text-gray-500" />
+                <span>Edit Content</span>
               </>
             )}
           </button>
 
           <button
             type="button"
-            onClick={handlePrint}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-gray-700 bg-surface hover:bg-canvas border border-borderMuted transition-colors"
-            title="Print or Save as PDF"
+            onClick={handlePrintPdf}
+            className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-medium bg-canvas hover:bg-gray-200/70 text-gray-700 border border-borderMuted transition-colors"
           >
-            <Printer className="w-3.5 h-3.5 text-gray-500" />
-            <span>Print / PDF</span>
+            <Printer className="w-3.5 h-3.5 text-gray-600" />
+            <span>Print / Save PDF</span>
           </button>
 
           <button
             type="button"
             onClick={handleDownloadDocx}
-            disabled={isExporting}
-            className="flex items-center space-x-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold text-white bg-sage-500 hover:bg-sage-600 shadow-xs transition-colors disabled:opacity-50"
-            title="Download official Microsoft Word document"
+            disabled={isDownloading}
+            className="flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-sage-600 hover:bg-sage-700 text-white shadow-xs transition-all disabled:opacity-60"
           >
-            <Download className="w-3.5 h-3.5" />
-            <span>{isExporting ? "Generating..." : "Download .docx"}</span>
+            {isDownloading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <FileDown className="w-3.5 h-3.5" />
+            )}
+            <span>Download Word (.docx)</span>
           </button>
         </div>
       </div>
 
-      {/* Rendered Official School Table */}
-      <div className="bg-white rounded-2xl border border-borderMuted shadow-md p-6 sm:p-10 text-gray-800 font-sans print:shadow-none print:border-none print:p-0">
-        {plan.templateType === "matatag" ? (
-          <MatatagRenderer plan={plan} onUpdateField={updateField} />
+      {/* Paper Container */}
+      <div className="print-container bg-white rounded-2xl border border-borderMuted shadow-sm p-4 sm:p-8 overflow-x-auto text-black">
+        {isMatatag ? (
+          <MatatagTableEditor
+            plan={plan}
+            profile={profile}
+            isEditing={isEditing}
+            onChange={(updated) => onUpdatePlan(updated)}
+          />
+        ) : isRve && rveFormat === "landscape_adidse" && plan.adidse ? (
+          <RveAdidseTableEditor
+            plan={plan}
+            profile={profile}
+            isEditing={isEditing}
+            onChange={(updated) => onUpdatePlan(updated)}
+          />
         ) : (
-          <LccpRenderer plan={plan} onUpdateField={updateField} />
+          <LccpTableEditor
+            plan={plan}
+            profile={profile}
+            isEditing={isEditing}
+            onChange={(updated) => onUpdatePlan(updated)}
+          />
         )}
       </div>
     </div>
   );
 };
 
-/* Sub-renderer for DepEd MATATAG / Banghay-Aralin format (Matching Kat's exact format) */
-const MatatagRenderer: React.FC<{
+/* ============================================================================
+ * FORMAT A: Banghay- Aralin sa FILIPINO (Grade 1 & Kinder 2 Filipino)
+ * Exact replica of G1-Filipino-LP-Week 11.docx, GRADE1-FILIPINO-LP-WEEK14 true.pdf,
+ * and K2 - Week 4 Filipino.docx
+ * ========================================================================== */
+const MatatagTableEditor: React.FC<{
   plan: MatatagLessonPlan;
-  onUpdateField: (path: string, val: string) => void;
-}> = ({ plan, onUpdateField }) => {
+  profile: TeacherProfile;
+  isEditing: boolean;
+  onChange: (plan: MatatagLessonPlan) => void;
+}> = ({ plan, profile, isEditing, onChange }) => {
+  const isKinder = plan.gradeSection.toLowerCase().includes("kinder");
+
+  const updateField = <K extends keyof MatatagLessonPlan>(
+    key: K,
+    value: MatatagLessonPlan[K]
+  ) => {
+    onChange({ ...plan, [key]: value });
+  };
+
+  const aiLines = (plan.subjectMatter.aiDeclaration || "").split("\n");
+  const aiHeaderNote =
+    aiLines[0]?.replace(/^DO\s*3\s*s\.?\s*2026\s*Annex\s*/i, "").trim() ||
+    "(Banggitin kung paano ginamit ang AI sa pagbuo ng plano sa pagtuturo)";
+  const aiBodyText =
+    aiLines[1]?.trim() ||
+    "Ang banghay- aralin na ay binuo sa tulong ng AI upang masiguro ang pagka-ayon nito sa mga Pamantayan ng Kurikulum ng DepEd MATATAG K-12.";
+
   return (
-    <div className="border border-black overflow-x-auto text-[13px] leading-relaxed">
-      {/* Title Header with Official School Banner */}
-      <div className="bg-gray-100 p-3 text-center border-b border-black">
-        <img
-          src={`data:image/jpeg;base64,${LCCP_BANNER_BASE64}`}
-          alt="La Consolacion College - Pasig Header Banner"
-          className="h-14 sm:h-16 w-auto max-w-full mx-auto mb-2 object-contain"
-        />
-        <div className="font-bold text-sm tracking-wide">
-          Banghay- Aralin sa {plan.subject.toUpperCase()}
-        </div>
-        <div className="text-xs font-semibold mt-0.5">{plan.schoolYear}</div>
-      </div>
-
-      {/* Metadata Row: EXACT 4 Columns */}
-      <div className="grid grid-cols-4 border-b border-black divide-x divide-black text-xs font-medium">
-        <div className="p-2">
-          <span className="font-bold block">Subject:</span>
-          <span
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => onUpdateField("subject", e.currentTarget.textContent || "")}
-            className="outline-none focus:bg-sage-50"
-          >
-            {plan.subject}
-          </span>
-        </div>
-        <div className="p-2">
-          <span className="font-bold block">Grade & Section:</span>
-          <span
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => onUpdateField("gradeSection", e.currentTarget.textContent || "")}
-            className="outline-none focus:bg-sage-50"
-          >
-            {plan.gradeSection}
-          </span>
-        </div>
-        <div className="p-2">
-          <span className="font-bold block">Date Coverage:</span>
-          <span
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => onUpdateField("dateCoverage", e.currentTarget.textContent || "")}
-            className="outline-none focus:bg-sage-50"
-          >
-            {plan.dateCoverage}
-          </span>
-        </div>
-        <div className="p-2">
-          <span className="font-bold block">Term & Week:</span>
-          <span
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => onUpdateField("termWeek", e.currentTarget.textContent || "")}
-            className="outline-none focus:bg-sage-50"
-          >
-            {plan.termWeek}
-          </span>
-        </div>
-      </div>
-
-      {/* Objectives and Subject Matter (2 Columns split) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 border-b border-black divide-y md:divide-y-0 md:divide-x divide-black">
-        {/* Objectives */}
-        <div className="p-3">
-          <p className="font-bold mb-1">I. Mga Layunin sa Pagkatuto:</p>
-          <p className="text-xs text-gray-600 mb-2">
-            Sa pagtatapos ng talakayan, ang mga mag-aaral ay inaasahang;
-          </p>
-          <ul className="list-disc pl-5 space-y-1">
-            {plan.objectives.map((obj, i) => (
-              <li
-                key={i}
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) => {
-                  const updated = [...plan.objectives];
-                  updated[i] = e.currentTarget.textContent || "";
-                  onUpdateField("objectives", updated as unknown as string);
-                }}
-                className="outline-none focus:bg-sage-50"
-              >
-                {obj}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Subject Matter */}
-        <div className="p-3 space-y-2">
-          <p className="font-bold">II. Paksang Aralin:</p>
-          <div>
-            <span className="font-bold">Paksa: </span>
-            <span
-              contentEditable
-              suppressContentEditableWarning
-              onBlur={(e) => onUpdateField("subjectMatter.paksa", e.currentTarget.textContent || "")}
-              className="outline-none focus:bg-sage-50"
+    <div
+      className="max-w-[850px] mx-auto text-[13px] leading-snug text-black"
+      style={{ fontFamily: '"Times New Roman", Times, serif' }}
+    >
+      <table className="lesson-table w-full border-collapse border border-black">
+        <tbody>
+          {/* Row 1: Pure White School Header Cell (colSpan 6) */}
+          <tr>
+            <td
+              colSpan={6}
+              className="bg-white text-center py-3 px-4 border border-black"
             >
-              {plan.subjectMatter.paksa}
-            </span>
-          </div>
-          {plan.subjectMatter.wika && (
-            <div>
-              <span className="font-bold">Wika: </span>
-              <span
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) => onUpdateField("subjectMatter.wika", e.currentTarget.textContent || "")}
-                className="outline-none focus:bg-sage-50"
+              <div className="flex flex-col items-center justify-center">
+                <img
+                  src={LCCP_BANNER_DATA_URI}
+                  alt="La Consolacion College Pasig PAASCU Banner"
+                  className="h-16 sm:h-20 w-auto object-contain mx-auto mb-1"
+                />
+                <div className="font-bold text-lg sm:text-xl tracking-tight text-black">
+                  Banghay- Aralin sa FILIPINO
+                </div>
+                <div className="text-xs font-normal text-black">
+                  {plan.schoolYear || profile.schoolYear || "S.Y. 2026-2027"}
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          {/* Row 2: Exact 3-Column Metadata Row (Subject | Grade & Section | Date Coverage + Term & Week) */}
+          <tr>
+            <td
+              colSpan={2}
+              className="w-[30%] align-top p-2.5 border border-black bg-white"
+            >
+              <div className="font-bold">Subject:</div>
+              <div className="h-3" />
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={plan.subject}
+                  onChange={(e) => updateField("subject", e.target.value)}
+                  className="w-full font-bold bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5"
+                />
+              ) : (
+                <div className="font-bold">{plan.subject}</div>
+              )}
+            </td>
+            <td
+              colSpan={2}
+              className="w-[35%] align-top p-2.5 border border-black bg-white"
+            >
+              <div className="font-bold">Grade &amp; Section:</div>
+              <div className="h-3" />
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={plan.gradeSection}
+                  onChange={(e) => updateField("gradeSection", e.target.value)}
+                  className="w-full font-bold bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5"
+                />
+              ) : (
+                <div className="font-bold">{plan.gradeSection}</div>
+              )}
+            </td>
+            <td
+              colSpan={2}
+              className="w-[35%] align-top p-2.5 border border-black bg-white"
+            >
+              <div className="font-bold">
+                Date Coverage:{" "}
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={plan.dateCoverage}
+                    onChange={(e) =>
+                      updateField("dateCoverage", e.target.value)
+                    }
+                    className="w-full font-bold bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5 mt-0.5"
+                  />
+                ) : (
+                  <span>{plan.dateCoverage}</span>
+                )}
+              </div>
+              <div className="h-3" />
+              <div className="font-bold">
+                Term &amp; Week:{" "}
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={plan.termWeek}
+                    onChange={(e) => updateField("termWeek", e.target.value)}
+                    className="w-full font-bold bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5 mt-0.5"
+                  />
+                ) : (
+                  <span>{plan.termWeek}</span>
+                )}
+              </div>
+            </td>
+          </tr>
+
+          {/* Row 3: Two Columns (I. Mga Layunin sa Pagkatuto | II. Paksang Aralin) */}
+          <tr>
+            <td
+              colSpan={3}
+              className="w-1/2 align-top p-3 border border-black bg-white"
+            >
+              <div className="font-bold">I. Mga Layunin sa Pagkatuto:</div>
+              <div className="italic mb-2">
+                Sa pagtatapos ng talakayan, ang mga mag-aaral ay inaasahang;
+              </div>
+              {isEditing ? (
+                <EditableStringList
+                  items={plan.objectives}
+                  onChange={(objectives) =>
+                    updateField("objectives", objectives)
+                  }
+                />
+              ) : (
+                <ul className="list-disc pl-5 space-y-1">
+                  {plan.objectives.map((obj, idx) => (
+                    <li key={idx}>{obj}</li>
+                  ))}
+                </ul>
+              )}
+            </td>
+
+            <td
+              colSpan={3}
+              className="w-1/2 align-top p-3 border border-black bg-white space-y-2"
+            >
+              <div className="font-bold">II. Paksang Aralin:</div>
+              <div>
+                <span className="font-bold">Paksa: </span>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={plan.subjectMatter.paksa}
+                    onChange={(e) =>
+                      updateField("subjectMatter", {
+                        ...plan.subjectMatter,
+                        paksa: e.target.value,
+                      })
+                    }
+                    className="w-full bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5 mt-0.5"
+                  />
+                ) : (
+                  <span>{plan.subjectMatter.paksa}</span>
+                )}
+              </div>
+
+              {(plan.subjectMatter.wika || isEditing) && (
+                <div>
+                  <span className="font-bold">Wika: </span>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={plan.subjectMatter.wika || ""}
+                      onChange={(e) =>
+                        updateField("subjectMatter", {
+                          ...plan.subjectMatter,
+                          wika: e.target.value,
+                        })
+                      }
+                      className="w-full bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5 mt-0.5"
+                    />
+                  ) : (
+                    <span>{plan.subjectMatter.wika}</span>
+                  )}
+                </div>
+              )}
+
+              <div className="pt-1">
+                <div className="font-bold">Sanggunian:</div>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={plan.subjectMatter.sanggunian}
+                    onChange={(e) =>
+                      updateField("subjectMatter", {
+                        ...plan.subjectMatter,
+                        sanggunian: e.target.value,
+                      })
+                    }
+                    className="w-full bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5 mt-0.5"
+                  />
+                ) : (
+                  <div>{plan.subjectMatter.sanggunian}</div>
+                )}
+              </div>
+
+              <div className="pt-1 text-[11px] leading-snug">
+                <div>
+                  <span className="font-bold">
+                    Deklarasyon sa Paggamit ng AI:{" "}
+                  </span>
+                  <span className="italic">
+                    DO 3 s 2026 Annex {aiHeaderNote}
+                  </span>
+                </div>
+                {isEditing ? (
+                  <textarea
+                    rows={2}
+                    value={plan.subjectMatter.aiDeclaration}
+                    onChange={(e) =>
+                      updateField("subjectMatter", {
+                        ...plan.subjectMatter,
+                        aiDeclaration: e.target.value,
+                      })
+                    }
+                    className="w-full bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5 mt-1"
+                  />
+                ) : (
+                  <div className="pl-5 mt-0.5">{aiBodyText}</div>
+                )}
+              </div>
+            </td>
+          </tr>
+
+          {/* Row 4: III. Mga Kasanayan sa Pagkatuto */}
+          <tr>
+            <td colSpan={6} className="p-3 border border-black bg-white">
+              <div className="font-bold mb-1">
+                III. Mga Kasanayan sa Pagkatuto:
+              </div>
+              {isEditing ? (
+                <textarea
+                  rows={2}
+                  value={plan.learningCompetencies}
+                  onChange={(e) =>
+                    updateField("learningCompetencies", e.target.value)
+                  }
+                  className="w-full bg-amber-50/70 border border-amber-300 rounded p-1.5"
+                />
+              ) : isKinder ? (
+                <ul className="list-disc pl-5">
+                  <li>{plan.learningCompetencies}</li>
+                </ul>
+              ) : (
+                <div>{plan.learningCompetencies}</div>
+              )}
+            </td>
+          </tr>
+
+          {/* Row 5: IV. Integrasyon Header (Pure White #FFFFFF) */}
+          <tr>
+            <td
+              colSpan={6}
+              className="bg-white font-bold p-2.5 border border-black"
+            >
+              IV. Integrasyon:
+            </td>
+          </tr>
+
+          {/* Rows 6–11: Kat's Exact Color-Coded Integration Rows */}
+          {(
+            [
+              {
+                key: "laudatoSi",
+                label: "Laudato Si",
+                bgColor: "#93C37D",
+                italicRight: true,
+              },
+              {
+                key: "justiceAndPeace",
+                label: "Justice and Peace Education",
+                bgColor: "#A34500",
+                italicRight: true,
+              },
+              {
+                key: "genderAndDevelopment",
+                label: "Gender and Development",
+                bgColor: "#B4A6D5",
+                italicRight: true,
+              },
+              {
+                key: "lccpCare",
+                label: "LCCP- Care",
+                bgColor: "#FF9900",
+                italicRight: true,
+              },
+              {
+                key: "interdisciplinary",
+                label: "Integrasyong Interdisiplinaryo",
+                bgColor: "#FFFFFF",
+                italicRight: false,
+              },
+              {
+                key: "techTeaching",
+                label: "Paggamit ng Teknolohiya sa Pagtuturo",
+                bgColor: "#FFFFFF",
+                italicRight: true,
+              },
+            ] as const
+          ).map((item) => (
+            <tr key={item.key}>
+              <td
+                colSpan={2}
+                style={{ backgroundColor: item.bgColor }}
+                className="w-[35%] font-bold p-2.5 align-top border border-black text-black"
               >
-                {plan.subjectMatter.wika}
-              </span>
-            </div>
+                {item.label}
+              </td>
+              <td
+                colSpan={4}
+                style={{ backgroundColor: item.bgColor }}
+                className="w-[65%] p-2.5 align-top border border-black text-black"
+              >
+                {isEditing ? (
+                  <textarea
+                    rows={2}
+                    value={plan.integrations[item.key]}
+                    onChange={(e) =>
+                      updateField("integrations", {
+                        ...plan.integrations,
+                        [item.key]: e.target.value,
+                      })
+                    }
+                    className="w-full bg-white/90 border border-amber-400 rounded p-1 text-black"
+                  />
+                ) : item.key === "interdisciplinary" ? (
+                  <div className="space-y-0.5">
+                    {plan.integrations.interdisciplinary
+                      .split("\n")
+                      .filter(Boolean)
+                      .map((line, lIdx) => {
+                        const colonIdx = line.indexOf(":");
+                        if (colonIdx !== -1 && colonIdx < 25) {
+                          return (
+                            <div key={lIdx}>
+                              <span className="font-bold">
+                                {line.slice(0, colonIdx + 1)}
+                              </span>
+                              <span>{line.slice(colonIdx + 1)}</span>
+                            </div>
+                          );
+                        }
+                        return <div key={lIdx}>{line}</div>;
+                      })}
+                  </div>
+                ) : (
+                  <div className={item.italicRight ? "italic" : ""}>
+                    {plan.integrations[item.key]}
+                  </div>
+                )}
+              </td>
+            </tr>
+          ))}
+
+          {/* Row 12: • Pamamaraan */}
+          <tr>
+            <td
+              colSpan={6}
+              className="p-3 space-y-2.5 border border-black bg-white"
+            >
+              <div className="font-bold">• Pamamaraan:</div>
+
+              {/* a. Mga Panimulang Gawain */}
+              <div className="pl-3">
+                <div className="font-bold mb-1">
+                  {isKinder
+                    ? "a. Mga Panimulang Gawain (5 mins)"
+                    : "a. Mga Panimulang Gawain (Day 1/10 mins)"}
+                </div>
+                {isEditing ? (
+                  <EditableStringList
+                    items={plan.procedures.routine}
+                    onChange={(routine) =>
+                      updateField("procedures", {
+                        ...plan.procedures,
+                        routine,
+                      })
+                    }
+                  />
+                ) : (
+                  <ul className="list-disc pl-6 space-y-0.5">
+                    {plan.procedures.routine.map((r, i) => (
+                      <li key={i}>{r}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* b. Pagganyak */}
+              <div className="pl-3">
+                <div className="font-bold mb-1">
+                  b. Pagganyak (day 1/15 mins)
+                </div>
+                {isEditing ? (
+                  <textarea
+                    rows={2}
+                    value={plan.procedures.motivation}
+                    onChange={(e) =>
+                      updateField("procedures", {
+                        ...plan.procedures,
+                        motivation: e.target.value,
+                      })
+                    }
+                    className="w-full bg-amber-50/70 border border-amber-300 rounded p-1.5"
+                  />
+                ) : (
+                  <ul className="list-disc pl-6 space-y-0.5">
+                    {plan.procedures.motivation
+                      .split("\n")
+                      .filter(Boolean)
+                      .map((line, i) => (
+                        <li key={i}>{line}</li>
+                      ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* c. Pagtalakay ng Aralin */}
+              <div className="pl-3 space-y-2">
+                <div className="font-bold">
+                  c. Pagtalakay ng Aralin: (Day 1-4/30 mins)
+                </div>
+                {isEditing ? (
+                  <EditableStringList
+                    items={plan.procedures.discussion.steps}
+                    onChange={(steps) =>
+                      updateField("procedures", {
+                        ...plan.procedures,
+                        discussion: {
+                          ...plan.procedures.discussion,
+                          steps,
+                        },
+                      })
+                    }
+                  />
+                ) : (
+                  <ul className="list-disc pl-6 space-y-0.5">
+                    {plan.procedures.discussion.steps.map((s, i) => (
+                      <li key={i}>{s}</li>
+                    ))}
+                  </ul>
+                )}
+
+                <div>
+                  <div className="font-bold mb-1">Gabay na tanong:</div>
+                  {isEditing ? (
+                    <EditableStringList
+                      items={plan.procedures.discussion.guideQuestions}
+                      onChange={(guideQuestions) =>
+                        updateField("procedures", {
+                          ...plan.procedures,
+                          discussion: {
+                            ...plan.procedures.discussion,
+                            guideQuestions,
+                          },
+                        })
+                      }
+                    />
+                  ) : (
+                    <ol className="list-decimal pl-6 space-y-0.5">
+                      {plan.procedures.discussion.guideQuestions.map((q, i) => (
+                        <li key={i}>{q}</li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+
+                <div>
+                  <span className="font-bold">Pamamaraan sa Pagturo: </span>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={plan.procedures.discussion.teachingMethods}
+                      onChange={(e) =>
+                        updateField("procedures", {
+                          ...plan.procedures,
+                          discussion: {
+                            ...plan.procedures.discussion,
+                            teachingMethods: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-full bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5 mt-0.5 italic"
+                    />
+                  ) : (
+                    <span className="italic">
+                      {plan.procedures.discussion.teachingMethods}
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  <div className="font-bold mb-1">Pagpapalalim:</div>
+                  {isEditing ? (
+                    <EditableStringList
+                      items={plan.procedures.discussion.deepening}
+                      onChange={(deepening) =>
+                        updateField("procedures", {
+                          ...plan.procedures,
+                          discussion: {
+                            ...plan.procedures.discussion,
+                            deepening,
+                          },
+                        })
+                      }
+                    />
+                  ) : (
+                    <ul className="list-disc pl-6 space-y-0.5">
+                      {plan.procedures.discussion.deepening.map((d, i) => (
+                        <li key={i}>{d}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+
+              {/* d. Integrasyon ng Pagpapahalaga */}
+              <div className="pl-3">
+                <div className="font-bold mb-1">
+                  d. Integrasyon ng Pagpapahalaga: (Day 4/ 15 mins)
+                </div>
+                {isEditing ? (
+                  <textarea
+                    rows={2}
+                    value={plan.procedures.valuesIntegration}
+                    onChange={(e) =>
+                      updateField("procedures", {
+                        ...plan.procedures,
+                        valuesIntegration: e.target.value,
+                      })
+                    }
+                    className="w-full bg-amber-50/70 border border-amber-300 rounded p-1.5"
+                  />
+                ) : (
+                  <ul className="list-disc pl-6">
+                    <li>{plan.procedures.valuesIntegration}</li>
+                  </ul>
+                )}
+              </div>
+
+              {/* e. Pagbubuod */}
+              <div className="pl-3">
+                <div className="font-bold mb-1">
+                  e. Pagbubuod: (Day 4/ 15 mins)
+                </div>
+                {isEditing ? (
+                  <textarea
+                    rows={3}
+                    value={plan.procedures.summary}
+                    onChange={(e) =>
+                      updateField("procedures", {
+                        ...plan.procedures,
+                        summary: e.target.value,
+                      })
+                    }
+                    className="w-full bg-amber-50/70 border border-amber-300 rounded p-1.5"
+                  />
+                ) : (
+                  <ul className="list-disc pl-6 space-y-0.5">
+                    {plan.procedures.summary
+                      .split("\n")
+                      .filter(Boolean)
+                      .map((line, i) => (
+                        <li key={i}>{line}</li>
+                      ))}
+                  </ul>
+                )}
+              </div>
+            </td>
+          </tr>
+
+          {/* Row 13: VI- Pagtataya: (Day 5/ 20 mins) */}
+          <tr>
+            <td
+              colSpan={6}
+              className="p-3 space-y-2 border border-black bg-white"
+            >
+              <div className="font-bold">VI- Pagtataya: (Day 5/ 20 mins)</div>
+
+              <div>
+                {!isKinder && <div className="font-bold">Formative</div>}
+                {isEditing ? (
+                  <textarea
+                    rows={2}
+                    value={plan.assessment.formative}
+                    onChange={(e) =>
+                      updateField("assessment", {
+                        ...plan.assessment,
+                        formative: e.target.value,
+                      })
+                    }
+                    className="w-full bg-amber-50/70 border border-amber-300 rounded p-1.5 mt-0.5"
+                  />
+                ) : (
+                  <ul className="list-disc pl-6 space-y-0.5">
+                    {plan.assessment.formative
+                      .split("\n")
+                      .filter(Boolean)
+                      .map((line, i) => (
+                        <li key={i}>{line}</li>
+                      ))}
+                  </ul>
+                )}
+              </div>
+
+              <div className="space-y-1 pt-1">
+                {!isKinder && <div className="font-bold">Summative</div>}
+                {isEditing ? (
+                  <textarea
+                    rows={2}
+                    value={plan.assessment.summativeInstruction}
+                    onChange={(e) =>
+                      updateField("assessment", {
+                        ...plan.assessment,
+                        summativeInstruction: e.target.value,
+                      })
+                    }
+                    className="w-full font-bold bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5"
+                  />
+                ) : (
+                  <div className="font-bold whitespace-pre-line">
+                    {plan.assessment.summativeInstruction}
+                  </div>
+                )}
+
+                {isEditing ? (
+                  <EditableStringList
+                    items={plan.assessment.summativeItems}
+                    onChange={(summativeItems) =>
+                      updateField("assessment", {
+                        ...plan.assessment,
+                        summativeItems,
+                      })
+                    }
+                  />
+                ) : (
+                  <ol className="list-decimal pl-6 space-y-0.5">
+                    {plan.assessment.summativeItems.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ol>
+                )}
+              </div>
+            </td>
+          </tr>
+
+          {/* Row 14: VII- Takdang- Aralin: */}
+          <tr>
+            <td colSpan={6} className="p-3 border border-black bg-white">
+              <div className="font-bold mb-1">VII- Takdang- Aralin:</div>
+              {isEditing ? (
+                <textarea
+                  rows={2}
+                  value={plan.assignment}
+                  onChange={(e) => updateField("assignment", e.target.value)}
+                  className="w-full bg-amber-50/70 border border-amber-300 rounded p-1.5"
+                />
+              ) : (
+                <div>{plan.assignment}</div>
+              )}
+            </td>
+          </tr>
+
+          {/* Row 15: Mga Tala at Pagninilay: */}
+          <tr>
+            <td colSpan={6} className="p-3 border border-black bg-white">
+              <div className="font-bold mb-1">Mga Tala at Pagninilay:</div>
+              {isEditing ? (
+                <textarea
+                  rows={2}
+                  value={plan.remarks}
+                  onChange={(e) => updateField("remarks", e.target.value)}
+                  placeholder="(Iniwanang bakante para sa sulat-kamay na tala at pagninilay)"
+                  className="w-full bg-amber-50/70 border border-amber-300 rounded p-1.5"
+                />
+              ) : (
+                <div className="min-h-[28px]">{plan.remarks}</div>
+              )}
+            </td>
+          </tr>
+
+          {/* Row 16: 3-Column Signatories */}
+          <tr>
+            <td
+              colSpan={2}
+              className="w-1/3 p-3 align-top border border-black bg-white"
+            >
+              <div className="font-bold mb-4">
+                {isKinder ? "Inihanda ni:" : "Inihanda:"}
+              </div>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={plan.signatories.preparedBy}
+                  onChange={(e) =>
+                    updateField("signatories", {
+                      ...plan.signatories,
+                      preparedBy: e.target.value,
+                    })
+                  }
+                  className="w-full font-bold bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5"
+                />
+              ) : (
+                <div className="font-bold">
+                  {plan.signatories.preparedBy ||
+                    (isKinder
+                      ? "Acola, Kathrynn Ross L."
+                      : profile.teacherNameFilipino)}
+                </div>
+              )}
+            </td>
+            <td
+              colSpan={2}
+              className="w-1/3 p-3 align-top border border-black bg-white"
+            >
+              <div className="font-bold mb-4">
+                {isKinder ? "Sinuri ni:" : "Sinuri:"}
+              </div>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={plan.signatories.checkedBy}
+                  onChange={(e) =>
+                    updateField("signatories", {
+                      ...plan.signatories,
+                      checkedBy: e.target.value,
+                    })
+                  }
+                  className="w-full font-bold bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5"
+                />
+              ) : (
+                <div className="font-bold">
+                  {plan.signatories.checkedBy ||
+                    (isKinder
+                      ? "Emma P. Dunque, LPT."
+                      : profile.coordinatorGrade1)}
+                </div>
+              )}
+            </td>
+            <td
+              colSpan={2}
+              className="w-1/3 p-3 align-top border border-black bg-white"
+            >
+              <div className="font-bold mb-4">
+                {isKinder ? "Inobserbahan ni:" : "Inobserbahan:"}
+              </div>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={plan.signatories.observedBy}
+                  onChange={(e) =>
+                    updateField("signatories", {
+                      ...plan.signatories,
+                      observedBy: e.target.value,
+                    })
+                  }
+                  className="w-full font-bold bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5"
+                />
+              ) : (
+                <div className="font-bold">
+                  {plan.signatories.observedBy ||
+                    (isKinder
+                      ? "Emma P. Dunque, LPT."
+                      : profile.coordinatorGrade1)}
+                </div>
+              )}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+/* ============================================================================
+ * FORMAT B: LA CONSOLACION COLLEGE-PASIG LEARNING PLAN (Portrait)
+ * Exact replica of K2 -WEEK 6 - MATHEMATICS.docx, K2-SCIENCE-W6.docx,
+ * and RVE LESSON 9.docx
+ * ========================================================================== */
+const LccpTableEditor: React.FC<{
+  plan: LccpLearningPlan;
+  profile: TeacherProfile;
+  isEditing: boolean;
+  onChange: (plan: LccpLearningPlan) => void;
+}> = ({ plan, profile, isEditing, onChange }) => {
+  const isRve = plan.subject.trim().toUpperCase() === "RVE";
+
+  const updateField = <K extends keyof LccpLearningPlan>(
+    key: K,
+    value: LccpLearningPlan[K]
+  ) => {
+    onChange({ ...plan, [key]: value });
+  };
+
+  return (
+    <div
+      className="max-w-[850px] mx-auto text-[14px] leading-snug text-black"
+      style={{ fontFamily: '"Times New Roman", Times, serif' }}
+    >
+      <table className="lesson-table w-full border-collapse border border-black">
+        <tbody>
+          {/* Row 1: Pure White Institutional Header with Left Crest & Centered Bold Text */}
+          <tr>
+            <td
+              colSpan={3}
+              className="bg-white text-center py-4 px-6 border border-black"
+            >
+              <div className="relative flex flex-col items-center justify-center">
+                <img
+                  src={LCCP_CREST_DATA_URI}
+                  alt="La Consolacion College Pasig Seal"
+                  className="h-16 w-16 object-contain mb-2 sm:mb-0 sm:absolute sm:left-6 sm:top-1/2 sm:-translate-y-1/2"
+                />
+                <div className="font-bold text-base sm:text-lg tracking-wide text-black">
+                  {plan.header.institution || profile.schoolName}
+                </div>
+                <div className="font-bold text-sm sm:text-base text-black">
+                  {plan.header.address || profile.schoolAddress}
+                </div>
+                <div className="font-bold text-base sm:text-lg text-black">
+                  {plan.header.title || "LEARNING PLAN"}
+                </div>
+                <div className="font-bold text-sm sm:text-base text-black">
+                  {plan.header.schoolYear || profile.schoolYear}
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          {/* Row 2: 3-Column Metadata Row */}
+          <tr>
+            <td className="w-[30%] p-2.5 align-top border border-black bg-white">
+              <span className="font-bold">Subject: </span>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={plan.subject}
+                  onChange={(e) => updateField("subject", e.target.value)}
+                  className="w-full bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5 mt-0.5"
+                />
+              ) : (
+                <span>{plan.subject}</span>
+              )}
+            </td>
+            <td className="w-[30%] p-2.5 align-top border border-black bg-white">
+              <span className="font-bold">Grade Level: </span>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={plan.gradeLevel}
+                  onChange={(e) => updateField("gradeLevel", e.target.value)}
+                  className="w-full bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5 mt-0.5"
+                />
+              ) : (
+                <span>{plan.gradeLevel}</span>
+              )}
+            </td>
+            <td className="w-[40%] p-2.5 align-top border border-black bg-white">
+              <div>
+                <span className="font-bold">Date Coverage: </span>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={plan.dateCoverage}
+                    onChange={(e) =>
+                      updateField("dateCoverage", e.target.value)
+                    }
+                    className="w-full bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5 mt-0.5"
+                  />
+                ) : (
+                  <span>{plan.dateCoverage}</span>
+                )}
+              </div>
+              <div className="font-bold mt-0.5">
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={plan.term}
+                    onChange={(e) => updateField("term", e.target.value)}
+                    className="w-full font-bold bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5 mt-0.5"
+                  />
+                ) : (
+                  <span>{plan.term}</span>
+                )}
+              </div>
+            </td>
+          </tr>
+
+          {/* Row 3: Two Columns (I Learning Objectives | II Subject Matter) */}
+          <tr>
+            <td className="w-1/2 p-3 align-top border border-black bg-white">
+              <div className="mb-1.5">
+                <span className="font-bold">I Learning Objectives: </span>
+                <span>
+                  At the end of the lesson the students will be able to:
+                </span>
+              </div>
+              {isEditing ? (
+                <EditableStringList
+                  items={plan.objectives}
+                  onChange={(objectives) =>
+                    updateField("objectives", objectives)
+                  }
+                />
+              ) : isRve ? (
+                <ol className="list-[lower-alpha] pl-6 space-y-1">
+                  {plan.objectives.map((obj, i) => (
+                    <li key={i}>{obj}</li>
+                  ))}
+                </ol>
+              ) : (
+                <ul className="list-disc pl-6 space-y-1">
+                  {plan.objectives.map((obj, i) => (
+                    <li key={i}>{obj}</li>
+                  ))}
+                </ul>
+              )}
+            </td>
+            <td
+              colSpan={2}
+              className="w-1/2 p-3 align-top space-y-3 border border-black bg-white"
+            >
+              <div className="font-bold">II Subject Matter</div>
+              <div>
+                <span className="font-bold">Lesson: </span>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={plan.subjectMatter.lesson}
+                    onChange={(e) =>
+                      updateField("subjectMatter", {
+                        ...plan.subjectMatter,
+                        lesson: e.target.value,
+                      })
+                    }
+                    className="w-full bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5 mt-0.5"
+                  />
+                ) : (
+                  <span>{plan.subjectMatter.lesson}</span>
+                )}
+              </div>
+              <div>
+                <span className="font-bold">Reference/s: </span>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={plan.subjectMatter.references}
+                    onChange={(e) =>
+                      updateField("subjectMatter", {
+                        ...plan.subjectMatter,
+                        references: e.target.value,
+                      })
+                    }
+                    className="w-full bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5 mt-0.5"
+                  />
+                ) : (
+                  <span>{plan.subjectMatter.references}</span>
+                )}
+              </div>
+            </td>
+          </tr>
+
+          {/* Optional Row 4: III - Learning Competencies */}
+          {(plan.learningCompetencies?.trim() || isEditing) && (
+            <tr>
+              <td colSpan={3} className="p-3 border border-black bg-white">
+                <div className="font-bold mb-1">
+                  III - Learning Competencies:
+                </div>
+                {isEditing ? (
+                  <textarea
+                    rows={2}
+                    value={plan.learningCompetencies}
+                    onChange={(e) =>
+                      updateField("learningCompetencies", e.target.value)
+                    }
+                    className="w-full bg-amber-50/70 border border-amber-300 rounded p-1.5"
+                  />
+                ) : (
+                  <ul className="list-disc pl-6">
+                    <li>{plan.learningCompetencies}</li>
+                  </ul>
+                )}
+              </td>
+            </tr>
           )}
-          <div>
-            <span className="font-bold">Sanggunian: </span>
-            <span
-              contentEditable
-              suppressContentEditableWarning
-              onBlur={(e) => onUpdateField("subjectMatter.sanggunian", e.currentTarget.textContent || "")}
-              className="outline-none focus:bg-sage-50"
-            >
-              {plan.subjectMatter.sanggunian}
-            </span>
-          </div>
-          <div className="pt-2 text-xs border-t border-gray-200">
-            <span className="font-bold block">
-              Deklarasyon sa Paggamit ng AI: DO 3 s 2026 Annex (Banggitin kung paano ginamit ang AI sa pagbuo ng plano sa pagtuturo)
-            </span>
-            <span
-              contentEditable
-              suppressContentEditableWarning
-              onBlur={(e) => onUpdateField("subjectMatter.aiDeclaration", e.currentTarget.textContent || "")}
-              className="italic text-gray-600 outline-none focus:bg-sage-50 block mt-1"
-            >
-              {plan.subjectMatter.aiDeclaration}
-            </span>
-          </div>
-        </div>
-      </div>
 
-      {/* Learning Competencies */}
-      <div className="p-3 border-b border-black">
-        <p className="font-bold mb-1">III. Mga Kasanayan sa Pagkatuto:</p>
-        <p
-          contentEditable
-          suppressContentEditableWarning
-          onBlur={(e) => onUpdateField("learningCompetencies", e.currentTarget.textContent || "")}
-          className="outline-none focus:bg-sage-50"
-        >
-          ● {plan.learningCompetencies.replace(/^●\s*/, "")}
-        </p>
-      </div>
+          {/* Row 5: III- Values Statement */}
+          <tr>
+            <td colSpan={3} className="p-3 border border-black bg-white">
+              <div className="font-bold mb-1">III- Values Statement:</div>
+              {isEditing ? (
+                <textarea
+                  rows={2}
+                  value={plan.valuesStatement}
+                  onChange={(e) =>
+                    updateField("valuesStatement", e.target.value)
+                  }
+                  className="w-full bg-amber-50/70 border border-amber-300 rounded p-1.5"
+                />
+              ) : isRve ? (
+                <div>{plan.valuesStatement}</div>
+              ) : (
+                <ul className="list-disc pl-6">
+                  <li>{plan.valuesStatement}</li>
+                </ul>
+              )}
+            </td>
+          </tr>
 
-      {/* Integrasyon Table */}
-      <div className="border-b border-black">
-        <div className="bg-gray-50 p-2 font-bold border-b border-black">
-          IV. Integrasyon:
-        </div>
-        <div className="divide-y divide-black text-xs">
-          <div className="grid grid-cols-12 divide-x divide-black">
-            <div className="col-span-4 p-2 font-semibold">Laudato Si</div>
-            <div
-              contentEditable
-              suppressContentEditableWarning
-              onBlur={(e) => onUpdateField("integrations.laudatoSi", e.currentTarget.textContent || "")}
-              className="col-span-8 p-2 outline-none focus:bg-sage-50"
+          {/* Row 6: IV- Procedures */}
+          <tr>
+            <td
+              colSpan={3}
+              className="p-3 space-y-2.5 border border-black bg-white"
             >
-              {plan.integrations.laudatoSi || "—"}
-            </div>
-          </div>
-          <div className="grid grid-cols-12 divide-x divide-black">
-            <div className="col-span-4 p-2 font-semibold">Justice and Peace Education</div>
-            <div
-              contentEditable
-              suppressContentEditableWarning
-              onBlur={(e) => onUpdateField("integrations.justiceAndPeace", e.currentTarget.textContent || "")}
-              className="col-span-8 p-2 outline-none focus:bg-sage-50"
-            >
-              {plan.integrations.justiceAndPeace}
-            </div>
-          </div>
-          <div className="grid grid-cols-12 divide-x divide-black">
-            <div className="col-span-4 p-2 font-semibold">Gender and Development</div>
-            <div
-              contentEditable
-              suppressContentEditableWarning
-              onBlur={(e) => onUpdateField("integrations.genderAndDevelopment", e.currentTarget.textContent || "")}
-              className="col-span-8 p-2 outline-none focus:bg-sage-50"
-            >
-              {plan.integrations.genderAndDevelopment}
-            </div>
-          </div>
-          <div className="grid grid-cols-12 divide-x divide-black">
-            <div className="col-span-4 p-2 font-semibold">LCCP- Care</div>
-            <div
-              contentEditable
-              suppressContentEditableWarning
-              onBlur={(e) => onUpdateField("integrations.lccpCare", e.currentTarget.textContent || "")}
-              className="col-span-8 p-2 outline-none focus:bg-sage-50"
-            >
-              {plan.integrations.lccpCare}
-            </div>
-          </div>
-          <div className="grid grid-cols-12 divide-x divide-black">
-            <div className="col-span-4 p-2 font-semibold">Integrasyong Interdisiplinaryo</div>
-            <div
-              contentEditable
-              suppressContentEditableWarning
-              onBlur={(e) => onUpdateField("integrations.interdisciplinary", e.currentTarget.textContent || "")}
-              className="col-span-8 p-2 outline-none focus:bg-sage-50"
-            >
-              {plan.integrations.interdisciplinary}
-            </div>
-          </div>
-          <div className="grid grid-cols-12 divide-x divide-black">
-            <div className="col-span-4 p-2 font-semibold">Paggamit ng Teknolohiya sa Pagtuturo</div>
-            <div
-              contentEditable
-              suppressContentEditableWarning
-              onBlur={(e) => onUpdateField("integrations.techTeaching", e.currentTarget.textContent || "")}
-              className="col-span-8 p-2 outline-none focus:bg-sage-50"
-            >
-              {plan.integrations.techTeaching}
-            </div>
-          </div>
-        </div>
-      </div>
+              <div className="font-bold">IV- Procedures:</div>
 
-      {/* Procedures */}
-      <div className="p-3 border-b border-black space-y-3">
-        <p className="font-bold text-sm">• Pamamaraan:</p>
-        
-        {/* Routine */}
-        <div>
-          <p className="font-semibold text-xs text-gray-700">a. Mga Panimulang Gawain (Day 1/10 mins)</p>
-          <ul className="list-disc pl-5 text-xs space-y-0.5 mt-1">
-            {plan.procedures.routine.map((r, i) => (
-              <li
-                key={i}
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) => {
-                  const updated = [...plan.procedures.routine];
-                  updated[i] = e.currentTarget.textContent || "";
-                  onUpdateField("procedures.routine", updated as unknown as string);
-                }}
-                className="outline-none focus:bg-sage-50"
-              >
-                {r}
-              </li>
-            ))}
-          </ul>
-        </div>
+              <div className="pl-4">
+                <div className="font-bold mb-1">a. Routine Activities</div>
+                {isEditing ? (
+                  <EditableStringList
+                    items={plan.procedures.routineActivities}
+                    onChange={(routineActivities) =>
+                      updateField("procedures", {
+                        ...plan.procedures,
+                        routineActivities,
+                      })
+                    }
+                  />
+                ) : (
+                  <ul className="list-disc pl-6 space-y-0.5">
+                    {plan.procedures.routineActivities.map((act, i) => (
+                      <li key={i}>{act}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
 
-        {/* Motivation */}
-        <div>
-          <p className="font-semibold text-xs text-gray-700">b. Pagganyak (day 1/15 mins)</p>
-          <p
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => onUpdateField("procedures.motivation", e.currentTarget.textContent || "")}
-            className="text-xs mt-1 outline-none focus:bg-sage-50"
-          >
-            {plan.procedures.motivation}
-          </p>
-        </div>
+              <div className="pl-4">
+                <div className="font-bold mb-1">b. Motivation:</div>
+                {isEditing ? (
+                  <textarea
+                    rows={2}
+                    value={plan.procedures.motivation}
+                    onChange={(e) =>
+                      updateField("procedures", {
+                        ...plan.procedures,
+                        motivation: e.target.value,
+                      })
+                    }
+                    className="w-full bg-amber-50/70 border border-amber-300 rounded px-1.5 py-1"
+                  />
+                ) : (
+                  <div className="pl-4 whitespace-pre-line">
+                    {plan.procedures.motivation}
+                  </div>
+                )}
+              </div>
 
-        {/* Discussion */}
-        <div className="space-y-1.5">
-          <p className="font-semibold text-xs text-gray-700">c. Pagtalakay ng Aralin: (Day 1-4/30 mins)</p>
-          <ul className="list-disc pl-5 text-xs space-y-1">
-            {plan.procedures.discussion.steps.map((st, i) => (
-              <li
-                key={i}
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) => {
-                  const updated = [...plan.procedures.discussion.steps];
-                  updated[i] = e.currentTarget.textContent || "";
-                  onUpdateField("procedures.discussion.steps", updated as unknown as string);
-                }}
-                className="outline-none focus:bg-sage-50"
-              >
-                {st}
-              </li>
-            ))}
-          </ul>
-          <p className="text-xs italic text-gray-600">
-            Pamamaraan sa Pagturo:{" "}
-            <span
-              contentEditable
-              suppressContentEditableWarning
-              onBlur={(e) =>
-                onUpdateField("procedures.discussion.teachingMethods", e.currentTarget.textContent || "")
-              }
-              className="outline-none focus:bg-sage-50 not-italic"
-            >
-              {plan.procedures.discussion.teachingMethods}
-            </span>
-          </p>
+              <div className="pl-4 space-y-2">
+                <div className="font-bold">c. Learning Strategies</div>
+                {plan.procedures.learningStrategies.map((strat, sIdx) => (
+                  <div key={sIdx} className="pl-3 space-y-1">
+                    {isEditing ? (
+                      <div className="space-y-1 bg-amber-50/40 p-2 rounded border border-amber-200">
+                        <input
+                          type="text"
+                          value={strat.title}
+                          onChange={(e) => {
+                            const updated = [
+                              ...plan.procedures.learningStrategies,
+                            ];
+                            updated[sIdx] = {
+                              ...strat,
+                              title: e.target.value,
+                            };
+                            updateField("procedures", {
+                              ...plan.procedures,
+                              learningStrategies: updated,
+                            });
+                          }}
+                          className="w-full font-bold bg-white border border-amber-300 rounded px-1.5 py-0.5"
+                        />
+                        <textarea
+                          rows={2}
+                          value={strat.instructions}
+                          onChange={(e) => {
+                            const updated = [
+                              ...plan.procedures.learningStrategies,
+                            ];
+                            updated[sIdx] = {
+                              ...strat,
+                              instructions: e.target.value,
+                            };
+                            updateField("procedures", {
+                              ...plan.procedures,
+                              learningStrategies: updated,
+                            });
+                          }}
+                          className="w-full bg-white border border-amber-300 rounded p-1"
+                        />
+                      </div>
+                    ) : (
+                      <div>
+                        <span className="font-bold">{strat.title} – </span>
+                        <span>{strat.instructions}</span>
+                      </div>
+                    )}
 
-          <div className="mt-2 pl-3 border-l-2 border-gray-300 space-y-1">
-            <p className="font-semibold text-xs">              Gabay na tanong:</p>
-            {plan.procedures.discussion.guideQuestions.map((q, i) => (
-              <p
-                key={i}
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) => {
-                  const updated = [...plan.procedures.discussion.guideQuestions];
-                  updated[i] = e.currentTarget.textContent?.replace(/^\d+\.\s*/, "") || "";
-                  onUpdateField("procedures.discussion.guideQuestions", updated as unknown as string);
-                }}
-                className="text-xs outline-none focus:bg-sage-50"
-              >
-                {i + 1}. {q}
-              </p>
-            ))}
-            {plan.procedures.discussion.deepening.length > 0 && (
-              <>
-                <p className="font-semibold text-xs pt-1">Pagpapalalim:</p>
-                {plan.procedures.discussion.deepening.map((d, i) => (
-                  <p
-                    key={i}
-                    contentEditable
-                    suppressContentEditableWarning
-                    onBlur={(e) => {
-                      const updated = [...plan.procedures.discussion.deepening];
-                      updated[i] = e.currentTarget.textContent?.replace(/^\d+\.\s*/, "") || "";
-                      onUpdateField("procedures.discussion.deepening", updated as unknown as string);
-                    }}
-                    className="text-xs outline-none focus:bg-sage-50"
-                  >
-                    • {d}
-                  </p>
+                    {strat.questions && strat.questions.length > 0 && (
+                      <div className="pl-4">
+                        <div className="font-bold">Guide Questions:</div>
+                        <ol className="list-decimal pl-5 space-y-0.5">
+                          {strat.questions.map((q, qIdx) => (
+                            <li key={qIdx}>{q}</li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+                  </div>
                 ))}
-              </>
-            )}
+              </div>
+            </td>
+          </tr>
+
+          {/* Row 7: V- Assessment */}
+          <tr>
+            <td colSpan={3} className="p-3 border border-black bg-white">
+              <div className="font-bold mb-1">V- Assessment:</div>
+              {isEditing ? (
+                <EditableStringList
+                  items={plan.assessment}
+                  onChange={(assessment) =>
+                    updateField("assessment", assessment)
+                  }
+                />
+              ) : (
+                <ul className="list-disc pl-6 space-y-0.5">
+                  {plan.assessment.map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              )}
+            </td>
+          </tr>
+
+          {/* Row 8: VI- Closure */}
+          <tr>
+            <td colSpan={3} className="p-3 border border-black bg-white">
+              <div className="font-bold mb-1">VI- Closure:</div>
+              {isEditing ? (
+                <textarea
+                  rows={2}
+                  value={plan.closure}
+                  onChange={(e) => updateField("closure", e.target.value)}
+                  className="w-full bg-amber-50/70 border border-amber-300 rounded p-1.5"
+                />
+              ) : (
+                <div>{plan.closure}</div>
+              )}
+            </td>
+          </tr>
+
+          {/* Row 9: VII- Assignment */}
+          <tr>
+            <td colSpan={3} className="p-3 border border-black bg-white">
+              <div className="font-bold mb-1">VII- Assignment:</div>
+              {isEditing ? (
+                <textarea
+                  rows={2}
+                  value={plan.assignment}
+                  onChange={(e) => updateField("assignment", e.target.value)}
+                  className="w-full bg-amber-50/70 border border-amber-300 rounded p-1.5"
+                />
+              ) : (
+                <div>{plan.assignment}</div>
+              )}
+            </td>
+          </tr>
+
+          {/* Row 10: Remarks */}
+          <tr>
+            <td colSpan={3} className="p-3 border border-black bg-white">
+              <div className="font-bold mb-1">Remarks:</div>
+              {isEditing ? (
+                <textarea
+                  rows={2}
+                  value={plan.remarks}
+                  onChange={(e) => updateField("remarks", e.target.value)}
+                  placeholder="(Left blank for handwritten remarks)"
+                  className="w-full bg-amber-50/70 border border-amber-300 rounded p-1.5"
+                />
+              ) : (
+                <div className="min-h-[28px]">{plan.remarks}</div>
+              )}
+            </td>
+          </tr>
+
+          {/* Row 11: 3-Column Signatories */}
+          <tr>
+            <td className="w-1/3 p-3 align-top border border-black bg-white">
+              <div className="font-bold mb-4">Prepared by:</div>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={plan.signatories.preparedBy}
+                  onChange={(e) =>
+                    updateField("signatories", {
+                      ...plan.signatories,
+                      preparedBy: e.target.value,
+                    })
+                  }
+                  className="w-full bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5"
+                />
+              ) : (
+                <div>{plan.signatories.preparedBy || profile.teacherName}</div>
+              )}
+            </td>
+            <td className="w-1/3 p-3 align-top border border-black bg-white">
+              <div className="font-bold mb-4">Checked by:</div>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={plan.signatories.checkedBy}
+                  onChange={(e) =>
+                    updateField("signatories", {
+                      ...plan.signatories,
+                      checkedBy: e.target.value,
+                    })
+                  }
+                  className="w-full bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5"
+                />
+              ) : (
+                <div>
+                  {plan.signatories.checkedBy || profile.coordinatorKinder}
+                </div>
+              )}
+            </td>
+            <td className="w-1/3 p-3 align-top border border-black bg-white">
+              <div className="font-bold mb-4">Observed by:</div>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={plan.signatories.observedBy}
+                  onChange={(e) =>
+                    updateField("signatories", {
+                      ...plan.signatories,
+                      observedBy: e.target.value,
+                    })
+                  }
+                  className="w-full bg-amber-50/70 border border-amber-300 rounded px-1.5 py-0.5"
+                />
+              ) : (
+                <div>
+                  {plan.signatories.observedBy || profile.coordinatorKinder}
+                </div>
+              )}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+/* ============================================================================
+ * FORMAT C: 5-Column Landscape RELIGION LEARNING PLAN (ADIDSE / Lectio-Divina)
+ * Exact replica of WEEK 1-3 RVE LP.docx and RVE LESSON 4-8
+ * ========================================================================== */
+const RveAdidseTableEditor: React.FC<{
+  plan: LccpLearningPlan;
+  profile: TeacherProfile;
+  isEditing: boolean;
+  onChange: (plan: LccpLearningPlan) => void;
+}> = ({ plan, profile }) => {
+  const adidse = plan.adidse!;
+
+  return (
+    <div
+      className="min-w-[920px] mx-auto text-[12px] leading-snug text-black space-y-3"
+      style={{ fontFamily: '"Times New Roman", Times, serif' }}
+    >
+      {/* Top School Banner */}
+      <div className="flex flex-col items-center justify-center">
+        <img
+          src={LCCP_BANNER_DATA_URI}
+          alt="La Consolacion College Pasig PAASCU Banner"
+          className="h-16 w-auto object-contain mx-auto"
+        />
+      </div>
+
+      {/* Two-Column Metadata Block */}
+      <div className="grid grid-cols-2 gap-4 font-bold text-xs px-1">
+        <div className="space-y-0.5">
+          <div>SUBJECT/ LEVEL: RELIGION – KINDER 2</div>
+          <div>
+            SCHOOL YEAR : {plan.header.schoolYear || profile.schoolYear}
           </div>
         </div>
-
-        {/* Values Integration */}
-        <div>
-          <p className="font-semibold text-xs text-gray-700">d. Integrasyon ng Pagpapahalaga: (Day 4/ 15 mins)</p>
-          <p
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => onUpdateField("procedures.valuesIntegration", e.currentTarget.textContent || "")}
-            className="text-xs mt-1 outline-none focus:bg-sage-50"
-          >
-            {plan.procedures.valuesIntegration}
-          </p>
-        </div>
-
-        {/* Summary */}
-        <div>
-          <p className="font-semibold text-xs text-gray-700">e. Pagbubuod: (Day 4/ 15 mins)</p>
-          <p
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => onUpdateField("procedures.summary", e.currentTarget.textContent || "")}
-            className="text-xs mt-1 outline-none focus:bg-sage-50"
-          >
-            {plan.procedures.summary}
-          </p>
-        </div>
-      </div>
-
-      {/* Assessment */}
-      <div className="p-3 border-b border-black space-y-2 text-xs">
-        <p className="font-bold text-sm">VI- Pagtataya: (Day 5/ 20 mins)</p>
-        <div>
-          <span className="font-semibold">• Formative – </span>
-          <span
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => onUpdateField("assessment.formative", e.currentTarget.textContent || "")}
-            className="outline-none focus:bg-sage-50"
-          >
-            {plan.assessment.formative}
-          </span>
-        </div>
-        <div>
-          <span className="font-semibold">• Summative - Panuto: </span>
-          <span
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => onUpdateField("assessment.summativeInstruction", e.currentTarget.textContent || "")}
-            className="outline-none focus:bg-sage-50"
-          >
-            {plan.assessment.summativeInstruction}
-          </span>
-          <div className="pl-4 space-y-1 mt-1.5 font-mono text-[12px]">
-            {plan.assessment.summativeItems.map((item, i) => (
-              <p
-                key={i}
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) => {
-                  const updated = [...plan.assessment.summativeItems];
-                  updated[i] = e.currentTarget.textContent?.replace(/^_______\s*\d+\.\s*/, "") || "";
-                  onUpdateField("assessment.summativeItems", updated as unknown as string);
-                }}
-                className="outline-none focus:bg-sage-50"
-              >
-                _______ {i + 1}. {item}
-              </p>
-            ))}
+        <div className="space-y-0.5">
+          <div>
+            GRADE &amp; SECTION:{" "}
+            {adidse.sectionName || "KINDER 2 – OUR LADY OF CONSOLATION"}
           </div>
+          <div>WEEK # / DATE: {adidse.weekDate || plan.dateCoverage}</div>
         </div>
       </div>
 
-      {/* Assignment */}
-      <div className="p-3 border-b border-black text-xs">
-        <p className="font-bold text-sm mb-1">VII- Takdang- Aralin:</p>
-        <p
-          contentEditable
-          suppressContentEditableWarning
-          onBlur={(e) => onUpdateField("assignment", e.currentTarget.textContent || "")}
-          className="outline-none focus:bg-sage-50"
-        >
-          {plan.assignment}
-        </p>
-      </div>
+      {/* 5-Column Main ADIDSE Table */}
+      <table className="lesson-table w-full border-collapse border border-black">
+        <tbody>
+          {/* Row 1: Sky Blue #8DB3E2 Header Row */}
+          <tr style={{ backgroundColor: "#8DB3E2" }} className="text-center">
+            <td className="w-[25%] p-2 border border-black font-bold">
+              CONTENT/ OBJECTIVES
+            </td>
+            <td className="w-[17%] p-2 border border-black">
+              <div className="font-bold">ALL ABOUT MY EXPERIENCE</div>
+              <div className="italic text-[11px]">(Activity – Discussion)</div>
+            </td>
+            <td className="w-[26%] p-2 border border-black">
+              <div className="font-bold">ALL ABOUT FAITH</div>
+              <div className="italic text-[11px]">
+                (Input – Further Discussion)
+              </div>
+            </td>
+            <td className="w-[22%] p-2 border border-black">
+              <div className="font-bold">ALL ABOUT MY LEARNING</div>
+              <div className="italic text-[11px]">
+                (Integrated Synthesis – Evaluation)
+              </div>
+            </td>
+            <td className="w-[10%] p-2 border border-black font-bold">
+              Remarks
+            </td>
+          </tr>
 
-      {/* Remarks */}
-      <div className="p-3 border-b border-black text-xs">
-        <p className="font-bold mb-1">Mga Tala at Pagninilay:</p>
-        <p
-          contentEditable
-          suppressContentEditableWarning
-          onBlur={(e) => onUpdateField("remarks", e.currentTarget.textContent || "")}
-          className="outline-none focus:bg-sage-50 italic text-gray-600"
-        >
-          {plan.remarks}
-        </p>
-      </div>
+          {/* Row 2: Unit & Lesson Banner Row */}
+          <tr className="bg-white font-bold text-center">
+            <td
+              colSpan={2}
+              className="p-2 border border-black whitespace-pre-line"
+            >
+              {adidse.unitTitle}
+            </td>
+            <td colSpan={2} className="p-2 border border-black">
+              {adidse.lessonTitle || plan.subjectMatter.lesson}
+            </td>
+            <td className="p-2 border border-black" />
+          </tr>
 
-      {/* Signatories: EXACT Kat Format */}
-      <div className="grid grid-cols-3 divide-x divide-black p-3 text-xs">
-        <div>
-          <span className="font-bold block">Inihanda:</span>
-          <span className="block mt-1">{plan.signatories.preparedBy}</span>
-        </div>
-        <div className="pl-3">
-          <span className="font-bold block">Sinuri:</span>
-          <span className="block mt-1">{plan.signatories.checkedBy}</span>
-        </div>
-        <div className="pl-3">
-          <span className="font-bold block">Inobserbahan:</span>
-          <span className="block mt-1">{plan.signatories.observedBy}</span>
-        </div>
+          {/* Row 3: 5-Column Main Content */}
+          <tr className="bg-white align-top">
+            {/* Col 1: LECTIO-DIVINA + Objectives + A/B/C/D + Nested 4-Color Core Values Table */}
+            <td className="p-2.5 border border-black space-y-2">
+              <div className="font-bold">LECTIO- DIVINA</div>
+              <div>
+                <div className="font-bold">
+                  Objectives: At the end of lesson the learners can:
+                </div>
+                <ul className="list-disc pl-5 space-y-0.5 mt-0.5">
+                  {plan.objectives.map((obj, idx) => (
+                    <li key={idx}>{obj}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <span className="font-bold">A. VALUE FOCUS: </span>
+                <span>{adidse.valueFocus}</span>
+              </div>
+              <div>
+                <span className="font-bold">B. REFERENCE: </span>
+                <span>{adidse.references}</span>
+              </div>
+              <div>
+                <span className="font-bold">C. MATERIALS NEEDED: </span>
+                <span>{adidse.materialsNeeded}</span>
+              </div>
+              <div>
+                <span className="font-bold">D. INTEGRITAS: </span>
+                <span>{adidse.integritas}</span>
+              </div>
+
+              {/* Nested 4-Color Core Values Table */}
+              <table className="w-full border-collapse border border-black text-[11px] mt-2">
+                <tbody>
+                  <tr>
+                    <td
+                      style={{ backgroundColor: "#92D050" }}
+                      className="w-[42%] p-1.5 border border-black font-bold"
+                    >
+                      Laudato Si
+                    </td>
+                    <td className="w-[58%] p-1.5 border border-black bg-white">
+                      {adidse.coreValues.laudatoSi}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      style={{ backgroundColor: "#EE0000" }}
+                      className="p-1.5 border border-black font-bold text-white"
+                    >
+                      Justice &amp; Peace Education
+                    </td>
+                    <td className="p-1.5 border border-black bg-white">
+                      {adidse.coreValues.justiceAndPeace}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      style={{ backgroundColor: "#BC8FDD" }}
+                      className="p-1.5 border border-black font-bold"
+                    >
+                      Gender &amp; Development
+                    </td>
+                    <td className="p-1.5 border border-black bg-white">
+                      {adidse.coreValues.genderAndDevelopment}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      style={{ backgroundColor: "#F57E1B" }}
+                      className="p-1.5 border border-black font-bold"
+                    >
+                      LCCP Care
+                    </td>
+                    <td className="p-1.5 border border-black bg-white">
+                      {adidse.coreValues.lccpCare}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            {/* Col 2: I. ROUTINE ACTIVITIES */}
+            <td className="p-2.5 border border-black space-y-1.5">
+              <div className="font-bold">I. ROUTINE ACTIVITIES</div>
+              <ul className="list-disc pl-5 space-y-1">
+                {adidse.routineActivities.map((act, idx) => (
+                  <li key={idx}>{act}</li>
+                ))}
+              </ul>
+            </td>
+
+            {/* Col 3: II. Augustinian Lectio- Divina Proper (ADIDSE) */}
+            <td className="p-2.5 border border-black space-y-2">
+              <div className="font-bold">
+                II. Augustinian Lectio- Divina Proper (ADIDSE)
+              </div>
+              <div>
+                <div className="font-bold">Lectio:</div>
+                <div>{adidse.lectio}</div>
+              </div>
+              <div>
+                <div className="font-bold">
+                  Meditatio: The teacher will ask the students:
+                </div>
+                <ul className="list-disc pl-5 space-y-0.5">
+                  {adidse.meditatio.map((m, idx) => (
+                    <li key={idx}>{m}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <div className="font-bold">Oratio:</div>
+                <ul className="list-disc pl-5">
+                  <li>{adidse.oratio}</li>
+                </ul>
+              </div>
+              <div>
+                <div className="font-bold">Contemplatio:</div>
+                <ul className="list-disc pl-5">
+                  <li>{adidse.contemplatio}</li>
+                </ul>
+              </div>
+              <div>
+                <div className="font-bold">Communicatio:</div>
+                <ul className="list-disc pl-5">
+                  <li>{adidse.communicatio}</li>
+                </ul>
+              </div>
+              <div>
+                <div className="font-bold">INPUT/ DEEPENING:</div>
+                <ul className="list-disc pl-5">
+                  <li>{adidse.inputDeepening}</li>
+                </ul>
+              </div>
+              <div>
+                <div className="font-bold">FURTHER DISCUSSION:</div>
+                <ul className="list-disc pl-5">
+                  <li>{adidse.furtherDiscussion}</li>
+                </ul>
+              </div>
+            </td>
+
+            {/* Col 4: Closing Song/Prayer, SYNTHESIS, EVALUATION */}
+            <td className="p-2.5 border border-black space-y-2">
+              <div className="font-bold">➢ {adidse.closingSong}</div>
+              <div className="font-bold">➢ {adidse.closingPrayer}</div>
+              <div>
+                <div className="font-bold">SYNTHESIS:</div>
+                <ul className="list-disc pl-5 space-y-0.5">
+                  {adidse.synthesis.map((s, idx) => (
+                    <li key={idx}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <div className="font-bold">EVALUATION:</div>
+                <ul className="list-disc pl-5 space-y-0.5">
+                  {adidse.evaluation.map((ev, idx) => (
+                    <li key={idx}>{ev}</li>
+                  ))}
+                </ul>
+              </div>
+            </td>
+
+            {/* Col 5: Remarks */}
+            <td className="p-2.5 border border-black">{plan.remarks}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* Bottom Signatories & Footer */}
+      <div className="grid grid-cols-3 gap-4 pt-2 font-bold text-[11px] px-1">
+        <div>PREPARED BY : Acola, Kathrynn Ross L. (Subject Teacher)</div>
+        <div>CHECKED BY : _____________________ (SAC, RELIGION/VE/ GMRC)</div>
+        <div>OBSERVED BY : _______________________</div>
+      </div>
+      <div className="text-center font-bold tracking-[0.25em] text-xs pt-1">
+        R E L I G I O N &nbsp; L E A R N I N G &nbsp; P L A N
       </div>
     </div>
   );
 };
 
-/* Sub-renderer for LCCP Institutional format */
-const LccpRenderer: React.FC<{
-  plan: LccpLearningPlan;
-  onUpdateField: (path: string, val: string) => void;
-}> = ({ plan, onUpdateField }) => {
+/* ============================================================================
+ * Helper Component for Editing Lists of Strings
+ * ========================================================================== */
+const EditableStringList: React.FC<{
+  items: string[];
+  onChange: (items: string[]) => void;
+}> = ({ items, onChange }) => {
+  const handleUpdateItem = (index: number, val: string) => {
+    const updated = [...items];
+    updated[index] = val;
+    onChange(updated);
+  };
+
+  const handleAddItem = () => {
+    onChange([...items, "New item..."]);
+  };
+
+  const handleRemoveItem = (index: number) => {
+    if (items.length <= 1) return;
+    onChange(items.filter((_, idx) => idx !== index));
+  };
+
   return (
-    <div className="border border-black overflow-x-auto text-[13px] leading-relaxed">
-      {/* School Header with Official LCCP Crest */}
-      <div className="bg-gray-100 p-3 text-center border-b border-black">
-        <img
-          src={`data:image/png;base64,${LCCP_CREST_BASE64}`}
-          alt="La Consolacion College - Pasig Crest"
-          className="h-16 w-auto mx-auto mb-2 object-contain"
-        />
-        <h2 className="font-bold text-sm tracking-wide">{plan.header.institution}</h2>
-        <p className="text-xs text-gray-600">{plan.header.address}</p>
-        <p className="font-bold text-xs mt-1">{plan.header.title}</p>
-        <p className="text-xs font-semibold">{plan.header.schoolYear}</p>
-      </div>
-
-      {/* Metadata Row */}
-      <div className="grid grid-cols-3 border-b border-black divide-x divide-black text-xs font-medium">
-        <div className="p-2">
-          <span className="font-bold block">Subject:</span>
-          <span
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => onUpdateField("subject", e.currentTarget.textContent || "")}
-            className="outline-none focus:bg-sage-50"
+    <div className="space-y-1.5 mt-1">
+      {items.map((item, idx) => (
+        <div key={idx} className="flex items-start space-x-1.5">
+          <input
+            type="text"
+            value={item}
+            onChange={(e) => handleUpdateItem(idx, e.target.value)}
+            className="flex-1 bg-amber-50/70 border border-amber-300 rounded px-2 py-0.5 text-xs"
+          />
+          <button
+            type="button"
+            onClick={() => handleRemoveItem(idx)}
+            className="p-1 text-gray-400 hover:text-rose-600"
+            title="Remove item"
           >
-            {plan.subject}
-          </span>
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
         </div>
-        <div className="p-2">
-          <span className="font-bold block">Grade Level:</span>
-          <span
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => onUpdateField("gradeLevel", e.currentTarget.textContent || "")}
-            className="outline-none focus:bg-sage-50"
-          >
-            {plan.gradeLevel}
-          </span>
-        </div>
-        <div className="p-2">
-          <span className="font-bold">Date Coverage: </span>
-          <span
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => onUpdateField("dateCoverage", e.currentTarget.textContent || "")}
-            className="outline-none focus:bg-sage-50"
-          >
-            {plan.dateCoverage}
-          </span>
-          <span className="font-bold ml-2">Term: </span>
-          <span
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => onUpdateField("term", e.currentTarget.textContent || "")}
-            className="outline-none focus:bg-sage-50"
-          >
-            {plan.term}
-          </span>
-        </div>
-      </div>
-
-      {/* Objectives and Subject Matter */}
-      <div className="grid grid-cols-1 md:grid-cols-2 border-b border-black divide-y md:divide-y-0 md:divide-x divide-black">
-        <div className="p-3">
-          <p className="font-bold mb-1">
-            I Learning Objectives: At the end of the lesson the students will be able to:
-          </p>
-          <ul className="list-disc pl-5 space-y-1">
-            {plan.objectives.map((obj, i) => (
-              <li
-                key={i}
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) => {
-                  const updated = [...plan.objectives];
-                  updated[i] = e.currentTarget.textContent || "";
-                  onUpdateField("objectives", updated as unknown as string);
-                }}
-                className="outline-none focus:bg-sage-50"
-              >
-                {obj}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="p-3 space-y-2">
-          <p className="font-bold">II Subject Matter</p>
-          <div>
-            <span className="font-bold">Lesson: </span>
-            <span
-              contentEditable
-              suppressContentEditableWarning
-              onBlur={(e) => onUpdateField("subjectMatter.lesson", e.currentTarget.textContent || "")}
-              className="outline-none focus:bg-sage-50"
-            >
-              {plan.subjectMatter.lesson}
-            </span>
-          </div>
-          <div>
-            <span className="font-bold">Reference/s: </span>
-            <span
-              contentEditable
-              suppressContentEditableWarning
-              onBlur={(e) => onUpdateField("subjectMatter.references", e.currentTarget.textContent || "")}
-              className="outline-none focus:bg-sage-50"
-            >
-              {plan.subjectMatter.references}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Competencies (when available) */}
-      {plan.learningCompetencies && (
-        <div className="p-3 border-b border-black">
-          <p className="font-bold mb-1">III - Learning Competencies:</p>
-          <p
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => onUpdateField("learningCompetencies", e.currentTarget.textContent || "")}
-            className="outline-none focus:bg-sage-50"
-          >
-            {plan.learningCompetencies}
-          </p>
-        </div>
-      )}
-
-      {/* Values Statement */}
-      <div className="p-3 border-b border-black">
-        <p className="font-bold mb-1">III- Values Statement:</p>
-        <p
-          contentEditable
-          suppressContentEditableWarning
-          onBlur={(e) => onUpdateField("valuesStatement", e.currentTarget.textContent || "")}
-          className="outline-none focus:bg-sage-50 italic text-gray-700"
-        >
-          {plan.valuesStatement}
-        </p>
-      </div>
-
-      {/* Procedures */}
-      <div className="p-3 border-b border-black space-y-3">
-        <p className="font-bold text-sm">IV- Procedures:</p>
-        <div>
-          <p className="font-semibold text-xs text-gray-700">a. Routine Activities</p>
-          <ul className="list-disc pl-5 text-xs space-y-0.5 mt-1">
-            {plan.procedures.routineActivities.map((r, i) => (
-              <li
-                key={i}
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) => {
-                  const updated = [...plan.procedures.routineActivities];
-                  updated[i] = e.currentTarget.textContent || "";
-                  onUpdateField("procedures.routineActivities", updated as unknown as string);
-                }}
-                className="outline-none focus:bg-sage-50"
-              >
-                {r}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <p className="font-semibold text-xs text-gray-700">b. Motivation:</p>
-          <p
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => onUpdateField("procedures.motivation", e.currentTarget.textContent || "")}
-            className="text-xs mt-1 outline-none focus:bg-sage-50"
-          >
-            {plan.procedures.motivation}
-          </p>
-        </div>
-        <div className="space-y-1.5">
-          <p className="font-semibold text-xs text-gray-700">c. Learning Strategies</p>
-          {plan.procedures.learningStrategies.map((strat, idx) => (
-            <div key={idx} className="pl-3 border-l-2 border-gray-200 text-xs">
-              <span
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) => {
-                  const updated = [...plan.procedures.learningStrategies];
-                  updated[idx] = { ...updated[idx], title: e.currentTarget.textContent?.replace(/\s*–\s*$/, "") || "" };
-                  onUpdateField("procedures.learningStrategies", updated as unknown as string);
-                }}
-                className="font-bold outline-none focus:bg-sage-50"
-              >
-                {strat.title} –{" "}
-              </span>
-              <span
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) => {
-                  const updated = [...plan.procedures.learningStrategies];
-                  updated[idx] = { ...updated[idx], instructions: e.currentTarget.textContent || "" };
-                  onUpdateField("procedures.learningStrategies", updated as unknown as string);
-                }}
-                className="outline-none focus:bg-sage-50"
-              >
-                {strat.instructions}
-              </span>
-              {strat.questions && (
-                <ul className="list-disc pl-5 mt-1 space-y-0.5 text-gray-600">
-                  {strat.questions.map((q, qi) => (
-                    <li
-                      key={qi}
-                      contentEditable
-                      suppressContentEditableWarning
-                      onBlur={(e) => {
-                        const updated = [...plan.procedures.learningStrategies];
-                        const questions = [...(updated[idx].questions || [])];
-                        questions[qi] = e.currentTarget.textContent || "";
-                        updated[idx] = { ...updated[idx], questions };
-                        onUpdateField("procedures.learningStrategies", updated as unknown as string);
-                      }}
-                      className="outline-none focus:bg-sage-50"
-                    >
-                      {q}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Assessment */}
-      <div className="p-3 border-b border-black text-xs space-y-1">
-        <p className="font-bold text-sm mb-1">V- Assessment:</p>
-        <ul className="list-disc pl-5 space-y-0.5">
-          {plan.assessment.map((a, i) => (
-            <li
-              key={i}
-              contentEditable
-              suppressContentEditableWarning
-              onBlur={(e) => {
-                const updated = [...plan.assessment];
-                updated[i] = e.currentTarget.textContent || "";
-                onUpdateField("assessment", updated as unknown as string);
-              }}
-              className="outline-none focus:bg-sage-50"
-            >
-              {a}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Closure */}
-      <div className="p-3 border-b border-black text-xs">
-        <p className="font-bold mb-1">VI- Closure:</p>
-        <p
-          contentEditable
-          suppressContentEditableWarning
-          onBlur={(e) => onUpdateField("closure", e.currentTarget.textContent || "")}
-          className="outline-none focus:bg-sage-50"
-        >
-          {plan.closure}
-        </p>
-      </div>
-
-      {/* Assignment */}
-      <div className="p-3 border-b border-black text-xs">
-        <p className="font-bold mb-1">VII- Assignment:</p>
-        <p
-          contentEditable
-          suppressContentEditableWarning
-          onBlur={(e) => onUpdateField("assignment", e.currentTarget.textContent || "")}
-          className="outline-none focus:bg-sage-50"
-        >
-          {plan.assignment}
-        </p>
-      </div>
-
-      {/* Remarks */}
-      <div className="p-3 border-b border-black text-xs">
-        <p className="font-bold mb-1">Remarks:</p>
-        <p
-          contentEditable
-          suppressContentEditableWarning
-          onBlur={(e) => onUpdateField("remarks", e.currentTarget.textContent || "")}
-          className="outline-none focus:bg-sage-50 italic text-gray-600"
-        >
-          {plan.remarks}
-        </p>
-      </div>
-
-      {/* Signatories */}
-      <div className="grid grid-cols-3 divide-x divide-black p-3 text-xs">
-        <div>
-          <span className="font-bold block">Prepared by:</span>
-          <span className="block mt-1">{plan.signatories.preparedBy}</span>
-        </div>
-        <div className="pl-3">
-          <span className="font-bold block">Checked by:</span>
-          <span className="block mt-1">{plan.signatories.checkedBy}</span>
-        </div>
-        <div className="pl-3">
-          <span className="font-bold block">Observed by:</span>
-          <span className="block mt-1">{plan.signatories.observedBy}</span>
-        </div>
-      </div>
+      ))}
+      <button
+        type="button"
+        onClick={handleAddItem}
+        className="inline-flex items-center space-x-1 text-[11px] font-medium text-sage-700 hover:text-sage-800 px-2 py-0.5 rounded bg-sage-50 border border-sage-200"
+      >
+        <Plus className="w-3 h-3" />
+        <span>Add Line</span>
+      </button>
     </div>
   );
 };

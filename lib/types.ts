@@ -1,6 +1,7 @@
 export type GradeLevel = "kinder2" | "grade1";
-export type Subject = "filipino" | "language" | "science" | "math";
+export type Subject = "filipino" | "language" | "science" | "math" | "rve";
 export type TemplateType = "matatag" | "lccp";
+export type RveFormatType = "portrait" | "landscape_adidse";
 
 export interface ImageInput {
   base64Data: string;
@@ -86,12 +87,43 @@ export interface MatatagLessonPlan {
   };
 }
 
+export interface RveAdidseContent {
+  unitTitle: string;
+  lessonTitle: string;
+  sectionName: string;
+  weekDate: string;
+  valueFocus: string;
+  references: string;
+  materialsNeeded: string;
+  integritas: string;
+  coreValues: {
+    laudatoSi: string;
+    justiceAndPeace: string;
+    genderAndDevelopment: string;
+    lccpCare: string;
+  };
+  routineActivities: string[];
+  lectio: string;
+  meditatio: string[];
+  oratio: string;
+  contemplatio: string;
+  communicatio: string;
+  inputDeepening: string;
+  furtherDiscussion: string;
+  closingSong: string;
+  closingPrayer: string;
+  synthesis: string[];
+  evaluation: string[];
+}
+
 /**
  * Template B: LCCP Institutional Learning Plan format
- * Used for Kinder 2 English, Science, Mathematics
+ * Used for Kinder 2 Language, Science, Mathematics, and RVE (Portrait & 5-Column Landscape ADIDSE)
  */
 export interface LccpLearningPlan {
   templateType: "lccp";
+  rveFormat?: RveFormatType;
+  adidse?: RveAdidseContent;
   header: {
     institution: string;
     address: string;
@@ -135,6 +167,7 @@ export interface GenerateRequestMeta {
   gradeLevel: GradeLevel;
   subject: Subject;
   templateType?: TemplateType;
+  rveFormat?: RveFormatType;
   weekNumber?: string;
   dateCoverage?: string;
   term?: string;

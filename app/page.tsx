@@ -19,7 +19,11 @@ import type {
 import {
   defaultTeacherProfile,
   sampleMatatagPlan,
+  sampleKinder2FilipinoPlan,
   sampleLccpPlan,
+  sampleK2MathPlan,
+  sampleK2SciencePlan,
+  sampleK2RvePlan,
 } from "@/lib/sampleData";
 import { generatePlanFromExtractedText } from "@/lib/freeLessonPlanner";
 import { generateLessonPlanUniversal } from "@/lib/universalAiScanner";
@@ -402,7 +406,7 @@ export default function HomePage() {
 
       let plan: LessonPlan;
 
-      // Direct client-side multimodal execution for ALL providers (eliminates Netlify 10-second serverless timeout!)
+      // Direct client-side multimodal execution for ALL providers
       try {
         plan = await generateLessonPlanUniversal({
           images,
@@ -501,15 +505,47 @@ export default function HomePage() {
     }
   };
 
-  const handleLoadSample = (type: "matatag" | "lccp") => {
-    if (type === "matatag") {
-      setGradeLevel("grade1");
-      setSubject("filipino");
-      setCurrentPlan(sampleMatatagPlan);
-    } else {
-      setGradeLevel("kinder2");
-      setSubject("language");
-      setCurrentPlan(sampleLccpPlan);
+  const handleLoadSample = (
+    type:
+      | "g1_filipino"
+      | "k2_filipino"
+      | "k2_language"
+      | "k2_math"
+      | "k2_science"
+      | "k2_rve"
+  ) => {
+    switch (type) {
+      case "g1_filipino":
+        setGradeLevel("grade1");
+        setSubject("filipino");
+        setCurrentPlan(sampleMatatagPlan);
+        break;
+      case "k2_filipino":
+        setGradeLevel("kinder2");
+        setSubject("filipino");
+        setCurrentPlan(sampleKinder2FilipinoPlan);
+        break;
+      case "k2_math":
+        setGradeLevel("kinder2");
+        setSubject("math");
+        setCurrentPlan(sampleK2MathPlan);
+        break;
+      case "k2_science":
+        setGradeLevel("kinder2");
+        setSubject("science");
+        setCurrentPlan(sampleK2SciencePlan);
+        break;
+      case "k2_rve":
+        setGradeLevel("kinder2");
+        setSubject("rve");
+        setCurrentPlan(sampleK2RvePlan);
+        break;
+      case "k2_language":
+      default:
+        setGradeLevel("kinder2");
+        setSubject("language");
+        setCurrentPlan(sampleLccpPlan);
+        break;
     }
     setErrorMessage(null);
     setScanWarning(null);
@@ -797,22 +833,50 @@ export default function HomePage() {
             {/* Quick Demo Previews */}
             <div className="pt-2 border-t border-stone-100 space-y-2">
               <span className="text-[11px] font-medium text-stone-500 block">
-                Instant Template Demonstrations:
+                Kat&apos;s Official Reference Templates:
               </span>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <button
                   type="button"
-                  onClick={() => handleLoadSample("matatag")}
-                  className="text-xs py-2 px-2.5 rounded-xl bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 font-medium transition-colors cursor-pointer text-center"
+                  onClick={() => handleLoadSample("g1_filipino")}
+                  className="text-xs py-2 px-2 rounded-xl bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 font-medium transition-colors cursor-pointer text-center"
                 >
-                  Grade 1 Filipino
+                  G1 Filipino
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleLoadSample("lccp")}
-                  className="text-xs py-2 px-2.5 rounded-xl bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 font-medium transition-colors cursor-pointer text-center"
+                  onClick={() => handleLoadSample("k2_filipino")}
+                  className="text-xs py-2 px-2 rounded-xl bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 font-medium transition-colors cursor-pointer text-center"
                 >
-                  Kinder 2 Language
+                  K2 Filipino
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleLoadSample("k2_math")}
+                  className="text-xs py-2 px-2 rounded-xl bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 font-medium transition-colors cursor-pointer text-center"
+                >
+                  K2 Math
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleLoadSample("k2_science")}
+                  className="text-xs py-2 px-2 rounded-xl bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 font-medium transition-colors cursor-pointer text-center"
+                >
+                  K2 Science
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleLoadSample("k2_language")}
+                  className="text-xs py-2 px-2 rounded-xl bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 font-medium transition-colors cursor-pointer text-center"
+                >
+                  K2 Language
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleLoadSample("k2_rve")}
+                  className="text-xs py-2 px-2 rounded-xl bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 font-medium transition-colors cursor-pointer text-center"
+                >
+                  K2 RVE
                 </button>
               </div>
             </div>
@@ -838,7 +902,7 @@ export default function HomePage() {
               <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-1">
                 <span className="font-semibold text-stone-900 block">Augustinian Core Values</span>
                 <p className="text-[11px] text-stone-600">
-                  Preserves Laudato Si stewardship, Justice and Peace, Gender and Development, and LCCP Care.
+                  Preserves Laudato Si (#93C37D), Justice and Peace (#A34500), Gender and Development (#B4A6D5), and LCCP Care (#FF9900).
                 </p>
               </div>
 
@@ -880,7 +944,7 @@ export default function HomePage() {
                     Awaiting Lesson Plan Generation
                   </h3>
                   <p className="text-xs text-stone-500 leading-relaxed">
-                    Attach textbook lesson photos or click a demonstration sample to render Kat&apos;s verified DepEd MATATAG or LCCP institutional table.
+                    Attach textbook lesson photos or click one of Kat&apos;s official reference templates to render her exact DepEd MATATAG, LCCP, or RVE ADIDSE table.
                   </p>
                 </div>
               </div>
