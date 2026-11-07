@@ -103,6 +103,48 @@ test("generateUniqueLessonIllustration creates a valid PNG data URI for every su
     ),
     "house_door"
   );
+
+  const usedSchool = new Set<SceneId>();
+  assert.strictEqual(
+    selectSceneForPanel(
+      "The classroom is where we study and learn new things.",
+      "Places in the School",
+      "Language",
+      0,
+      usedSchool
+    ),
+    "school_classroom"
+  );
+  assert.strictEqual(
+    selectSceneForPanel(
+      "The library is where we read and borrow books.",
+      "Places in the School",
+      "Language",
+      1,
+      usedSchool
+    ),
+    "school_library"
+  );
+  assert.strictEqual(
+    selectSceneForPanel(
+      "The canteen is where we eat our meals.",
+      "Places in the School",
+      "Language",
+      2,
+      usedSchool
+    ),
+    "school_canteen"
+  );
+  assert.strictEqual(
+    selectSceneForPanel(
+      "The playground is where we play and exercise with friends.",
+      "Places in the School",
+      "Language",
+      3,
+      usedSchool
+    ),
+    "school_playground"
+  );
 });
 
 test("generateMatatagDocx produces a valid non-empty DOCX file with embedded school banner", async () => {
