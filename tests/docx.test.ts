@@ -23,6 +23,15 @@ import {
   sanitizeGeminiSvg,
   generateFallbackPngDataUri,
 } from "../lib/lessonIllustrationGenerator";
+import {
+  getDomainRealArtFallback,
+  REAL_ART_COMMUNITY_ARTS,
+  REAL_ART_HOUSE_PARTS,
+  REAL_ART_MATH_COUNTING,
+  REAL_ART_ANIMALS_NATURE,
+  REAL_ART_COMMUNITY_HELPERS,
+  REAL_ART_CLASSROOM_STORY,
+} from "../lib/authenticArtAssets";
 
 test("getLccpBannerBuffer, getLccpCrestBuffer, and getLccpPaascuBuffer return authentic image assets", () => {
   const banner = getLccpBannerBuffer();
@@ -88,6 +97,35 @@ test("Gemini AI illustration engine rotates to a NEW design and NEW style on eve
   assert.ok(pngBytes && pngBytes.length > 1000, "Decoded PNG bytes should be > 1KB");
   assert.strictEqual(pngBytes[0], 0x89);
   assert.strictEqual(pngBytes[1], 0x50);
+});
+
+test("getDomainRealArtFallback connects 100% to lesson topic and panels", () => {
+  const artsArt = getDomainRealArtFallback(
+    "Language",
+    "Learning About Arts in the Community",
+    false,
+    ["Farmers planting rice in the green fields of the community", "Artists carving wooden crafts"]
+  );
+  assert.strictEqual(
+    artsArt,
+    REAL_ART_COMMUNITY_ARTS,
+    "Arts in the Community MUST connect to community landscape/farming art (NOT classroom reading)"
+  );
+
+  const houseArt = getDomainRealArtFallback("Language", "Learning About Parts of the House", false, ["Living room", "Roof and walls"]);
+  assert.strictEqual(houseArt, REAL_ART_HOUSE_PARTS, "Parts of the House MUST connect to house parts art");
+
+  const mathArt = getDomainRealArtFallback("Mathematics", "Counting Sets", false, ["Montessori blocks"]);
+  assert.strictEqual(mathArt, REAL_ART_MATH_COUNTING, "Math MUST connect to counting manipulatives art");
+
+  const animalArt = getDomainRealArtFallback("Science", "Living Things: Animals and Pets", false, ["Carabao in meadow"]);
+  assert.strictEqual(animalArt, REAL_ART_ANIMALS_NATURE, "Animals MUST connect to animals & nature art");
+
+  const helperArt = getDomainRealArtFallback("Social Studies", "Community Helpers: Doctors and Nurses", false, ["Clinic and hospital"]);
+  assert.strictEqual(helperArt, REAL_ART_COMMUNITY_HELPERS, "Community Helpers MUST connect to helpers art");
+
+  const storyArt = getDomainRealArtFallback("Filipino", "Iyan ang Lider!", true, ["Kuwento ng lider"]);
+  assert.strictEqual(storyArt, REAL_ART_CLASSROOM_STORY, "Story fable MUST connect to classroom reading art");
 });
 
 test("generateMatatagDocx produces a valid non-empty DOCX file with embedded school banner", async () => {

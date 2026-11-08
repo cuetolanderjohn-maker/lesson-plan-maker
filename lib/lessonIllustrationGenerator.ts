@@ -261,7 +261,7 @@ export function extractIllustrationContent(plan: LessonPlan): {
       ...(plan.procedures?.discussion?.guideQuestions || []),
     ].join(" ");
 
-    let hasStory = /\b(kuwento|kwento|story|fable|pabula|parabula|alamat|tauhan|lider|gamu-gamo|siso|leon|daga|pagong|matsing|sining|art)\b/i.test(
+    let hasStory = /\b(kuwento|kwento|story|fable|pabula|parabula|alamat|tauhan|lider|gamu-gamo|siso|leon|daga|pagong|matsing)\b/i.test(
       matatagSignals
     );
     let storyTitle = title;
@@ -333,7 +333,7 @@ export function extractIllustrationContent(plan: LessonPlan): {
     ...strategyQuestions,
   ].join(" ");
 
-  const hasStory = /\b(story|fable|tale|parable|rhyme|poem|character|plot|myth|art|community)\b/i.test(lccpSignals);
+  const hasStory = /\b(story|fable|tale|parable|rhyme|poem|character|plot|myth)\b/i.test(lccpSignals);
   const storyTitle = title;
 
   const rawLines = [
@@ -520,7 +520,13 @@ FOCUS ON:
 - Authentic environment (classroom, village, nature, home), warm golden sunlight, rich painted textures.
 Output ONLY the raw prompt text, no quotes or explanations.`;
 
-  const models = ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-flash-latest"];
+  const models = [
+    "gemini-3.5-flash-lite",
+    "gemini-flash-lite-latest",
+    "gemini-3.1-flash-lite",
+    "gemini-3-flash-preview",
+    "gemini-flash-latest",
+  ];
   for (const model of models) {
     try {
       const res = await fetch(
@@ -528,7 +534,7 @@ Output ONLY the raw prompt text, no quotes or explanations.`;
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          signal: AbortSignal.timeout(8000),
+          signal: AbortSignal.timeout(6000),
           body: JSON.stringify({
             contents: [{ parts: [{ text: `${instruction}\n\nContext:\n${storyInfo}` }] }],
             generationConfig: { maxOutputTokens: 250, temperature: 0.7 },
@@ -546,11 +552,12 @@ Output ONLY the raw prompt text, no quotes or explanations.`;
     }
   }
 
-  // Deterministic fallback prompt based on the lesson plan
+  // Deterministic fallback prompt directly connected to the lesson plan topic and specific scenes
+  const sceneSnippet = content.panels[0] ? `, featuring ${content.panels[0]}` : "";
   if (content.hasStory) {
-    return `Charming realistic storybook painting of the fable "${content.storyTitle}", Filipino children, warm sunlight, rich details, beautiful colors, no text, no clipart`.slice(0, 240);
+    return `Charming realistic storybook painting of "${content.storyTitle}"${sceneSnippet}, warm natural sunlight, rich painted details, beautiful colors, no text, no clipart`.slice(0, 240);
   }
-  return `Charming realistic educational illustration of ${content.title}, ${content.subject} classroom setting with Filipino children, warm sunlight, highly detailed, no text, no clipart`.slice(0, 240);
+  return `Charming realistic educational illustration of ${content.title}${sceneSnippet}, warm natural sunlight, authentic details, beautiful colors, no text, no clipart`.slice(0, 240);
 }
 
 /**
@@ -613,9 +620,10 @@ export async function requestGeminiIllustration(
   try {
     artPrompt = await requestGeminiCraftedArtPrompt(content, artStyle, apiKey);
   } catch {
+    const sceneSnippet = content.panels[0] ? `, featuring ${content.panels[0]}` : "";
     artPrompt = content.hasStory
-      ? `Charming realistic storybook painting of the fable "${content.storyTitle}", Filipino children, warm sunlight, rich details, beautiful colors, no text, no clipart`
-      : `Charming realistic educational illustration of ${content.title}, ${content.subject} classroom setting with Filipino children, warm sunlight, highly detailed, no text, no clipart`;
+      ? `Charming realistic storybook painting of "${content.storyTitle}"${sceneSnippet}, warm natural sunlight, rich painted details, beautiful colors, no text, no clipart`
+      : `Charming realistic educational illustration of ${content.title}${sceneSnippet}, warm natural sunlight, authentic details, beautiful colors, no text, no clipart`;
   }
 
   // 2. Fetch High-Quality Neural AI Image (via Pollinations / Diffusion)
@@ -628,7 +636,7 @@ export async function requestGeminiIllustration(
 
   // 3. Guaranteed High-Taste Fallback (Zero clipart, zero stick figures, zero cone bodies)
   if (!rawImageDataUri) {
-    rawImageDataUri = getDomainRealArtFallback(content.subject, content.title, content.hasStory);
+    rawImageDataUri = getDomainRealArtFallback(content.subject, content.title, content.hasStory, content.panels);
   }
 
   // 4. Frame the AI Image with Kat's signature Presentation Card (Top Banner & Caption, watermark cropped)
@@ -715,7 +723,7 @@ export function buildOfflineDynamicSvg(
   _artStyle: ArtStyleDirection,
   _nonce: number
 ): string {
-  const fallbackRealArt = getDomainRealArtFallback(content.subject, content.title, content.hasStory);
+  const fallbackRealArt = getDomainRealArtFallback(content.subject, content.title, content.hasStory, content.panels);
   return buildFramedEducationalSvg(fallbackRealArt, content);
 }
 
