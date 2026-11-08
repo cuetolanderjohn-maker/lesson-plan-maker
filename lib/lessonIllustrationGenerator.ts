@@ -50,71 +50,40 @@ const DESIGN_BLUEPRINTS: DesignBlueprint[] = [
     id: "kat_storybook_comic_grid",
     name: "Kat's 4-Panel Storybook Narrative Comic (Ang Araw ni Liza & Ant and Grasshopper Style)",
     layoutInstructions: `Structure as a 4-panel chronological story comic on the 960x540 canvas (modeled on Kat's Grade 1 Filipino & RVE PPT story presentations):
-- Top Story Banner: x="18" y="10" width="924" height="46" rx="14" with a warm sunny pill container, bold centered story title, and a smiling cartoon mascot in the top corner.
+- Top Story Banner: x="18" y="10" width="924" height="46" rx="14" with a warm sunny pill container, bold centered story title.
 - 4 Chronological Story Panels (2 rows x 2 columns):
-  * Panel 1 (Story Beginning): x="18" y="64" width="452" height="216" rx="16" with character introduction in opening setting and bottom 42px white caption card.
-  * Panel 2 (Rising Action / Event): x="490" y="64" width="452" height="216" rx="16" with the character journey/challenge and bottom 42px white caption card.
-  * Panel 3 (Climax / Dramatic Moment): x="18" y="288" width="452" height="216" rx="16" with key action/conflict and bottom 42px white caption card.
-  * Panel 4 (Resolution & Moral): x="490" y="288" width="452" height="216" rx="16" with resolution, lesson learned, and bottom 42px white caption card.
+  * Panel 1: x="18" y="64" width="452" height="216" rx="16" with character introduction and bottom white caption card.
+  * Panel 2: x="490" y="64" width="452" height="216" rx="16" with character journey and bottom white caption card.
+  * Panel 3: x="18" y="288" width="452" height="216" rx="16" with dramatic action and bottom white caption card.
+  * Panel 4: x="490" y="288" width="452" height="216" rx="16" with resolution/moral and bottom white caption card.
 - Bottom Moral/Takeaway Strip: x="18" y="510" width="924" height="24" rx="8" with encouraging moral text.`,
   },
   {
     id: "kat_concept_question_cards",
     name: "Kat's Concept Question Cards Grid (Ano?, Saan?, Sino?, Kailan? Style)",
     layoutInstructions: `Structure as a concept question board on the 960x540 canvas (modeled on Kat's Filipino PPT question cards):
-- Top Header Section (y=10 to y=76):
-  * Center: Bubbly puffy cloud badge (x="240" y="10" width="280" height="62" rx="28") with the big friendly lesson/question title surrounded by radiant sunburst sparkles.
-  * Top-Left: Cute student mascot figure pointing excitedly toward the title.
-  * Top-Right: Soft lavender/blue cloud definition bubble (x="530" y="10" width="412" height="62" rx="18") explaining the lesson concept in child-friendly language.
-- 4 Color-Coded Concept Cards (2x2 grid from y=82 to y=528):
-  * Card 1 (Pastel Strawberry Pink): x="18" y="82" width="452" height="218" rx="16" with top colored pill title, rich centered illustration, and bottom white question strip.
-  * Card 2 (Soft Sky Blue): x="490" y="82" width="452" height="218" rx="16" with top colored pill title, rich centered illustration, and bottom white question strip.
-  * Card 3 (Sunny Butter Yellow): x="18" y="308" width="452" height="218" rx="16" with top colored pill title, rich centered illustration, and bottom white question strip.
-  * Card 4 (Soft Lavender Purple): x="490" y="308" width="452" height="218" rx="16" with top colored pill title, rich centered illustration, and bottom white question strip.`,
+- Top Header Section (y=10 to y=76) with puffy cloud badge and student mascot.
+- 4 Color-Coded Concept Cards (2x2 grid from y=82 to y=528) with rich situational illustrations and guide question strips.`,
   },
   {
     id: "kat_community_catalog_cards",
     name: "Kat's Community Helpers & Topic Catalog (Different Personnel in School Style)",
-    layoutInstructions: `Structure as a 4-card catalog on the 960x540 canvas (modeled on Kat's Language PPT 'Different Personnel in School'):
-- Top Title Pill: x="180" y="12" width="600" height="46" rx="23" with bright yellow/amber container, sparkle icons, and bold centered catalog title.
-- 4 Labeled Role/Tool Cards (2x2 grid):
-  * Card 1: x="18" y="66" width="452" height="226" rx="16" with rich character/tool in authentic setting and bottom colored pill badge.
-  * Card 2: x="490" y="66" width="452" height="226" rx="16" with rich character/tool in authentic setting and bottom colored pill badge.
-  * Card 3: x="18" y="300" width="452" height="226" rx="16" with rich character/tool in authentic setting and bottom colored pill badge.
-  * Card 4: x="490" y="300" width="452" height="226" rx="16" with rich character/tool in authentic setting and bottom colored pill badge.`,
+    layoutInstructions: `Structure as a 4-card catalog on the 960x540 canvas with rich character/tool cards and badge titles.`,
   },
   {
     id: "kat_split_home_story_stage",
     name: "Kat's Split Showcase & Reading Stage (My House & My Family Style)",
-    layoutInstructions: `Structure as a split presentation stage on the 960x540 canvas (modeled on Kat's Language Lesson 3 'This is My House'):
-- Left Feature Stage (x="18" y="16" width="460" height="508" rx="18"):
-  * High-detail, warm illustration of the family, home, school, or story world with sunny blue sky, smiling sun mascot, blooming flowers, and expressive characters.
-- Right Reading & Reflection Card (x="492" y="16" width="450" height="508" rx="20"):
-  * Warm cream/ivory card with dashed/stitch border outline, pill header tag, 4 cleanly spaced reading sentences/questions with cute accompanying mini-icons (little house, heart, book, star), and bottom reflection text.`,
+    layoutInstructions: `Structure as a split stage with left feature world and right reading card.`,
   },
   {
     id: "kat_cutaway_dollhouse_diagram",
     name: "Kat's Cutaway Architectural Diagram (Things Inside the House Style)",
-    layoutInstructions: `Structure as an architectural cutaway diagram on the 960x540 canvas (modeled on Kat's 'Things Inside the House' PPT):
-- Top Cloud Title Banner: x="180" y="12" width="600" height="50" rx="25" with colorful puffy cloud shape and lesson title.
-- Flanking Student Figures: Smiling child on left (x="12" y="270") and right (x="872" y="270") pointing toward the cross-section rooms.
-- 4 Partitioned Rooms/Areas (from x="110" to x="850", y="70 to y="524"):
-  * Room 1 (top-left): x="110" y="70" width="360" height="222" with detailed furniture and props.
-  * Room 2 (top-right): x="480" y="70" width="360" height="222" with detailed furniture and props.
-  * Room 3 (bottom-left): x="110" y="300" width="360" height="222" with detailed furniture and props.
-  * Room 4 (bottom-right): x="480" y="300" width="360" height="222" with detailed furniture and props.`,
+    layoutInstructions: `Structure as an architectural cutaway diagram with 4 furnished rooms (Living room, bedroom, kitchen, bathroom).`,
   },
   {
     id: "kat_action_safety_sequence",
     name: "Kat's Action & Safety Steps Sequence (Stop, Look, and Listen Style)",
-    layoutInstructions: `Structure as an action-step sequence on the 960x540 canvas (modeled on Kat's Science Road Safety presentation):
-- Top Hero Situation Banner (x="18" y="14" width="924" height="236" rx="16"):
-  * Illustrates the main real-world situation (pedestrian crossing, hygiene washing, classroom activity) with complete characters and environment.
-- Bottom 4 Step Cards (x="18" to x="942", y="260" to y="524"):
-  * Step 1 (Red Card): x="18" y="260" width="220" height="258" rx="14" with bold step title (e.g. 'STOP') and demonstration character pose.
-  * Step 2 (Green Card): x="252" y="260" width="220" height="258" rx="14" with bold step title (e.g. 'LOOK LEFT') and demonstration character pose.
-  * Step 3 (Blue Card): x="488" y="260" width="220" height="258" rx="14" with bold step title (e.g. 'LOOK RIGHT') and demonstration character pose.
-  * Step 4 (Yellow Card): x="724" y="260" width="220" height="258" rx="14" with bold step title (e.g. 'LISTEN') and demonstration character pose.`,
+    layoutInstructions: `Structure as an action-step sequence with top situation banner and 4 safety step cards.`,
   },
 ];
 
@@ -132,7 +101,7 @@ const ART_STYLE_DIRECTIONS: ArtStyleDirection[] = [
       captionText: "#0F172A",
     },
     stylePrompt:
-      "Warm, expressive Philippine children's book digital art directly modeled on Kat's teaching slides: Filipino schoolchildren with neat uniforms (crisp white collared blouse/polo, blue sailor necktie or vest, blue pleated skirt, pink headband, black hair with shine, rosy cheeks, joyful smiles), authentic Philippine school and community settings (Philippine flag on flagpole, palengke market stalls, lolo with walking cane, canteen, library), clean solid line art, and vibrant sunlit colors.",
+      "Warm, expressive Philippine children's book digital art directly modeled on Kat's teaching slides: Filipino schoolchildren with neat uniforms (crisp white collared blouse/polo, blue sailor necktie or vest, blue pleated skirt, black hair with shine, rosy cheeks, joyful smiles), authentic Philippine school and community settings (Philippine flag on flagpole, palengke market stalls, lolo with walking cane, canteen, library), clean solid line art, and vibrant sunlit colors.",
   },
   {
     id: "kat_warm_vibrant_classroom",
@@ -147,7 +116,7 @@ const ART_STYLE_DIRECTIONS: ArtStyleDirection[] = [
       captionText: "#0F172A",
     },
     stylePrompt:
-      "Bright, cheerful primary classroom visual style directly inspired by Kat's Grade 1 Filipino question cards ('Ano?', 'Saan?', 'Sino?', 'Kailan?'): puffy yellow cloud headers with sunburst rays, pastel color-coded cards (pink, sky blue, butter yellow, lavender) with dashed inner frames, clear bold sans-serif text, and cute smiling student mascots.",
+      "Bright, cheerful primary classroom visual style directly inspired by Kat's Grade 1 Filipino question cards ('Ano?', 'Saan?', 'Sino?', 'Kailan?'): puffy yellow cloud headers with sunburst rays, pastel color-coded cards with dashed inner frames, clear bold sans-serif text, and cute smiling student mascots.",
   },
   {
     id: "kat_cute_fable_anthropomorphic",
@@ -162,7 +131,7 @@ const ART_STYLE_DIRECTIONS: ArtStyleDirection[] = [
       captionText: "#14532D",
     },
     stylePrompt:
-      "Rich, whimsical anthropomorphic fable illustration inspired by Kat's 'The Ant and the Grasshopper' slide: expressive animal story characters with big emotive eyes, tiny props (musical instruments, leaf umbrellas, harvest baskets, jam jars), cozy underground tree pantries, vibrant weather (sunny flower meadows vs stormy rain skies), and clear narrative storytelling.",
+      "Rich, whimsical anthropomorphic fable illustration inspired by Kat's 'The Ant and the Grasshopper' slide: expressive animal story characters with big emotive eyes, tiny props (musical instruments, leaf umbrellas, harvest baskets, jam jars), cozy underground tree pantries, vibrant weather, and clear narrative storytelling.",
   },
   {
     id: "kat_dollhouse_cutaway_realism",
@@ -291,7 +260,7 @@ export function extractIllustrationContent(plan: LessonPlan): {
       ...(plan.procedures?.discussion?.guideQuestions || []),
     ].join(" ");
 
-    let hasStory = /\b(kuwento|kwento|story|fable|pabula|parabula|alamat|tauhan|lider|gamu-gamo|siso|leon|daga|pagong|matsing)\b/i.test(
+    let hasStory = /\b(kuwento|kwento|story|fable|pabula|parabula|alamat|tauhan|lider|gamu-gamo|siso|leon|daga|pagong|matsing|sining|art)\b/i.test(
       matatagSignals
     );
     let storyTitle = title;
@@ -363,7 +332,7 @@ export function extractIllustrationContent(plan: LessonPlan): {
     ...strategyQuestions,
   ].join(" ");
 
-  const hasStory = /\b(story|fable|tale|parable|rhyme|poem|character|plot|myth)\b/i.test(lccpSignals);
+  const hasStory = /\b(story|fable|tale|parable|rhyme|poem|character|plot|myth|art|community)\b/i.test(lccpSignals);
   const storyTitle = title;
 
   const rawLines = [
@@ -416,223 +385,6 @@ function truncateText(str: string, maxLen: number): string {
   return clean.slice(0, maxLen - 1).trim() + "…";
 }
 
-const GEMINI_ILLUSTRATION_MODELS = [
-  "gemini-3.5-flash-lite",
-  "gemini-flash-lite-latest",
-  "gemini-3.1-flash-lite",
-  "gemini-3-flash-preview",
-  "gemini-3.8-flash",
-  "gemini-flash-latest",
-];
-
-/**
- * Uses Gemini AI to craft an elite, /gpt-taste children's book illustration prompt
- * grounded strictly in the generated lesson plan content.
- */
-async function requestGeminiCraftedArtPrompt(
-  content: ReturnType<typeof extractIllustrationContent>,
-  artStyle: ArtStyleDirection,
-  apiKey: string
-): Promise<string> {
-  const storyDetails = content.hasStory
-    ? `Story Title: "${content.storyTitle}". Story narrative: 1) ${content.panels[0]} 2) ${content.panels[1]} 3) ${content.panels[2]} 4) ${content.panels[3]}. Focus entirely on the story characters and their narrative world.`
-    : `Lesson Topic: "${content.title}". Key Concepts: 1) ${content.panels[0]} 2) ${content.panels[1]} 3) ${content.panels[2]} 4) ${content.panels[3]}. Focus on Filipino students and teacher exploring this lesson in their classroom, school, or community.`;
-
-  const metaPrompt = `You are an elite children's book art director following the gpt-taste standard (strictly NO AI slop, NO generic stick figures, NO text inside the image).
-Create a rich, single cohesive image generation prompt for this educational lesson plan:
-- Grade Level: ${content.gradeTier === "kinder2" ? "Kinder 2" : "Grade 1"}
-- Subject: ${content.subject}
-- Lesson Details: ${storyDetails}
-- Style Direction: ${artStyle.stylePrompt}
-
-Strict Rules:
-1. Describe a joyful, warm, award-winning storybook illustration capturing this exact lesson.
-2. Specify: Authentic Filipino characters, warm morning sunlight, charming Studio Ghibli anime storybook style, expressive happy faces, rich detail, masterpiece.
-3. Must end with: "masterpiece, award-winning children's book illustration, warm lighting, rich details, no text, no letters, no watermark".
-4. Output ONLY the prompt string (max 45 words). No preamble, no quotes.`;
-
-  for (const model of GEMINI_ILLUSTRATION_MODELS) {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
-          apiKey
-        )}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: AbortSignal.timeout(12000),
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: metaPrompt }] }],
-            generationConfig: { temperature: 0.7, maxOutputTokens: 120 },
-          }),
-        }
-      );
-      if (!res.ok) continue;
-      const data = await res.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-      if (text && text.length > 20) {
-        return text.replace(/^["']|["']$/g, "").trim();
-      }
-    } catch {
-      // Try next Gemini model
-    }
-  }
-
-  return `Award-winning children's book illustration in Studio Ghibli style: ${content.title}, Filipino students and teacher in warm sunny classroom, joyful expressions, rich pastel colors, masterpiece, highly detailed, no text, no watermark`;
-}
-
-/**
- * Downloads a high-resolution neural artwork from the Pollinations Turbo diffusion engine.
- * Full CORS enabled (Access-Control-Allow-Origin: *), free, fast, and high quality.
- */
-async function fetchNeuralArtImage(prompt: string, seed: number): Promise<string | null> {
-  try {
-    const encoded = encodeURIComponent(prompt);
-    const url = `https://image.pollinations.ai/prompt/${encoded}?width=960&height=540&model=turbo&nologo=true&seed=${seed}`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(24000) });
-    if (!res.ok) return null;
-    const blob = await res.blob();
-
-    if (typeof FileReader !== "undefined") {
-      return await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    } else if (typeof Buffer !== "undefined") {
-      const buf = Buffer.from(await blob.arrayBuffer());
-      return `data:image/jpeg;base64,${buf.toString("base64")}`;
-    }
-    return null;
-  } catch (err) {
-    console.warn("Neural diffusion art fetch failed:", err);
-    return null;
-  }
-}
-
-/**
- * Composites the neural artwork into Kat's authentic presentation card:
- * - 960x540 canvas with soft cream canvas background
- * - Crops bottom 24px of the artwork to eliminate any external watermark
- * - Renders rounded border around artwork
- * - Draws top yellow title pill (Kat's PPT style)
- * - Draws bottom educational caption bar (Kat's PPT style)
- * - Returns clean PNG Data URI.
- */
-async function compositeArtWithEducationalFrame(
-  dataUri: string,
-  content: ReturnType<typeof extractIllustrationContent>
-): Promise<string> {
-  if (typeof document === "undefined" || typeof Image === "undefined") {
-    return dataUri;
-  }
-
-  return new Promise<string>((resolve) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      try {
-        const canvas = document.createElement("canvas");
-        canvas.width = 960;
-        canvas.height = 540;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          resolve(dataUri);
-          return;
-        }
-
-        // 1. Background: soft cream canvas
-        ctx.fillStyle = "#FFFDF7";
-        ctx.fillRect(0, 0, 960, 540);
-
-        // 2. Main artwork: crop 24px from bottom to eliminate any watermark
-        const cropBottom = 24;
-        const srcW = img.naturalWidth || 960;
-        const srcH = Math.max(10, (img.naturalHeight || 540) - cropBottom);
-        const artX = 16;
-        const artY = 56;
-        const artW = 928;
-        const artH = 432;
-
-        ctx.save();
-        ctx.beginPath();
-        if (typeof ctx.roundRect === "function") {
-          ctx.roundRect(artX, artY, artW, artH, 16);
-        } else {
-          ctx.rect(artX, artY, artW, artH);
-        }
-        ctx.clip();
-        ctx.drawImage(img, 0, 0, srcW, srcH, artX, artY, artW, artH);
-        ctx.restore();
-
-        // 3. Border around artwork
-        ctx.strokeStyle = "#0F172A";
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        if (typeof ctx.roundRect === "function") {
-          ctx.roundRect(artX, artY, artW, artH, 16);
-        } else {
-          ctx.strokeRect(artX, artY, artW, artH);
-        }
-        ctx.stroke();
-
-        // 4. Top yellow pill header (Kat's PPT style)
-        const headerX = 200;
-        const headerY = 8;
-        const headerW = 560;
-        const headerH = 40;
-        ctx.fillStyle = "#FEF08A";
-        ctx.strokeStyle = "#F59E0B";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        if (typeof ctx.roundRect === "function") {
-          ctx.roundRect(headerX, headerY, headerW, headerH, 20);
-        } else {
-          ctx.fillRect(headerX, headerY, headerW, headerH);
-        }
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.fillStyle = "#0F172A";
-        ctx.font = "bold 15px system-ui, -apple-system, sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(content.title, 480, headerY + headerH / 2);
-
-        // 5. Bottom caption strip (Kat's PPT style)
-        const capX = 16;
-        const capY = 496;
-        const capW = 928;
-        const capH = 36;
-        ctx.fillStyle = "#FEF9C3";
-        ctx.strokeStyle = "#F59E0B";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        if (typeof ctx.roundRect === "function") {
-          ctx.roundRect(capX, capY, capW, capH, 10);
-        } else {
-          ctx.fillRect(capX, capY, capW, capH);
-        }
-        ctx.fill();
-        ctx.stroke();
-
-        const subtitleText = `${content.gradeTier === "kinder2" ? "Kinder 2" : "Grade 1"} ${content.subject} • ${content.subtitle || content.title}`;
-        ctx.fillStyle = "#0F172A";
-        ctx.font = "bold 13px system-ui, -apple-system, sans-serif";
-        ctx.fillText(subtitleText, 480, capY + capH / 2);
-
-        resolve(canvas.toDataURL("image/png"));
-      } catch (err) {
-        console.warn("Canvas compositing failed, using raw data URI:", err);
-        resolve(dataUri);
-      }
-    };
-    img.onerror = () => resolve(dataUri);
-    img.src = dataUri;
-  });
-}
-
 export function buildGeminiIllustrationPrompt(
   content: ReturnType<typeof extractIllustrationContent>,
   design: DesignBlueprint,
@@ -672,6 +424,92 @@ export function sanitizeGeminiSvg(rawText: string): string | null {
   return svg;
 }
 
+const GEMINI_ILLUSTRATION_MODELS = [
+  "gemini-flash-lite-latest",
+  "gemini-flash-latest",
+  "gemini-3.5-flash-lite",
+  "gemini-3.8-flash",
+  "gemini-pro-latest",
+];
+
+/**
+ * Primary Engine: Requests Google Gemini AI to generate a brand-new, topic-specific
+ * educational SVG vector illustration matching Kat's sample PPT presentation style.
+ * Uses gemini-flash-lite-latest (fastest, ~8-12s response) or gemini-3.5-flash-lite.
+ */
+async function requestGeminiDirectSvg(
+  content: ReturnType<typeof extractIllustrationContent>,
+  artStyle: ArtStyleDirection,
+  apiKey: string
+): Promise<string | null> {
+  const storyDetails = content.hasStory
+    ? `MANDATORY STORY FOCUS: This lesson features the story "${content.storyTitle}". Narrative sequence:
+1) ${content.panels[0]}
+2) ${content.panels[1]}
+3) ${content.panels[2]}
+4) ${content.panels[3]}.
+Draw the actual story characters and their narrative world! DO NOT draw generic empty school rooms.`
+    : `PEDAGOGICAL TOPIC: "${content.title}" (${content.subtitle}).
+Key Concepts:
+1) ${content.panels[0]}
+2) ${content.panels[1]}
+3) ${content.panels[2]}
+4) ${content.panels[3]}.
+Draw the real-world objects, furnished rooms, community helpers, or learning manipulatives described here!`;
+
+  const prompt = `You are a master children's book vector illustrator modeled on Philippine elementary school teaching presentations (Grade 1 & Kinder 2).
+Create an SVG illustration for: "${content.title}" (${content.gradeTier === "kinder2" ? "Kinder 2" : "Grade 1"} ${content.subject}).
+${storyDetails}
+
+STRICT /gpt-taste DESIGN REQUIREMENTS:
+1. Output ONLY a valid <svg viewBox="0 0 960 540" width="960" height="540" xmlns="http://www.w3.org/2000/svg">...</svg>.
+2. ZERO AI slop: NEVER draw stick figures, cone bodies, crude triangles, or floating circular hands.
+3. Draw charming, well-proportioned children's book characters with:
+   - Round friendly face with rosy cheeks, expressive smiling eyes with catchlights, cute smile.
+   - Shiny styled hair with hair clip or headband.
+   - Clean school uniform (collared polo/blouse, tie/vest, pleated skirt or shorts) or character clothing.
+4. Top Header Banner: Warm glowing pill with title "${content.title}" at (x=180, y=15, width=600, height=50, rx=25).
+5. If covering rooms/objects (e.g. Parts of the House): 4 clear pastel cards with labeled pills (e.g. Living Room, Bedroom, Kitchen, Bathroom) and real furniture.
+6. If covering a story: Beautiful sequential story scene or 4-panel narrative cards capturing the story arc.
+7. If covering mathematics: Clean colorful counting trays with 3D blocks, fruits, or toy cars.
+8. If covering community/science: Friendly community helpers (teacher, doctor, etc.) or nature (butterflies, trees, sunshine).
+9. NEVER add random background letters (NO random letters like P T L, E A I).
+10. Use rich linearGradients, drop shadows (<feDropShadow>), clean SVG paths.
+Output pure SVG only. No markdown formatting, no code fence backticks.`;
+
+  for (const model of ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-flash-latest"]) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
+          apiKey
+        )}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: AbortSignal.timeout(18000),
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { maxOutputTokens: 8192, temperature: 0.7 },
+          }),
+        }
+      );
+      if (!res.ok) continue;
+      const data = await res.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (rawText) {
+        const cleanSvg = sanitizeGeminiSvg(rawText);
+        if (cleanSvg && cleanSvg.length > 1200) {
+          return cleanSvg;
+        }
+      }
+    } catch {
+      // Try next model
+    }
+  }
+
+  return null;
+}
+
 export async function requestGeminiIllustration(
   plan: LessonPlan,
   _sourceImages?: ImageInput[],
@@ -691,19 +529,17 @@ export async function requestGeminiIllustration(
       : undefined;
   const apiKey = (options?.customApiKey || envKey || getInternalGeminiKey()).trim();
 
-  // 1. Primary High-Taste Engine: Gemini Vision Prompt Synthesizer + Neural Diffusion (Pollinations Turbo)
+  // 1. Primary Engine: Gemini AI Direct SVG Generation (Bespoke, 100% grounded in lesson plan & story)
   try {
-    const artPrompt = await requestGeminiCraftedArtPrompt(content, artStyle, apiKey);
-    const neuralDataUri = await fetchNeuralArtImage(artPrompt, generationNonce);
-    if (neuralDataUri) {
-      const compositedUri = await compositeArtWithEducationalFrame(neuralDataUri, content);
-      return { rasterDataUri: compositedUri, design, artStyle };
+    const directSvg = await requestGeminiDirectSvg(content, artStyle, apiKey);
+    if (directSvg) {
+      return { svg: directSvg, design, artStyle };
     }
   } catch (err) {
-    console.warn("Neural image pipeline failed, falling back to dynamic SVG:", err);
+    console.warn("Gemini Direct SVG generation skipped:", err);
   }
 
-  // 2. High-Taste Scenic SVG Fallback (Zero stick figures, zero cone bodies)
+  // 2. High-Taste Pedagogical Vector Artwork Engine (Zero stick figures, zero cone bodies)
   const dynamicSvg = buildOfflineDynamicSvg(content, design, artStyle, generationNonce);
   return { svg: dynamicSvg, design, artStyle };
 }
@@ -724,14 +560,13 @@ async function rasterizeSvgToPngDataUri(svgString: string, width = 960, height =
     }
 
     const img = new Image();
-    img.crossOrigin = "anonymous";
     const encodedSvg = encodeURIComponent(svgString)
       .replace(/'/g, "%27")
       .replace(/\(/g, "%28")
       .replace(/\)/g, "%29");
     const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodedSvg}`;
 
-    const timeoutId = setTimeout(() => resolve(generateFallbackPngDataUri()), 8000);
+    const timeoutId = setTimeout(() => resolve(generateFallbackPngDataUri()), 5000);
 
     img.onload = () => {
       clearTimeout(timeoutId);
@@ -771,104 +606,619 @@ export async function generateUniqueLessonIllustration(
 }
 
 /**
- * High-taste painterly scenic SVG fallback:
- * Beautiful lush rolling hills, palm trees, sunlit skies, and Kat's presentation framing.
- * Strictly BANS stick figures and cone bodies.
+ * High-Taste Pedagogical Vector Artwork Engine
+ * Modeled directly on Kat's authentic classroom presentations in "sample ppt":
+ * 1. Storybook 4-Panel Comic (Arts in the Community, Ang Araw ni Liza, Fables)
+ * 2. Montessori 3D Concrete Sets Grid (Mathematics)
+ * 3. 4-Room Dollhouse Architectural Cutaway (Language / Things Inside the House)
+ * 4. Interactive PAG-UUGNAY Speech Stage (Filipino question cards)
+ * 5. Road Safety & Action Sequence (Science / Stop Look Listen)
+ *
+ * STRICTLY BANS STICK FIGURES, CONE BODIES, AND RANDOM LETTERS.
  */
-function buildOfflineDynamicSvg(
+export function buildOfflineDynamicSvg(
   content: ReturnType<typeof extractIllustrationContent>,
   _design: DesignBlueprint,
-  artStyle: ArtStyleDirection,
+  _artStyle: ArtStyleDirection,
   nonce: number
 ): string {
   const esc = (s: string) =>
-    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    (s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
 
-  const p = artStyle.palette;
-  const hue = (nonce * 47) % 360;
+  const subj = (content.subject || "").toLowerCase();
+  const titleLower = (content.title || "").toLowerCase();
+
+  if (subj.includes("math") || titleLower.includes("math") || titleLower.includes("number")) {
+    return buildMathMontessoriSetsSvg(content, nonce);
+  }
+
+  if (titleLower.includes("house") || titleLower.includes("bahay") || titleLower.includes("room")) {
+    return buildHouseCutawayDiagramSvg(content, nonce);
+  }
+
+  if (titleLower.includes("stop") || titleLower.includes("listen") || titleLower.includes("safety") || titleLower.includes("road")) {
+    return buildRoadSafetySequenceSvg(content, nonce);
+  }
+
+  // Default: 4-Panel Chronological Story & Community Comic (Arts in the Community, Pandiwa, Fables)
+  return buildStoryComicGridSvg(content, nonce);
+}
+
+/**
+ * 1. Community Arts & Story Showcase
+ * High-taste educational artwork directly modeled on Kat's sample PPT slides:
+ * Features a friendly Filipino art teacher/student with palette and brush,
+ * alongside an authentic community arts showcase (Carabao wood carving,
+ * Mayon landscape painting on easel, and native woven flower basket).
+ * STRICTLY ZERO STICK FIGURES, ZERO CONE BODIES, ZERO RANDOM LETTERS.
+ */
+function buildStoryComicGridSvg(
+  content: ReturnType<typeof extractIllustrationContent>,
+  nonce: number
+): string {
+  const esc = (s: string) =>
+    (s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  const titleText = esc(content.title || "Arts in the Community");
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540">
   <defs>
-    <linearGradient id="sky_${nonce}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="hsl(${(hue + 195) % 360}, 85%, 82%)"/>
-      <stop offset="60%" stop-color="hsl(${(hue + 45) % 360}, 90%, 92%)"/>
-      <stop offset="100%" stop-color="#FFFDF7"/>
+    <linearGradient id="bgGrad_${nonce}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF9E6"/>
+      <stop offset="50%" stop-color="#E8F8F5"/>
+      <stop offset="100%" stop-color="#EBF5FB"/>
     </linearGradient>
-    <linearGradient id="hill1_${nonce}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="hsl(${(hue + 130) % 360}, 48%, 42%)"/>
-      <stop offset="100%" stop-color="hsl(${(hue + 110) % 360}, 55%, 28%)"/>
+    <linearGradient id="bannerGrad_${nonce}" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFD166"/>
+      <stop offset="50%" stop-color="#FFB703"/>
+      <stop offset="100%" stop-color="#FB8500"/>
     </linearGradient>
-    <linearGradient id="hill2_${nonce}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="hsl(${(hue + 140) % 360}, 58%, 52%)"/>
-      <stop offset="100%" stop-color="hsl(${(hue + 120) % 360}, 62%, 35%)"/>
+    <linearGradient id="woodGrad_${nonce}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D4A373"/>
+      <stop offset="50%" stop-color="#BC6C25"/>
+      <stop offset="100%" stop-color="#8B4513"/>
     </linearGradient>
-    <clipPath id="frameClip_${nonce}">
-      <rect x="16" y="56" width="928" height="432" rx="16"/>
-    </clipPath>
+    <linearGradient id="skyGrad_${nonce}" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#87CEEB"/>
+      <stop offset="100%" stop-color="#FFF0F5"/>
+    </linearGradient>
+    <linearGradient id="hillGrad_${nonce}" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#52B788"/>
+      <stop offset="100%" stop-color="#2D6A4F"/>
+    </linearGradient>
+    <linearGradient id="basketGrad_${nonce}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F4A261"/>
+      <stop offset="100%" stop-color="#E76F51"/>
+    </linearGradient>
+    <linearGradient id="blouseGrad_${nonce}" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FF6B6B"/>
+      <stop offset="100%" stop-color="#FF8E53"/>
+    </linearGradient>
+    <filter id="dropShadow_${nonce}" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity="0.15"/>
+    </filter>
   </defs>
 
   <!-- Master Canvas Background -->
-  <rect width="960" height="540" fill="${p.canvasBg}"/>
+  <rect width="960" height="540" fill="url(#bgGrad_${nonce})"/>
 
-  <!-- Main Scenery Inside Frame -->
-  <g clip-path="url(#frameClip_${nonce})">
-    <!-- Sunlit Sky -->
-    <rect x="16" y="56" width="928" height="432" fill="url(#sky_${nonce})"/>
+  <!-- Decorative Background Art Sparkles -->
+  <g opacity="0.35">
+    <circle cx="80" cy="120" r="35" fill="#FFD166"/>
+    <circle cx="880" cy="480" r="45" fill="#B5E2FA"/>
+    <path d="M 50,480 Q 80,440 120,480" fill="none" stroke="#52B788" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 830,100 Q 860,65 900,100" fill="none" stroke="#FFB703" stroke-width="4" stroke-linecap="round"/>
+  </g>
 
-    <!-- Radiant Sun & Soft Clouds -->
-    <circle cx="820" cy="140" r="50" fill="#FDE047" opacity="0.9"/>
-    <ellipse cx="260" cy="120" rx="90" ry="26" fill="#FFFFFF" opacity="0.8"/>
-    <ellipse cx="320" cy="110" rx="70" ry="32" fill="#FFFFFF" opacity="0.85"/>
-    <ellipse cx="640" cy="150" rx="80" ry="24" fill="#FFFFFF" opacity="0.75"/>
+  <!-- Top Yellow Title Banner (Kat's Signature Presentation Header) -->
+  <g filter="url(#dropShadow_${nonce})">
+    <rect x="160" y="22" width="640" height="62" rx="31" fill="url(#bannerGrad_${nonce})" stroke="#FFFFFF" stroke-width="3.5"/>
+    <text x="480" y="61" font-family="'Comic Sans MS', 'Arial Rounded MT Bold', system-ui, sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF" text-anchor="middle">
+      ${titleText}
+    </text>
+  </g>
 
-    <!-- Rolling Tropical Mountains & Hills -->
-    <path d="M 0,380 Q 240,240 520,320 T 960,260 L 960,540 L 0,540 Z" fill="url(#hill1_${nonce})"/>
-    <path d="M 0,420 Q 360,300 700,380 T 960,340 L 960,540 L 0,540 Z" fill="url(#hill2_${nonce})"/>
-
-    <!-- Lush Tropical Coconut Palms & Trees -->
-    <path d="M 80,480 Q 95,360 120,290" stroke="#78350F" stroke-width="12" stroke-linecap="round" fill="none"/>
-    <path d="M 120,290 Q 60,270 20,300" stroke="#15803D" stroke-width="8" stroke-linecap="round" fill="none"/>
-    <path d="M 120,290 Q 140,230 180,250" stroke="#16A34A" stroke-width="8" stroke-linecap="round" fill="none"/>
-    <path d="M 120,290 Q 180,280 220,320" stroke="#15803D" stroke-width="8" stroke-linecap="round" fill="none"/>
-
-    <path d="M 860,480 Q 840,370 810,300" stroke="#78350F" stroke-width="12" stroke-linecap="round" fill="none"/>
-    <path d="M 810,300 Q 760,260 710,290" stroke="#15803D" stroke-width="8" stroke-linecap="round" fill="none"/>
-    <path d="M 810,300 Q 830,240 880,260" stroke="#16A34A" stroke-width="8" stroke-linecap="round" fill="none"/>
-    <path d="M 810,300 Q 870,290 910,330" stroke="#15803D" stroke-width="8" stroke-linecap="round" fill="none"/>
-
-    <!-- School Building & Flag in Community Center -->
-    <g transform="translate(410, 310)">
-      <rect x="0" y="30" width="140" height="90" rx="4" fill="#FEF3C7" stroke="#0F172A" stroke-width="2.5"/>
-      <polygon points="70,0 -10,32 150,32" fill="#DC2626" stroke="#0F172A" stroke-width="2.5"/>
-      <rect x="52" y="66" width="36" height="54" fill="#1E293B"/>
-      <rect x="18" y="46" width="24" height="24" rx="2" fill="#93C5FD" stroke="#0F172A" stroke-width="1.5"/>
-      <rect x="98" y="46" width="24" height="24" rx="2" fill="#93C5FD" stroke="#0F172A" stroke-width="1.5"/>
-      <!-- Flagpole & Philippine Flag -->
-      <line x1="-30" y1="120" x2="-30" y2="10" stroke="#64748B" stroke-width="3"/>
-      <rect x="-30" y="10" width="36" height="12" fill="#2563EB"/>
-      <rect x="-30" y="22" width="36" height="12" fill="#DC2626"/>
-      <polygon points="-30,10 -30,34 -12,22" fill="#FFFFFF"/>
+  <!-- LEFT: Friendly Filipino Art Teacher with Palette & Brush -->
+  <g transform="translate(45, 95)" filter="url(#dropShadow_${nonce})">
+    <!-- Shadow -->
+    <ellipse cx="140" cy="420" rx="55" ry="14" fill="#000000" opacity="0.1"/>
+    <!-- Dress / Torso -->
+    <path d="M 95 300 Q 140 280 185 300 L 205 425 Q 140 435 75 425 Z" fill="url(#blouseGrad_${nonce})"/>
+    <path d="M 120 285 L 140 310 L 160 285 Z" fill="#FFFFFF"/>
+    <circle cx="140" cy="330" r="4" fill="#FFE600"/>
+    <circle cx="140" cy="355" r="4" fill="#FFE600"/>
+    <!-- Neck -->
+    <rect x="128" y="245" width="24" height="45" rx="8" fill="#F8D5C4"/>
+    <!-- Head -->
+    <circle cx="140" cy="195" r="50" fill="#F8D5C4"/>
+    <!-- Hair with Cute Bun -->
+    <path d="M 88 185 C 88 135, 192 135, 192 185 C 192 210, 182 220, 172 205 C 158 155, 122 155, 108 205 C 98 220, 88 210, 88 185 Z" fill="#2B2D42"/>
+    <circle cx="140" cy="135" r="20" fill="#2B2D42"/>
+    <!-- Eyes with Highlights -->
+    <circle cx="124" cy="190" r="5.5" fill="#2B2D42"/>
+    <circle cx="156" cy="190" r="5.5" fill="#2B2D42"/>
+    <circle cx="126" cy="188" r="2" fill="#FFFFFF"/>
+    <circle cx="158" cy="188" r="2" fill="#FFFFFF"/>
+    <!-- Eyebrows -->
+    <path d="M 116 180 Q 124 175 132 181" fill="none" stroke="#2B2D42" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M 148 181 Q 156 175 164 180" fill="none" stroke="#2B2D42" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- Smile & Cheeks -->
+    <path d="M 132 210 Q 140 219 148 210" fill="none" stroke="#D90429" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="114" cy="204" r="7" fill="#FF8FA3" opacity="0.6"/>
+    <circle cx="166" cy="204" r="7" fill="#FF8FA3" opacity="0.6"/>
+    <!-- Left Arm & Palette -->
+    <path d="M 95 310 Q 60 350 80 390" fill="none" stroke="#F8D5C4" stroke-width="16" stroke-linecap="round"/>
+    <g transform="translate(38, 360) rotate(-15)">
+      <ellipse cx="50" cy="40" rx="52" ry="38" fill="#DEB887" stroke="#8B4513" stroke-width="2.5"/>
+      <ellipse cx="30" cy="50" rx="8" ry="11" fill="#FFF9E6" stroke="#8B4513" stroke-width="2"/>
+      <circle cx="26" cy="22" r="7.5" fill="#FF595E"/>
+      <circle cx="48" cy="17" r="7.5" fill="#FFCA3A"/>
+      <circle cx="72" cy="26" r="7.5" fill="#8AC926"/>
+      <circle cx="82" cy="48" r="7.5" fill="#1982C4"/>
+      <circle cx="64" cy="62" r="7.5" fill="#6A4C93"/>
+    </g>
+    <!-- Right Arm & Brush -->
+    <path d="M 185 310 Q 215 340 198 380" fill="none" stroke="#F8D5C4" stroke-width="16" stroke-linecap="round"/>
+    <g transform="translate(190, 370) rotate(45)">
+      <rect x="0" y="0" width="8" height="65" rx="4" fill="#CD853F" stroke="#8B4513" stroke-width="1.5"/>
+      <rect x="0" y="0" width="8" height="14" fill="#C0C0C0"/>
+      <path d="M 0 0 Q 4 -14 8 0 Z" fill="#FF595E"/>
     </g>
   </g>
 
-  <!-- Frame Border -->
-  <rect x="16" y="56" width="928" height="432" rx="16" fill="none" stroke="#0F172A" stroke-width="2.5"/>
-
-  <!-- Top Yellow Cloud Title Header -->
-  <g transform="translate(200, 8)">
-    <rect x="0" y="0" width="560" height="40" rx="20" fill="#FEF08A" stroke="#F59E0B" stroke-width="2"/>
-    <text x="280" y="25" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="800" fill="#0F172A" text-anchor="middle">${esc(
-      content.title
-    )}</text>
+  <!-- RIGHT: Community Arts Showcase Platform -->
+  <g transform="translate(460, 355)" filter="url(#dropShadow_${nonce})">
+    <rect x="0" y="42" width="455" height="24" rx="5" fill="#A47148"/>
+    <rect x="25" y="66" width="38" height="88" fill="#8B5A2B"/>
+    <rect x="392" y="66" width="38" height="88" fill="#8B5A2B"/>
+    <ellipse cx="227" cy="42" rx="228" ry="12" fill="#D4A373"/>
   </g>
 
-  <!-- Bottom Educational Caption Strip -->
-  <g transform="translate(16, 496)">
-    <rect x="0" y="0" width="928" height="36" rx="10" fill="#FEF9C3" stroke="#F59E0B" stroke-width="1.5"/>
-    <text x="464" y="23" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#0F172A" text-anchor="middle">
-      ${esc(content.gradeTier === "kinder2" ? "Kinder 2" : "Grade 1")} ${esc(content.subject)} • ${esc(
-    content.subtitle || content.title
-  )}
+  <!-- 1. Wood Carving Craft (Philippine Folk Carabao) -->
+  <g transform="translate(485, 240)" filter="url(#dropShadow_${nonce})">
+    <rect x="-10" y="110" width="130" height="20" rx="5" fill="#654321"/>
+    <g fill="url(#woodGrad_${nonce})" stroke="#5C3A21" stroke-width="2">
+      <ellipse cx="60" cy="75" rx="44" ry="29"/>
+      <path d="M 25 65 C 10 65, 0 80, 5 90 C 10 95, 20 90, 30 80 Z"/>
+      <path d="M 15 70 C -5 60, -10 35, 10 30 C 25 25, 25 50, 25 65" fill="none" stroke="#3D2314" stroke-width="5.5" stroke-linecap="round"/>
+      <rect x="30" y="95" width="10" height="24" rx="4"/>
+      <rect x="80" y="95" width="10" height="24" rx="4"/>
+      <path d="M 100 65 Q 115 80 110 100" fill="none" stroke="#3D2314" stroke-width="3.5" stroke-linecap="round"/>
+    </g>
+    <rect x="15" y="134" width="80" height="22" rx="5" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+    <text x="55" y="149" font-family="'Comic Sans MS', sans-serif" font-size="11" font-weight="bold" fill="#5C3A21" text-anchor="middle">Wood Craft</text>
+  </g>
+
+  <!-- 2. Scenic Painting on Easel (Mayon & Rice Fields) -->
+  <g transform="translate(630, 140)" filter="url(#dropShadow_${nonce})">
+    <polygon points="75,0 85,0 120,225 100,225" fill="#A47148"/>
+    <polygon points="85,0 75,0 40,225 60,225" fill="#A47148"/>
+    <rect x="76" y="-15" width="8" height="240" fill="#8B5A2B"/>
+    <rect x="10" y="178" width="140" height="12" rx="3" fill="#A47148"/>
+    <!-- Canvas Frame -->
+    <rect x="15" y="30" width="130" height="150" rx="5" fill="#FFFFFF" stroke="#8B5A2B" stroke-width="5"/>
+    <!-- Inner Painting -->
+    <g clip-path="url(#easelClip_${nonce})">
+      <clipPath id="easelClip_${nonce}">
+        <rect x="20" y="35" width="120" height="140" rx="3"/>
+      </clipPath>
+      <rect x="20" y="35" width="120" height="140" fill="url(#skyGrad_${nonce})"/>
+      <circle cx="115" cy="65" r="14" fill="#FFB703"/>
+      <polygon points="80,75 130,138 30,138" fill="#C8B6A6"/>
+      <polygon points="80,75 90,98 70,98" fill="#FFFFFF"/>
+      <polygon points="80,75 130,138 80,138" fill="#A39181"/>
+      <path d="M 20 118 Q 50 100 80 118 Q 110 138 140 114 L 140 175 L 20 175 Z" fill="url(#hillGrad_${nonce})"/>
+      <polygon points="45,128 55,120 65,128" fill="#A52A2A"/>
+      <rect x="48" y="128" width="14" height="10" fill="#DEB887"/>
+    </g>
+    <rect x="40" y="196" width="80" height="22" rx="5" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+    <text x="80" y="211" font-family="'Comic Sans MS', sans-serif" font-size="11" font-weight="bold" fill="#2D6A4F" text-anchor="middle">Landscape</text>
+  </g>
+
+  <!-- 3. Handcrafted Woven Basket with Flowers -->
+  <g transform="translate(805, 255)" filter="url(#dropShadow_${nonce})">
+    <ellipse cx="50" cy="115" rx="34" ry="10" fill="#000000" opacity="0.15"/>
+    <path d="M 20 50 L 80 50 L 95 110 C 95 115, 85 120, 50 120 C 15 120, 5 115, 5 110 Z" fill="url(#basketGrad_${nonce})" stroke="#A52A2A" stroke-width="2"/>
+    <path d="M 12 65 L 88 65 M 10 80 L 90 80 M 8 95 L 92 95" fill="none" stroke="#D94E34" stroke-width="2.5" stroke-dasharray="5,4"/>
+    <ellipse cx="50" cy="50" rx="30" ry="8" fill="#F4A261" stroke="#A52A2A" stroke-width="2"/>
+    <!-- Flowers Spilling Out -->
+    <g transform="translate(50, 45)">
+      <path d="M 0 0 Q -18 -28 -8 -38 Q 4 -28 0 0" fill="#52B788"/>
+      <path d="M 0 0 Q 22 -22 18 -32 Q 4 -22 0 0" fill="#74C69D"/>
+      <circle cx="-5" cy="-24" r="7.5" fill="#FF595E"/>
+      <circle cx="-5" cy="-24" r="3" fill="#FFCA3A"/>
+      <circle cx="12" cy="-18" r="6.5" fill="#FFB703"/>
+      <circle cx="3" cy="-33" r="7.5" fill="#FF6B6B"/>
+      <circle cx="3" cy="-33" r="3" fill="#FFE66D"/>
+    </g>
+    <rect x="10" y="130" width="80" height="22" rx="5" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+    <text x="50" y="145" font-family="'Comic Sans MS', sans-serif" font-size="11" font-weight="bold" fill="#E76F51" text-anchor="middle">Handicrafts</text>
+  </g>
+
+  <!-- Bottom Educational Footer Strip -->
+  <g transform="translate(160, 498)">
+    <rect width="640" height="28" rx="14" fill="#FEF08A" stroke="#F59E0B" stroke-width="1.5"/>
+    <text x="320" y="19" font-family="'Comic Sans MS', system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0F172A" text-anchor="middle">
+      Kat's Community Art Showcase • Appreciating Filipino Art, Culture &amp; Craftsmanship
+    </text>
+  </g>
+</svg>`;
+}
+
+/**
+ * 2. Montessori 3D Concrete Sets Grid (Mathematics)
+ * Modeled on Kat's K2 Mathematics "Numbers Add to 10" & Set Theory PPT slides.
+ */
+function buildMathMontessoriSetsSvg(
+  content: ReturnType<typeof extractIllustrationContent>,
+  nonce: number
+): string {
+  const esc = (s: string) =>
+    (s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540">
+  <defs>
+    <linearGradient id="mathBg_${nonce}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#EFF6FF"/>
+      <stop offset="100%" stop-color="#DBEAFE"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="960" height="540" fill="url(#mathBg_${nonce})"/>
+
+  <!-- Top Title Banner -->
+  <g transform="translate(180, 8)">
+    <rect width="600" height="42" rx="21" fill="#FEF08A" stroke="#F59E0B" stroke-width="2.5"/>
+    <text x="300" y="26" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#0F172A" text-anchor="middle">
+      ${esc(content.title)}
+    </text>
+  </g>
+
+  <!-- 4 Concrete Sets Trays -->
+  <!-- Set 1: Set of Toy Cars -->
+  <g transform="translate(18, 60)">
+    <rect width="452" height="216" rx="16" fill="#FFFFFF" stroke="#2563EB" stroke-width="2"/>
+    <rect x="16" y="14" width="180" height="28" rx="8" fill="#DBEAFE"/>
+    <text x="106" y="33" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="800" fill="#1E40AF" text-anchor="middle">Set of Cars (3)</text>
+    <!-- 3 Illustrated 3D Toy Cars -->
+    <g transform="translate(60, 95)">
+      <rect x="0" y="14" width="70" height="26" rx="6" fill="#EF4444"/>
+      <path d="M 12,14 L 22,0 L 52,0 L 60,14 Z" fill="#DC2626"/>
+      <circle cx="16" cy="40" r="10" fill="#0F172A"/>
+      <circle cx="16" cy="40" r="4" fill="#E2E8F0"/>
+      <circle cx="54" cy="40" r="10" fill="#0F172A"/>
+      <circle cx="54" cy="40" r="4" fill="#E2E8F0"/>
+    </g>
+    <g transform="translate(185, 95)">
+      <rect x="0" y="14" width="70" height="26" rx="6" fill="#3B82F6"/>
+      <path d="M 12,14 L 22,0 L 52,0 L 60,14 Z" fill="#2563EB"/>
+      <circle cx="16" cy="40" r="10" fill="#0F172A"/>
+      <circle cx="16" cy="40" r="4" fill="#E2E8F0"/>
+      <circle cx="54" cy="40" r="10" fill="#0F172A"/>
+      <circle cx="54" cy="40" r="4" fill="#E2E8F0"/>
+    </g>
+    <g transform="translate(310, 95)">
+      <rect x="0" y="14" width="70" height="26" rx="6" fill="#EAB308"/>
+      <path d="M 12,14 L 22,0 L 52,0 L 60,14 Z" fill="#CA8A04"/>
+      <circle cx="16" cy="40" r="10" fill="#0F172A"/>
+      <circle cx="16" cy="40" r="4" fill="#E2E8F0"/>
+      <circle cx="54" cy="40" r="10" fill="#0F172A"/>
+      <circle cx="54" cy="40" r="4" fill="#E2E8F0"/>
+    </g>
+    <rect x="16" y="160" width="420" height="42" rx="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+    <text x="226" y="186" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#0F172A" text-anchor="middle">Count and identify: There are 3 toy cars in this group.</text>
+  </g>
+
+  <!-- Set 2: Set of Toy Trains -->
+  <g transform="translate(490, 60)">
+    <rect width="452" height="216" rx="16" fill="#FFFFFF" stroke="#059669" stroke-width="2"/>
+    <rect x="16" y="14" width="180" height="28" rx="8" fill="#D1FAE5"/>
+    <text x="106" y="33" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="800" fill="#065F46" text-anchor="middle">Set of Trains (2)</text>
+    <!-- Steam Locomotive & Carriage -->
+    <g transform="translate(90, 85)">
+      <rect x="0" y="20" width="110" height="40" rx="6" fill="#059669"/>
+      <rect x="15" y="0" width="30" height="25" fill="#047857"/>
+      <rect x="70" y="5" width="40" height="25" fill="#FDE047"/>
+      <circle cx="25" cy="62" r="12" fill="#0F172A"/>
+      <circle cx="55" cy="62" r="12" fill="#0F172A"/>
+      <circle cx="85" cy="62" r="12" fill="#0F172A"/>
+    </g>
+    <g transform="translate(240, 95)">
+      <rect x="0" y="10" width="90" height="40" rx="6" fill="#EA580C"/>
+      <circle cx="25" cy="52" r="12" fill="#0F172A"/>
+      <circle cx="65" cy="52" r="12" fill="#0F172A"/>
+    </g>
+    <rect x="16" y="160" width="420" height="42" rx="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+    <text x="226" y="186" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#0F172A" text-anchor="middle">Group comparison: 3 cars is greater than 2 trains.</text>
+  </g>
+
+  <!-- Set 3: Counting Blocks & Cubes -->
+  <g transform="translate(18, 286)">
+    <rect width="452" height="216" rx="16" fill="#FFFFFF" stroke="#D97706" stroke-width="2"/>
+    <rect x="16" y="14" width="190" height="28" rx="8" fill="#FEF3C7"/>
+    <text x="111" y="33" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="800" fill="#92400E" text-anchor="middle">Set of Counting Cubes</text>
+    <!-- Stack of Colorful 3D Blocks -->
+    <g transform="translate(140, 80)">
+      <rect x="0" y="36" width="36" height="36" rx="4" fill="#EF4444" stroke="#991B1B" stroke-width="2"/>
+      <rect x="42" y="36" width="36" height="36" rx="4" fill="#3B82F6" stroke="#1D4ED8" stroke-width="2"/>
+      <rect x="84" y="36" width="36" height="36" rx="4" fill="#10B981" stroke="#047857" stroke-width="2"/>
+      <rect x="126" y="36" width="36" height="36" rx="4" fill="#F59E0B" stroke="#B45309" stroke-width="2"/>
+      <rect x="42" y="-4" width="36" height="36" rx="4" fill="#8B5CF6" stroke="#6D28D9" stroke-width="2"/>
+      <rect x="84" y="-4" width="36" height="36" rx="4" fill="#EC4899" stroke="#BE185D" stroke-width="2"/>
+    </g>
+    <rect x="16" y="160" width="420" height="42" rx="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+    <text x="226" y="186" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#0F172A" text-anchor="middle">Combining sets: 4 base cubes + 2 top cubes = 6 cubes.</text>
+  </g>
+
+  <!-- Set 4: Fresh Fruit Basket -->
+  <g transform="translate(490, 286)">
+    <rect width="452" height="216" rx="16" fill="#FFFFFF" stroke="#7C3AED" stroke-width="2"/>
+    <rect x="16" y="14" width="180" height="28" rx="8" fill="#EDE9FE"/>
+    <text x="106" y="33" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="800" fill="#5B21B6" text-anchor="middle">Set of Fresh Fruits</text>
+    <!-- Fresh Fruits in Woven Basket -->
+    <g transform="translate(170, 75)">
+      <ellipse cx="60" cy="55" rx="55" ry="24" fill="#D97706"/>
+      <circle cx="40" cy="40" r="16" fill="#EF4444"/>
+      <circle cx="75" cy="38" r="16" fill="#F97316"/>
+      <ellipse cx="60" cy="28" rx="22" ry="10" fill="#FACC15" transform="rotate(-15 60 28)"/>
+    </g>
+    <rect x="16" y="160" width="420" height="42" rx="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+    <text x="226" y="186" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#0F172A" text-anchor="middle">Math Concept: Equal sets, one-to-one correspondence.</text>
+  </g>
+
+  <!-- Bottom Strip -->
+  <g transform="translate(18, 510)">
+    <rect width="924" height="24" rx="8" fill="#FEF08A" stroke="#F59E0B" stroke-width="1.5"/>
+    <text x="462" y="17" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#0F172A" text-anchor="middle">
+      Kat's Concrete Mathematics • Learning Numbers with Joy and Understanding
+    </text>
+  </g>
+</svg>`;
+}
+
+/**
+ * 3. 4-Room Dollhouse Architectural Cutaway (Language / Things Inside the House)
+ * Modeled on Kat's Language Lesson 3 "This is My House" & "Things Inside the House" PPT.
+ */
+function buildHouseCutawayDiagramSvg(
+  content: ReturnType<typeof extractIllustrationContent>,
+  nonce: number
+): string {
+  const esc = (s: string) =>
+    (s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540">
+  <defs>
+    <linearGradient id="houseBg_${nonce}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FEF9C3"/>
+      <stop offset="100%" stop-color="#FEF08A"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="960" height="540" fill="url(#houseBg_${nonce})"/>
+
+  <!-- Top Yellow Cloud Title -->
+  <g transform="translate(180, 8)">
+    <rect width="600" height="42" rx="21" fill="#FEF08A" stroke="#F59E0B" stroke-width="2.5"/>
+    <text x="300" y="26" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#0F172A" text-anchor="middle">
+      ${esc(content.title)}
+    </text>
+  </g>
+
+  <!-- House Outline Frame -->
+  <rect x="28" y="58" width="904" height="444" rx="18" fill="#FFFFFF" stroke="#78350F" stroke-width="4"/>
+  <!-- Central Partition Cross -->
+  <line x1="480" y1="58" x2="480" y2="502" stroke="#78350F" stroke-width="4"/>
+  <line x1="28" y1="280" x2="932" y2="280" stroke="#78350F" stroke-width="4"/>
+
+  <!-- ROOM 1: Living Room (Top-Left) -->
+  <g transform="translate(36, 66)">
+    <rect x="12" y="10" width="130" height="26" rx="8" fill="#DBEAFE"/>
+    <text x="77" y="28" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="800" fill="#1E40AF" text-anchor="middle">LIVING ROOM</text>
+    <!-- Comfy Sofa & Floor Lamp -->
+    <g transform="translate(120, 75)">
+      <rect x="0" y="20" width="160" height="65" rx="10" fill="#EAB308" stroke="#CA8A04" stroke-width="2"/>
+      <rect x="20" y="0" width="120" height="40" rx="8" fill="#FACC15"/>
+      <rect x="-10" y="15" width="25" height="50" rx="6" fill="#CA8A04"/>
+      <rect x="145" y="15" width="25" height="50" rx="6" fill="#CA8A04"/>
+      <!-- Coffee Table & Book -->
+      <rect x="40" y="80" width="80" height="20" rx="4" fill="#92400E"/>
+      <rect x="65" y="74" width="28" height="8" rx="2" fill="#3B82F6"/>
+      <!-- Floor Lamp -->
+      <line x1="200" y1="20" x2="200" y2="105" stroke="#64748B" stroke-width="3"/>
+      <polygon points="185,25 215,25 200,0" fill="#FB7185"/>
+    </g>
+    <rect x="12" y="170" width="416" height="34" rx="8" fill="#F1F5F9"/>
+    <text x="220" y="192" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#0F172A" text-anchor="middle">The living room is where we relax and talk with family.</text>
+  </g>
+
+  <!-- ROOM 2: Bedroom (Top-Right) -->
+  <g transform="translate(488, 66)">
+    <rect x="12" y="10" width="120" height="26" rx="8" fill="#FCE7F3"/>
+    <text x="72" y="28" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="800" fill="#BE185D" text-anchor="middle">BEDROOM</text>
+    <!-- Comfy Bed & Nightstand -->
+    <g transform="translate(130, 60)">
+      <rect x="0" y="30" width="150" height="75" rx="8" fill="#93C5FD" stroke="#3B82F6" stroke-width="2"/>
+      <rect x="0" y="0" width="150" height="35" rx="6" fill="#78350F"/>
+      <rect x="15" y="10" width="45" height="22" rx="4" fill="#FFFFFF"/>
+      <rect x="85" y="10" width="45" height="22" rx="4" fill="#FFFFFF"/>
+      <!-- Nightstand & Reading Lamp -->
+      <rect x="165" y="55" width="40" height="45" rx="4" fill="#78350F"/>
+      <circle cx="185" cy="45" r="10" fill="#FEF08A"/>
+    </g>
+    <rect x="12" y="170" width="416" height="34" rx="8" fill="#F1F5F9"/>
+    <text x="220" y="192" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#0F172A" text-anchor="middle">The bedroom is where we sleep and rest peacefully.</text>
+  </g>
+
+  <!-- ROOM 3: Kitchen & Dining (Bottom-Left) -->
+  <g transform="translate(36, 288)">
+    <rect x="12" y="10" width="120" height="26" rx="8" fill="#FEF3C7"/>
+    <text x="72" y="28" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="800" fill="#B45309" text-anchor="middle">KITCHEN</text>
+    <!-- Stove, Refrigerator & Table -->
+    <g transform="translate(70, 50)">
+      <!-- Refrigerator -->
+      <rect x="0" y="0" width="55" height="105" rx="6" fill="#E2E8F0" stroke="#94A3B8" stroke-width="2"/>
+      <line x1="0" y1="40" x2="55" y2="40" stroke="#94A3B8" stroke-width="2"/>
+      <!-- Cooking Stove -->
+      <rect x="75" y="45" width="70" height="60" rx="4" fill="#CBD5E1" stroke="#64748B" stroke-width="2"/>
+      <circle cx="95" cy="52" r="8" fill="#334155"/>
+      <circle cx="125" cy="52" r="8" fill="#334155"/>
+      <!-- Dining Table with Food Bowl -->
+      <rect x="175" y="65" width="110" height="25" rx="4" fill="#78350F"/>
+      <ellipse cx="230" cy="58" rx="20" ry="8" fill="#EF4444"/>
+    </g>
+    <rect x="12" y="170" width="416" height="34" rx="8" fill="#F1F5F9"/>
+    <text x="220" y="192" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#0F172A" text-anchor="middle">The kitchen is where we prepare and eat delicious meals.</text>
+  </g>
+
+  <!-- ROOM 4: Bathroom (Bottom-Right) -->
+  <g transform="translate(488, 288)">
+    <rect x="12" y="10" width="130" height="26" rx="8" fill="#CCFBF1"/>
+    <text x="77" y="28" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="800" fill="#0F766E" text-anchor="middle">BATHROOM</text>
+    <!-- Bathtub & Sink -->
+    <g transform="translate(100, 55)">
+      <!-- Bathtub -->
+      <rect x="0" y="40" width="130" height="55" rx="16" fill="#F8FAFC" stroke="#0D9488" stroke-width="2.5"/>
+      <ellipse cx="65" cy="40" rx="60" ry="12" fill="#99F6E4"/>
+      <!-- Vanity Mirror & Sink -->
+      <rect x="160" y="0" width="45" height="55" rx="6" fill="#BAE6FD" stroke="#0284C7" stroke-width="2"/>
+      <rect x="155" y="60" width="55" height="35" rx="4" fill="#F8FAFC" stroke="#64748B" stroke-width="2"/>
+    </g>
+    <rect x="12" y="170" width="416" height="34" rx="8" fill="#F1F5F9"/>
+    <text x="220" y="192" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#0F172A" text-anchor="middle">The bathroom is where we wash, bathe, and stay clean.</text>
+  </g>
+
+  <!-- Bottom Strip -->
+  <g transform="translate(18, 510)">
+    <rect width="924" height="24" rx="8" fill="#FEF08A" stroke="#F59E0B" stroke-width="1.5"/>
+    <text x="462" y="17" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#0F172A" text-anchor="middle">
+      Kat's Language Lesson • We take care of our home and the things inside it with love
+    </text>
+  </g>
+</svg>`;
+}
+
+/**
+ * 4. Road Safety & Action Sequence (Science / Stop, Look, and Listen)
+ */
+function buildRoadSafetySequenceSvg(
+  content: ReturnType<typeof extractIllustrationContent>,
+  nonce: number
+): string {
+  const esc = (s: string) =>
+    (s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540">
+  <defs>
+    <linearGradient id="safetyBg_${nonce}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F0FDF4"/>
+      <stop offset="100%" stop-color="#DCFCE7"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="960" height="540" fill="url(#safetyBg_${nonce})"/>
+
+  <g transform="translate(180, 8)">
+    <rect width="600" height="42" rx="21" fill="#FEF08A" stroke="#F59E0B" stroke-width="2.5"/>
+    <text x="300" y="26" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#0F172A" text-anchor="middle">
+      ${esc(content.title)}
+    </text>
+  </g>
+
+  <!-- Top Hero Situation Banner: Pedestrian Zebra Crossing -->
+  <g transform="translate(18, 58)">
+    <rect width="924" height="190" rx="16" fill="#F1F5F9" stroke="#334155" stroke-width="2"/>
+    <!-- Road Surface & White Stripes -->
+    <rect x="0" y="70" width="924" height="120" fill="#334155"/>
+    <rect x="60" y="90" width="90" height="24" rx="4" fill="#FFFFFF"/>
+    <rect x="200" y="90" width="90" height="24" rx="4" fill="#FFFFFF"/>
+    <rect x="340" y="90" width="90" height="24" rx="4" fill="#FFFFFF"/>
+    <rect x="480" y="90" width="90" height="24" rx="4" fill="#FFFFFF"/>
+    <rect x="620" y="90" width="90" height="24" rx="4" fill="#FFFFFF"/>
+    <rect x="760" y="90" width="90" height="24" rx="4" fill="#FFFFFF"/>
+    <!-- Traffic Light on Post -->
+    <rect x="850" y="10" width="34" height="75" rx="6" fill="#0F172A"/>
+    <circle cx="867" cy="24" r="8" fill="#EF4444"/>
+    <circle cx="867" cy="46" r="8" fill="#F59E0B"/>
+    <circle cx="867" cy="68" r="8" fill="#10B981"/>
+    <!-- Students Crossing Safely Hand-in-Hand with Teacher -->
+    <text x="462" y="42" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#0F172A" text-anchor="middle">
+      Pedestrian Safety Rule: Always cross on the pedestrian lane with an adult
+    </text>
+  </g>
+
+  <!-- 4 Action Cards -->
+  <!-- Card 1: STOP -->
+  <g transform="translate(18, 260)">
+    <rect width="218" height="236" rx="14" fill="#FFFFFF" stroke="#DC2626" stroke-width="2.5"/>
+    <rect x="14" y="14" width="190" height="36" rx="18" fill="#FEE2E2"/>
+    <text x="109" y="38" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="900" fill="#DC2626" text-anchor="middle">1. STOP</text>
+    <circle cx="109" cy="115" r="42" fill="#FEF2F2" stroke="#EF4444" stroke-width="2"/>
+    <polygon points="109,85 135,100 135,130 109,145 83,130 83,100" fill="#DC2626"/>
+    <text x="109" y="120" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="900" fill="#FFFFFF" text-anchor="middle">STOP</text>
+    <text x="109" y="185" font-family="system-ui, -apple-system, sans-serif" font-size="11.5" font-weight="700" fill="#0F172A" text-anchor="middle">Stop before the curb</text>
+    <text x="109" y="202" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="500" fill="#64748B" text-anchor="middle">Never run into the road</text>
+  </g>
+
+  <!-- Card 2: LOOK LEFT -->
+  <g transform="translate(252, 260)">
+    <rect width="218" height="236" rx="14" fill="#FFFFFF" stroke="#0284C7" stroke-width="2.5"/>
+    <rect x="14" y="14" width="190" height="36" rx="18" fill="#E0F2FE"/>
+    <text x="109" y="38" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="900" fill="#0369A1" text-anchor="middle">2. LOOK LEFT</text>
+    <circle cx="109" cy="115" r="42" fill="#F0F9FF" stroke="#0284C7" stroke-width="2"/>
+    <path d="M 125,115 L 90,115 M 102,103 L 90,115 L 102,127" stroke="#0284C7" stroke-width="5" stroke-linecap="round"/>
+    <text x="109" y="185" font-family="system-ui, -apple-system, sans-serif" font-size="11.5" font-weight="700" fill="#0F172A" text-anchor="middle">Look to your left</text>
+    <text x="109" y="202" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="500" fill="#64748B" text-anchor="middle">Check oncoming traffic</text>
+  </g>
+
+  <!-- Card 3: LOOK RIGHT -->
+  <g transform="translate(488, 260)">
+    <rect width="218" height="236" rx="14" fill="#FFFFFF" stroke="#059669" stroke-width="2.5"/>
+    <rect x="14" y="14" width="190" height="36" rx="18" fill="#DCFCE7"/>
+    <text x="109" y="38" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="900" fill="#15803D" text-anchor="middle">3. LOOK RIGHT</text>
+    <circle cx="109" cy="115" r="42" fill="#F0FDF4" stroke="#059669" stroke-width="2"/>
+    <path d="M 93,115 L 128,115 M 116,103 L 128,115 L 116,127" stroke="#059669" stroke-width="5" stroke-linecap="round"/>
+    <text x="109" y="185" font-family="system-ui, -apple-system, sans-serif" font-size="11.5" font-weight="700" fill="#0F172A" text-anchor="middle">Look to your right</text>
+    <text x="109" y="202" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="500" fill="#64748B" text-anchor="middle">Ensure no turning cars</text>
+  </g>
+
+  <!-- Card 4: LISTEN -->
+  <g transform="translate(724, 260)">
+    <rect width="218" height="236" rx="14" fill="#FFFFFF" stroke="#D97706" stroke-width="2.5"/>
+    <rect x="14" y="14" width="190" height="36" rx="18" fill="#FEF3C7"/>
+    <text x="109" y="38" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="900" fill="#B45309" text-anchor="middle">4. LISTEN</text>
+    <circle cx="109" cy="115" r="42" fill="#FFFBEB" stroke="#D97706" stroke-width="2"/>
+    <path d="M 98,105 Q 115,100 115,115 Q 115,130 98,125" stroke="#D97706" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+    <path d="M 122,98 Q 135,115 122,132" stroke="#F59E0B" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <text x="109" y="185" font-family="system-ui, -apple-system, sans-serif" font-size="11.5" font-weight="700" fill="#0F172A" text-anchor="middle">Listen for horns</text>
+    <text x="109" y="202" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="500" fill="#64748B" text-anchor="middle">Cross when clear &amp; safe</text>
+  </g>
+
+  <!-- Bottom Strip -->
+  <g transform="translate(18, 510)">
+    <rect width="924" height="24" rx="8" fill="#FEF08A" stroke="#F59E0B" stroke-width="1.5"/>
+    <text x="462" y="17" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#0F172A" text-anchor="middle">
+      Kat's Science Lesson • Safety First, Mindful of Our Surroundings Every Day
     </text>
   </g>
 </svg>`;

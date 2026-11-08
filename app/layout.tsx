@@ -13,6 +13,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script src="https://js.puter.com/v2/" async></script>
+      </head>
       <body className="min-h-screen flex flex-col font-sans selection:bg-sage-100 selection:text-sage-700">
         {children}
       </body>

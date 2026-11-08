@@ -80,13 +80,13 @@ export const SelectorBar: React.FC<SelectorBarProps> = ({
         </div>
       </div>
 
-      {/* Subject (Full Width 3-Column Grid so labels never overlap) */}
+      {/* Subject (Full Width 3-Column Grid so labels never overlap or clip) */}
       <div>
         <label className="flex items-center space-x-1.5 text-xs font-semibold text-gray-700 mb-2">
           <BookOpen className="w-3.5 h-3.5 text-sage-600 shrink-0" />
           <span>Subject</span>
         </label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 p-1.5 bg-canvas rounded-xl border border-borderMuted">
+        <div className="grid grid-cols-3 gap-1.5 p-1.5 bg-canvas rounded-xl border border-borderMuted">
           {(
             [
               { id: "filipino", label: "Filipino" },
@@ -100,7 +100,7 @@ export const SelectorBar: React.FC<SelectorBarProps> = ({
               key={item.id}
               type="button"
               onClick={() => onChangeSubject(item.id)}
-              className={`py-2 px-2.5 rounded-lg text-xs font-medium transition-all cursor-pointer text-center truncate ${
+              className={`py-2 px-1.5 rounded-lg text-[11px] sm:text-xs font-medium transition-all cursor-pointer text-center whitespace-nowrap overflow-hidden text-ellipsis ${
                 subject === item.id
                   ? "bg-sage-600 text-white shadow-xs font-semibold"
                   : "text-gray-600 hover:text-gray-900 hover:bg-surface/60"

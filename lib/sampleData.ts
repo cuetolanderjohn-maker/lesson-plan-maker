@@ -1,5 +1,6 @@
 import type { MatatagLessonPlan, LccpLearningPlan, TeacherProfile } from "./types";
 import { generateFallbackPngDataUri } from "./lessonIllustrationGenerator";
+import { SAMPLE_ILLUSTRATIONS } from "./sampleIllustrations";
 
 
 const _GM_BYTES = [8,1,121,31,7,84,33,52,183,196,246,216,194,198,193,212,236,138,131,182,129,234,166,153,130,167,187,85,110,71,111,15,102,2,94,83,47,35,29,119,42,91,56,12,15,179,194,241,243,218,213,194,244];
@@ -118,7 +119,7 @@ export const sampleMatatagPlan: MatatagLessonPlan = {
     checkedBy: "Bb. Sta. Ana Florence",
     observedBy: "Bb. Sta. Ana Florence",
   },
-  generatedIllustrationUrl: generateFallbackPngDataUri(101),
+  generatedIllustrationUrl: SAMPLE_ILLUSTRATIONS.g1_filipino,
   illustrationStyle: "pag_uugnay_speech",
 };
 
@@ -202,7 +203,7 @@ export const sampleKinder2FilipinoPlan: MatatagLessonPlan = {
     checkedBy: "Emma P. Dunque, LPT.",
     observedBy: "Emma P. Dunque, LPT.",
   },
-  generatedIllustrationUrl: generateFallbackPngDataUri(102),
+  generatedIllustrationUrl: SAMPLE_ILLUSTRATIONS.k2_filipino,
   illustrationStyle: "comic_story",
 };
 
@@ -267,7 +268,7 @@ export const sampleLccpPlan: LccpLearningPlan = {
     checkedBy: "Mrs. Emma P. Dunque Lpt.",
     observedBy: "Mrs. Emma P. Dunque Lpt.",
   },
-  generatedIllustrationUrl: generateFallbackPngDataUri(103),
+  generatedIllustrationUrl: SAMPLE_ILLUSTRATIONS.k2_language,
   illustrationStyle: "comic_story",
 };
 
@@ -325,7 +326,7 @@ export const sampleK2MathPlan: LccpLearningPlan = {
     checkedBy: "Mrs. Emma P. Dunque Lpt.",
     observedBy: "Mrs. Emma P. Dunque Lpt.",
   },
-  generatedIllustrationUrl: generateFallbackPngDataUri(104),
+  generatedIllustrationUrl: SAMPLE_ILLUSTRATIONS.k2_math,
   illustrationStyle: "math_concept_sets",
 };
 
@@ -389,7 +390,7 @@ export const sampleK2SciencePlan: LccpLearningPlan = {
     checkedBy: "Mrs. Emma P. Dunque Lpt.",
     observedBy: "Mrs. Emma P. Dunque Lpt.",
   },
-  generatedIllustrationUrl: generateFallbackPngDataUri(105),
+  generatedIllustrationUrl: SAMPLE_ILLUSTRATIONS.k2_science,
   illustrationStyle: "comic_story",
 };
 
@@ -492,6 +493,6 @@ export const sampleK2RvePlan: LccpLearningPlan = {
       "Page 65: Draw a heart beside the pictures that show kindness.",
     ],
   },
-  generatedIllustrationUrl: generateFallbackPngDataUri(106),
+  generatedIllustrationUrl: SAMPLE_ILLUSTRATIONS.k2_rve,
   illustrationStyle: "comic_story",
 };

@@ -140,7 +140,36 @@ export default function HomePage() {
       }
       const savedHistory = localStorage.getItem("kat_plan_history");
       if (savedHistory) {
-        setHistoryItems(JSON.parse(savedHistory));
+        const items: HistoryItem[] = JSON.parse(savedHistory);
+        const cleaned = items.map((item) => {
+          const url = item.plan?.generatedIllustrationUrl;
+          if (
+            url &&
+            (url.includes("-12,38 0,-15 12,38") ||
+              url.includes("-9,38 0,-15 9,38") ||
+              url.includes("hill1_") ||
+              url.includes("p1Sky_") ||
+              url.includes("p2Shop_") ||
+              url.includes("panel1Clip_") ||
+              url.includes("pollinations.ai") ||
+              url.startsWith("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAA"))
+          ) {
+            return {
+              ...item,
+              plan: {
+                ...item.plan,
+                generatedIllustrationUrl: undefined,
+              },
+            };
+          }
+          return item;
+        });
+        setHistoryItems(cleaned);
+        try {
+          localStorage.setItem("kat_plan_history", JSON.stringify(cleaned));
+        } catch {
+          // ignore
+        }
       }
     } catch (e) {
       console.error("Failed to load stored preferences:", e);

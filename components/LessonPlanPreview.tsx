@@ -41,6 +41,23 @@ interface LessonPlanPreviewProps {
   attachedImages?: ImageInput[];
 }
 
+function isLegacyOrFallbackIllustration(url?: string): boolean {
+  if (!url || url.length < 50) return true;
+  if (
+    url.includes("-12,38 0,-15 12,38") ||
+    url.includes("-9,38 0,-15 9,38") ||
+    url.includes("hill1_") ||
+    url.includes("p1Sky_") ||
+    url.includes("p2Shop_") ||
+    url.includes("panel1Clip_") ||
+    url.includes("pollinations.ai") ||
+    url.startsWith("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAA")
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({
   plan,
   profile,
@@ -60,8 +77,12 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({
 
   useEffect(() => {
     let cancelled = false;
-    if (plan.generatedIllustrationUrl && plan.generatedIllustrationUrl.length > 1000) {
-      lastRenderedIdentityRef.current = planIdentityKey;
+    const isAlreadyRendered =
+      lastRenderedIdentityRef.current === planIdentityKey &&
+      plan.generatedIllustrationUrl &&
+      !isLegacyOrFallbackIllustration(plan.generatedIllustrationUrl);
+
+    if (isAlreadyRendered) {
       return;
     }
 
@@ -107,6 +128,7 @@ export const LessonPlanPreview: React.FC<LessonPlanPreviewProps> = ({
         variationSeed: nextSeed,
         forceNewGeneration: true,
       });
+      lastRenderedIdentityRef.current = planIdentityKey;
       onUpdatePlan({
         ...plan,
         generatedIllustrationUrl: dataUri,
