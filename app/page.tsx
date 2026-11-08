@@ -151,6 +151,9 @@ export default function HomePage() {
               url.includes("p1Sky_") ||
               url.includes("p2Shop_") ||
               url.includes("panel1Clip_") ||
+              url.includes("teacherGroup") ||
+              url.includes("blouseGrad_") ||
+              url.includes("bgGrad_") ||
               url.includes("pollinations.ai") ||
               url.startsWith("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAA"))
           ) {

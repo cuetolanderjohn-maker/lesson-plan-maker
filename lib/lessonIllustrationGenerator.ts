@@ -1,5 +1,6 @@
 import type { IllustrationStyle, ImageInput, LessonPlan } from "./types";
 import { getInternalGeminiKey, getInternalGroqKey } from "./sampleData";
+import { getDomainRealArtFallback } from "./authenticArtAssets";
 
 export interface IllustrationGeneratorOptions {
   style?: IllustrationStyle;
@@ -433,80 +434,158 @@ const GEMINI_ILLUSTRATION_MODELS = [
 ];
 
 /**
- * Primary Engine: Requests Google Gemini AI to generate a brand-new, topic-specific
- * educational SVG vector illustration matching Kat's sample PPT presentation style.
- * Uses gemini-flash-lite-latest (fastest, ~8-12s response) or gemini-3.5-flash-lite.
+ * Educational Presentation Card Framer
+ * Embeds a real AI-generated illustration into Kat's signature presentation slide:
+ * - 960x540 canvas
+ * - Top yellow pill banner with the lesson topic
+ * - Main 924x430 card with 2.5px solid border, clipping bottom 26px to remove any logo/watermark
+ * - Bottom yellow caption strip with grade level, subject, and learning point
+ * STRICTLY ZERO STICK FIGURES, ZERO CONE BODIES, ZERO CLIPART.
  */
-async function requestGeminiDirectSvg(
+export function buildFramedEducationalSvg(
+  imageDataUri: string,
+  content: ReturnType<typeof extractIllustrationContent>
+): string {
+  const esc = (s: string) =>
+    (s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  const titleText = esc(content.title || "Lesson Presentation");
+  const captionText = esc(`${content.subtitle} • ${content.panels[0] || "Key Learning Scene"}`);
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540">
+  <defs>
+    <clipPath id="cardClip">
+      <rect x="18" y="60" width="924" height="430" rx="18"/>
+    </clipPath>
+    <filter id="cardShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="960" height="540" fill="#FFFDF7"/>
+
+  <!-- Main Realistic AI Image Card with Watermark Crop -->
+  <g filter="url(#cardShadow)">
+    <rect x="18" y="60" width="924" height="430" rx="18" fill="#E2E8F0"/>
+    <g clip-path="url(#cardClip)">
+      <image href="${imageDataUri}" x="18" y="60" width="924" height="458" preserveAspectRatio="xMidYMin slice"/>
+    </g>
+    <rect x="18" y="60" width="924" height="430" rx="18" fill="none" stroke="#0F172A" stroke-width="2.5"/>
+  </g>
+
+  <!-- Top Yellow Title Banner (Kat's Presentation Header) -->
+  <g filter="url(#cardShadow)">
+    <rect x="180" y="10" width="600" height="42" rx="21" fill="#FEF08A" stroke="#F59E0B" stroke-width="2.5"/>
+    <text x="480" y="37" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#0F172A" text-anchor="middle">
+      ${titleText}
+    </text>
+  </g>
+
+  <!-- Bottom Yellow Caption Strip -->
+  <g>
+    <rect x="18" y="498" width="924" height="34" rx="10" fill="#FEF9C3" stroke="#F59E0B" stroke-width="1.5"/>
+    <text x="480" y="520" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#0F172A" text-anchor="middle">
+      ${captionText}
+    </text>
+  </g>
+</svg>`;
+}
+
+/**
+ * Gemini Prompt Synthesis Engine:
+ * Analyzes the generated lesson plan, grade tier, story narrative, and pedagogical concepts
+ * to craft a targeted, descriptive neural art prompt for a real, painted/photographic children's book illustration.
+ */
+export async function requestGeminiCraftedArtPrompt(
   content: ReturnType<typeof extractIllustrationContent>,
   artStyle: ArtStyleDirection,
   apiKey: string
-): Promise<string | null> {
-  const storyDetails = content.hasStory
-    ? `MANDATORY STORY FOCUS: This lesson features the story "${content.storyTitle}". Narrative sequence:
-1) ${content.panels[0]}
-2) ${content.panels[1]}
-3) ${content.panels[2]}
-4) ${content.panels[3]}.
-Draw the actual story characters and their narrative world! DO NOT draw generic empty school rooms.`
-    : `PEDAGOGICAL TOPIC: "${content.title}" (${content.subtitle}).
-Key Concepts:
-1) ${content.panels[0]}
-2) ${content.panels[1]}
-3) ${content.panels[2]}
-4) ${content.panels[3]}.
-Draw the real-world objects, furnished rooms, community helpers, or learning manipulatives described here!`;
+): Promise<string> {
+  const storyInfo = content.hasStory
+    ? `Story Title: "${content.storyTitle}". Story arc: ${content.panels.join("; ")}.`
+    : `Topic: "${content.title}" (${content.subtitle}). Key elements: ${content.panels.join("; ")}.`;
 
-  const prompt = `You are a master children's book vector illustrator modeled on Philippine elementary school teaching presentations (Grade 1 & Kinder 2).
-Create an SVG illustration for: "${content.title}" (${content.gradeTier === "kinder2" ? "Kinder 2" : "Grade 1"} ${content.subject}).
-${storyDetails}
+  const instruction = `You are an art director for elementary school educational presentation slides (Kinder 2 & Grade 1).
+Craft ONE single concise, highly descriptive prompt (under 220 characters) for a realistic, warm children's book / fine art illustration.
+STRICT CONSTRAINTS:
+- ZERO clipart, ZERO cartoons, ZERO stick figures, ZERO cone bodies.
+- ZERO floating text, ZERO letters, ZERO logos, ZERO split panels.
+FOCUS ON:
+- Realistic characters (Filipino schoolchildren or story characters), natural facial expressions.
+- Authentic environment (classroom, village, nature, home), warm golden sunlight, rich painted textures.
+Output ONLY the raw prompt text, no quotes or explanations.`;
 
-STRICT /gpt-taste DESIGN REQUIREMENTS:
-1. Output ONLY a valid <svg viewBox="0 0 960 540" width="960" height="540" xmlns="http://www.w3.org/2000/svg">...</svg>.
-2. ZERO AI slop: NEVER draw stick figures, cone bodies, crude triangles, or floating circular hands.
-3. Draw charming, well-proportioned children's book characters with:
-   - Round friendly face with rosy cheeks, expressive smiling eyes with catchlights, cute smile.
-   - Shiny styled hair with hair clip or headband.
-   - Clean school uniform (collared polo/blouse, tie/vest, pleated skirt or shorts) or character clothing.
-4. Top Header Banner: Warm glowing pill with title "${content.title}" at (x=180, y=15, width=600, height=50, rx=25).
-5. If covering rooms/objects (e.g. Parts of the House): 4 clear pastel cards with labeled pills (e.g. Living Room, Bedroom, Kitchen, Bathroom) and real furniture.
-6. If covering a story: Beautiful sequential story scene or 4-panel narrative cards capturing the story arc.
-7. If covering mathematics: Clean colorful counting trays with 3D blocks, fruits, or toy cars.
-8. If covering community/science: Friendly community helpers (teacher, doctor, etc.) or nature (butterflies, trees, sunshine).
-9. NEVER add random background letters (NO random letters like P T L, E A I).
-10. Use rich linearGradients, drop shadows (<feDropShadow>), clean SVG paths.
-Output pure SVG only. No markdown formatting, no code fence backticks.`;
-
-  for (const model of ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-flash-latest"]) {
+  const models = ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-flash-latest"];
+  for (const model of models) {
     try {
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
-          apiKey
-        )}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          signal: AbortSignal.timeout(18000),
+          signal: AbortSignal.timeout(8000),
           body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { maxOutputTokens: 8192, temperature: 0.7 },
+            contents: [{ parts: [{ text: `${instruction}\n\nContext:\n${storyInfo}` }] }],
+            generationConfig: { maxOutputTokens: 250, temperature: 0.7 },
           }),
         }
       );
       if (!res.ok) continue;
       const data = await res.json();
-      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (rawText) {
-        const cleanSvg = sanitizeGeminiSvg(rawText);
-        if (cleanSvg && cleanSvg.length > 1200) {
-          return cleanSvg;
-        }
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+      if (rawText && rawText.length > 20) {
+        return rawText.replace(/[\r\n]+/g, " ").replace(/^["']|["']$/g, "").trim().slice(0, 240);
       }
     } catch {
-      // Try next model
+      // try next
     }
   }
 
+  // Deterministic fallback prompt based on the lesson plan
+  if (content.hasStory) {
+    return `Charming realistic storybook painting of the fable "${content.storyTitle}", Filipino children, warm sunlight, rich details, beautiful colors, no text, no clipart`.slice(0, 240);
+  }
+  return `Charming realistic educational illustration of ${content.title}, ${content.subject} classroom setting with Filipino children, warm sunlight, highly detailed, no text, no clipart`.slice(0, 240);
+}
+
+/**
+ * Fetches a real AI-generated image via neural diffusion.
+ * Returns base64 data URI or null if rate-limited or offline.
+ */
+export async function fetchNeuralArtImage(
+  prompt: string,
+  seed: number
+): Promise<string | null> {
+  const cleanPrompt = encodeURIComponent(prompt.trim());
+  const url = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=960&height=540&nologo=true&seed=${seed}`;
+
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(16000) });
+    if (!res.ok) return null;
+
+    if (typeof window !== "undefined" && typeof FileReader !== "undefined") {
+      const blob = await res.blob();
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => resolve("");
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    if (typeof Buffer !== "undefined") {
+      const arrayBuffer = await res.arrayBuffer();
+      const buf = Buffer.from(arrayBuffer);
+      return `data:image/jpeg;base64,${buf.toString("base64")}`;
+    }
+  } catch {
+    return null;
+  }
   return null;
 }
 
@@ -529,19 +608,33 @@ export async function requestGeminiIllustration(
       : undefined;
   const apiKey = (options?.customApiKey || envKey || getInternalGeminiKey()).trim();
 
-  // 1. Primary Engine: Gemini AI Direct SVG Generation (Bespoke, 100% grounded in lesson plan & story)
+  // 1. Primary Engine: Gemini AI Synthesizes a Bespoke, Topic-Grounded Prompt
+  let artPrompt = "";
   try {
-    const directSvg = await requestGeminiDirectSvg(content, artStyle, apiKey);
-    if (directSvg) {
-      return { svg: directSvg, design, artStyle };
-    }
-  } catch (err) {
-    console.warn("Gemini Direct SVG generation skipped:", err);
+    artPrompt = await requestGeminiCraftedArtPrompt(content, artStyle, apiKey);
+  } catch {
+    artPrompt = content.hasStory
+      ? `Charming realistic storybook painting of the fable "${content.storyTitle}", Filipino children, warm sunlight, rich details, beautiful colors, no text, no clipart`
+      : `Charming realistic educational illustration of ${content.title}, ${content.subject} classroom setting with Filipino children, warm sunlight, highly detailed, no text, no clipart`;
   }
 
-  // 2. High-Taste Pedagogical Vector Artwork Engine (Zero stick figures, zero cone bodies)
-  const dynamicSvg = buildOfflineDynamicSvg(content, design, artStyle, generationNonce);
-  return { svg: dynamicSvg, design, artStyle };
+  // 2. Fetch High-Quality Neural AI Image (via Pollinations / Diffusion)
+  let rawImageDataUri: string | null = null;
+  try {
+    rawImageDataUri = await fetchNeuralArtImage(artPrompt, generationNonce);
+  } catch (err) {
+    console.warn("Neural image generation fetch warning:", err);
+  }
+
+  // 3. Guaranteed High-Taste Fallback (Zero clipart, zero stick figures, zero cone bodies)
+  if (!rawImageDataUri) {
+    rawImageDataUri = getDomainRealArtFallback(content.subject, content.title, content.hasStory);
+  }
+
+  // 4. Frame the AI Image with Kat's signature Presentation Card (Top Banner & Caption, watermark cropped)
+  const framedSvg = buildFramedEducationalSvg(rawImageDataUri, content);
+
+  return { svg: framedSvg, design, artStyle };
 }
 
 async function rasterizeSvgToPngDataUri(svgString: string, width = 960, height = 540): Promise<string> {
@@ -620,32 +713,10 @@ export function buildOfflineDynamicSvg(
   content: ReturnType<typeof extractIllustrationContent>,
   _design: DesignBlueprint,
   _artStyle: ArtStyleDirection,
-  nonce: number
+  _nonce: number
 ): string {
-  const esc = (s: string) =>
-    (s || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-
-  const subj = (content.subject || "").toLowerCase();
-  const titleLower = (content.title || "").toLowerCase();
-
-  if (subj.includes("math") || titleLower.includes("math") || titleLower.includes("number")) {
-    return buildMathMontessoriSetsSvg(content, nonce);
-  }
-
-  if (titleLower.includes("house") || titleLower.includes("bahay") || titleLower.includes("room")) {
-    return buildHouseCutawayDiagramSvg(content, nonce);
-  }
-
-  if (titleLower.includes("stop") || titleLower.includes("listen") || titleLower.includes("safety") || titleLower.includes("road")) {
-    return buildRoadSafetySequenceSvg(content, nonce);
-  }
-
-  // Default: 4-Panel Chronological Story & Community Comic (Arts in the Community, Pandiwa, Fables)
-  return buildStoryComicGridSvg(content, nonce);
+  const fallbackRealArt = getDomainRealArtFallback(content.subject, content.title, content.hasStory);
+  return buildFramedEducationalSvg(fallbackRealArt, content);
 }
 
 /**
