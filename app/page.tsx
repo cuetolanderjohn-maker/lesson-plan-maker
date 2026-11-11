@@ -651,7 +651,7 @@ export default function HomePage() {
           </div>
 
           <h1 className="gsap-hero-item text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-stone-900 leading-[1.12] max-w-5xl mx-auto">
-            Official Lesson Plan Studio for La Consolacion College Pasig
+            Kathrynn&apos;s Personal Lesson Plan Maker
           </h1>
 
           <p className="gsap-hero-item text-sm sm:text-base md:text-lg text-stone-600 font-normal max-w-3xl mx-auto leading-relaxed">
